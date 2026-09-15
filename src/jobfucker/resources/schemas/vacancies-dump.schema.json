@@ -1,0 +1,346 @@
+{
+  "$defs": {
+    "VacancyContext": {
+      "additionalProperties": false,
+      "description": "Read-only vacancy values included to make review useful.",
+      "properties": {
+        "applied_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Applied At"
+        },
+        "apply_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Apply Error"
+        },
+        "apply_status": {
+          "anyOf": [
+            {
+              "enum": [
+                "pending",
+                "applied",
+                "skipped",
+                "error"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Apply Status"
+        },
+        "company": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Company"
+        },
+        "cover_letter_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Cover Letter Error"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "external_id": {
+          "title": "External Id",
+          "type": "string"
+        },
+        "fetched_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Fetched At"
+        },
+        "generated_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Generated At"
+        },
+        "letter_stale": {
+          "title": "Letter Stale",
+          "type": "boolean"
+        },
+        "pipeline_id": {
+          "title": "Pipeline Id",
+          "type": "integer"
+        },
+        "salary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Salary"
+        },
+        "score_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Score Error"
+        },
+        "score_stale": {
+          "title": "Score Stale",
+          "type": "boolean"
+        },
+        "scored_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Scored At"
+        },
+        "skip_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Skip Reason"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "user_edited_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "User Edited At"
+        },
+        "user_stale": {
+          "title": "User Stale",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "pipeline_id",
+        "external_id",
+        "created_at",
+        "updated_at",
+        "fetched_at",
+        "scored_at",
+        "generated_at",
+        "user_edited_at",
+        "score_stale",
+        "letter_stale",
+        "user_stale",
+        "title",
+        "url",
+        "company",
+        "description",
+        "salary",
+        "score_error",
+        "cover_letter_error",
+        "apply_status",
+        "apply_error",
+        "skip_reason",
+        "applied_at"
+      ],
+      "title": "VacancyContext",
+      "type": "object"
+    },
+    "VacancyDocumentRow": {
+      "additionalProperties": false,
+      "description": "One visible vacancy entry.",
+      "properties": {
+        "context_edit_not_allowed": {
+          "$ref": "#/$defs/VacancyContext"
+        },
+        "editable": {
+          "$ref": "#/$defs/VacancyEditable"
+        }
+      },
+      "required": [
+        "context_edit_not_allowed",
+        "editable"
+      ],
+      "title": "VacancyDocumentRow",
+      "type": "object"
+    },
+    "VacancyEditable": {
+      "additionalProperties": false,
+      "description": "Partial user-editable projection; omitted fields remain out of the batch.",
+      "properties": {
+        "cover_letter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cover Letter"
+        },
+        "deleted": {
+          "default": false,
+          "title": "Deleted",
+          "type": "boolean"
+        },
+        "manual_skip": {
+          "default": false,
+          "title": "Manual Skip",
+          "type": "boolean"
+        },
+        "manual_skip_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Manual Skip Reason"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "maximum": 5,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Score"
+        },
+        "score_reasoning": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Score Reasoning"
+        }
+      },
+      "title": "VacancyEditable",
+      "type": "object"
+    }
+  },
+  "$id": "https://raw.githubusercontent.com/example-org/jobfucker/main/docs/schemas/vacancies-dump.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Versioned vacancy review document shared by YAML and JSON encodings.",
+  "properties": {
+    "$schema": {
+      "const": "https://raw.githubusercontent.com/example-org/jobfucker/main/docs/schemas/vacancies-dump.schema.json",
+      "title": "$Schema",
+      "type": "string"
+    },
+    "editing_instructions_edit_not_allowed": {
+      "const": "Edit values only inside `editable` blocks.\n\nYou may remove entries from `vacancies` to select a smaller apply batch.\nRemoving an entry does not delete it from the database.\n\nSet `deleted` to true to soft-delete a vacancy. Set it to false to restore\na soft-deleted vacancy.\n\nBlocks ending in `_edit_not_allowed` are informational or internal.\nPreview changes with:\n  jobfucker vacancies apply --source FILE --dry-run",
+      "title": "Editing Instructions Edit Not Allowed",
+      "type": "string"
+    },
+    "vacancies": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^vacancy_[1-9][0-9]*$": {
+          "$ref": "#/$defs/VacancyDocumentRow"
+        }
+      },
+      "title": "Vacancies",
+      "type": "object"
+    }
+  },
+  "required": [
+    "$schema",
+    "editing_instructions_edit_not_allowed",
+    "vacancies"
+  ],
+  "title": "VacancyDumpDocument",
+  "type": "object",
+  "x-jobfucker-schema-version": "sha256:ea8c932da8a91016f8e194f49788e66a85d2a52f546bf0ee81717d07cc42e19b"
+}

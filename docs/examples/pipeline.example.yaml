@@ -1,0 +1,109 @@
+# =============================================================================
+# jobfucker — pipeline.yaml reference example
+# =============================================================================
+# yaml-language-server: $schema=https://raw.githubusercontent.com/stone-w4tch3r/jobfucker/main/docs/schemas/pipeline.schema.json
+
+# --- Identity ----------------------------------------------------------------
+name: "fullstack-ai-search"
+description: "Python/FastAPI vacancies in Russia"
+
+# --- File references ----------------------------------------------------------
+# Relative file paths resolve against THIS yaml file's directory (`..` climbs
+# out); absolute paths are used as-is. Ignored for inline values.
+
+# --- Board selection ---------------------------------------------------------
+# Exactly one board under `service`; that single key selects the client.
+service:
+  mock:                                    # offline client
+    resume_id: "mock-resume-1"             # resume id used for applying (set once)
+    searches:                              # ordered search pool; fetch walks every entry in order
+      - query: "python AND fastapi"        # per-entry board query language / plaintext
+        filter:                            # per-entry concrete search filter
+          area: [1]
+          schedule: ["fullDay", "remote"]
+          experience: "between1And3"
+          only_with_salary: true
+      # - query: "python"                  # second pool entry (optional):
+      #   filter: {area: [2]}              # each entry is fully self-contained
+      #   window:                          # optional per-entry fetch window
+      #     first_page: 0
+      #     page_size: 100
+      #     take_pages: 10
+  # hh:                                    # alternative HH.ru client
+  #   resume_id: "0a1b2c3d4e5f67890a1b2c3d4e5f67890"
+  #   search_mode: "catalog"               # catalog | resume_similar
+  #   captcha_max_attempts: 4               # 1..10 fresh images per challenge (default 4)
+  #   searches:
+  #     - query: '(fullstack OR фулстек)'
+  #       filter:
+  #         ordering:
+  #           sort_results_by: publication_time  # published / location / targeting / response_extras
+  #         work_arrangement:
+  #           work_formats: [remote]
+  #           required_experience: between_1_and_3_years
+  #         salary:
+  #           from: 250000
+  #           currency: rur
+  #           only_with_salary: true
+  #         published:
+  #           within_days: 30
+  #         location:
+  #           regions: [1]
+
+# --- Credentials --------------------------------------------------------------
+# Use ONE of the two styles per key (never both).
+auth:
+  # Style A — credentials live in files (relative to this yaml file):
+  login_file: "secrets/login.txt"
+  password_file: "secrets/password.txt"
+  # Style B — credentials inline:
+  # login: "me@example.com"
+  # password: "hunter2"
+
+# --- Resume --------------------------------------------------------------------
+resume:
+  # Style A — resume in a markdown file:
+  path: "../cvs/CV_2024-2025.md"
+  # Style B — resume text inline:
+  # contents: |-
+  #   # Ivan Petrov
+  #   Python backend engineer, 6 years...
+
+# --- OpenAI (scoring / cover-letter) --------------------------------------------
+openai:
+  model: "gpt-5.6-luna"
+  base_url: "https://api.openai.com/v1"
+  # Style A — API key in a file:
+  api_key_file: "secrets/api_key.txt"
+  # Style B — API key inline:
+  # api_key: "sk-..."
+  # reasoning_effort: "medium"   # free-form passthrough; provider-dependent values (e.g. OpenAI: low/medium/high; Gemini: true/false)
+
+# --- OpenAI captcha vision solving (optional, independent) -------------------------------
+openai_captcha:
+  model: "gpt-5-mini"
+  base_url: "https://api.openai.com/v1"
+#   api_key: "sk-..."
+  # consensus_requests: 4   # vision votes per captcha attempt; most-common answer wins
+
+# --- AI scoring -------------------------------------------------------------------
+scoring:
+  min_required_score: 3                  # vacancies below this are dropped after scoring
+  # Style A — prompt template in a file:
+  scoring_prompt_file: "prompts/score.md.j2"
+  # Style B — prompt template inline:
+  # scoring_prompt: |
+  #   Score the fit of the vacancy for {{ resume }} ...
+  #   Return a number 1..10.
+
+# --- Cover letter -------------------------------------------------------------------
+apply:
+  # Style A — prompt template in a file:
+  apply_prompt_file: "prompts/apply.md.j2"
+  # Style B — prompt template inline:
+  # apply_prompt: |
+  #   Write a short cover letter for {{ vacancy.title }} ...
+
+# --- Limits ----------------------------------------------------------------------
+limits:
+  daily_apply_limit: 50    # optional, default 50; conservative per-pipeline safety limit

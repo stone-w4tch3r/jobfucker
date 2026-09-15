@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jobfucker — Project Audit (2026-08-20)</title>
+<style>
+  :root{
+    --ink:#1b1f24; --dim:#57606a; --line:#d8dee4; --bg:#ffffff; --panel:#f6f8fa;
+    --ok:#1a7f37; --okbg:#e6f4ea;
+    --warn:#9a6700; --warnbg:#fff8c5;
+    --bad:#cf222e; --badbg:#ffebe9;
+    --info:#0969da; --infobg:#ddf4ff;
+    --ghost:#8250df; --ghostbg:#f8f4fe;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.55 -apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;color:var(--ink);background:var(--bg)}
+  code,kbd,pre,.mono{font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  a{color:var(--info);text-decoration:none}
+  a:hover{text-decoration:underline}
+  header.top{padding:28px 32px 18px;border-bottom:2px solid var(--ink);background:var(--panel)}
+  header.top h1{margin:0;font-size:26px;letter-spacing:-.5px}
+  header.top p{margin:6px 0 0;color:var(--dim);max-width:900px}
+  .layout{display:grid;grid-template-columns:250px 1fr;gap:0;align-items:start}
+  nav.toc{position:sticky;top:0;align-self:start;max-height:100vh;overflow:auto;padding:18px 14px;border-right:1px solid var(--line);font-size:13px}
+  nav.toc a{display:block;padding:3px 8px;border-radius:6px;color:var(--ink)}
+  nav.toc a:hover{background:var(--panel);text-decoration:none}
+  main{padding:10px 34px 80px;min-width:0}
+  section{margin-top:44px}
+  section > h2{font-size:21px;border-bottom:1px solid var(--line);padding-bottom:8px;margin:0 0 14px}
+  section > h2 .no{color:var(--dim);font-weight:400;margin-right:8px}
+  h3{font-size:16px;margin:26px 0 8px}
+  h4{font-size:14px;margin:18px 0 6px;color:var(--dim)}
+  p{max-width:980px}
+  table{border-collapse:collapse;margin:10px 0;width:100%;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+  th{background:var(--panel);font-weight:600}
+  tr:nth-child(even) td{background:#fcfdfe}
+  .chip{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;font-weight:700;letter-spacing:.3px;white-space:nowrap}
+  .c-real{color:var(--ok);background:var(--okbg)}
+  .c-undoc{color:var(--info);background:var(--infobg)}
+  .c-stale{color:var(--bad);background:var(--badbg)}
+  .c-warn{color:var(--warn);background:var(--warnbg)}
+  .c-ghost{color:var(--ghost);background:var(--ghostbg)}
+  .c-stub{color:#57606a;background:#eaeef2}
+  .c-user{color:var(--ghost);background:var(--ghostbg);border:1px dashed #b57edc}
+  .c-removed{color:#57606a;background:#eaeef2;text-decoration:line-through}
+  .ev{font:11.5px/1.45 ui-monospace,Menlo,Consolas,monospace;color:var(--dim);background:var(--panel);padding:1px 5px;border-radius:4px;white-space:nowrap}
+  pre{background:#0d1117;color:#e6edf3;padding:14px 16px;border-radius:8px;overflow:auto;max-width:1080px}
+  pre .c{color:#8b949e}
+  pre .k{color:#ff7b72}
+  pre .s{color:#a5d6ff}
+  pre .f{color:#d2a8ff}
+  details{border:1px solid var(--line);border-radius:8px;margin:8px 0;background:#fff}
+  details > summary{cursor:pointer;padding:9px 14px;font-weight:600;background:var(--panel);border-radius:8px;list-style:none}
+  details > summary::before{content:"▸ ";color:var(--dim)}
+  details[open] > summary::before{content:"▾ "}
+  details .body{padding:10px 16px 14px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:1000px){.grid2,.grid3{grid-template-columns:1fr}.layout{grid-template-columns:1fr}nav.toc{position:static;max-height:none;border-right:none;border-bottom:1px solid var(--line)}}
+  .card{border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:#fff}
+  .card h4{margin:0 0 6px;color:var(--ink)}
+  .stat{border:1px solid var(--line);border-radius:8px;padding:10px 14px;background:var(--panel)}
+  .stat .n{font-size:22px;font-weight:700;display:block}
+  .stat .l{font-size:11.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+  .callout{border-left:4px solid var(--warn);background:var(--warnbg);padding:10px 14px;border-radius:0 8px 8px 0;margin:12px 0;max-width:980px}
+  .callout.bad{border-left-color:var(--bad);background:var(--badbg)}
+  .callout.ok{border-left-color:var(--ok);background:var(--okbg)}
+  .callout.info{border-left-color:var(--info);background:var(--infobg)}
+  .callout.user{border-left-color:var(--ghost);background:var(--ghostbg);border-top:1px dashed #b57edc;border-right:1px dashed #b57edc;border-bottom:1px dashed #b57edc}
+  .unote-tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--ghost);margin-bottom:4px}
+  figure{margin:14px 0;padding:12px;border:1px solid var(--line);border-radius:8px;overflow-x:auto;background:#fff}
+  figcaption{font-size:12.5px;color:var(--dim);margin-top:6px}
+  svg text{font:12px -apple-system,"Segoe UI",Roboto,sans-serif;fill:#1b1f24}
+  svg .dim{fill:#57606a}
+  svg .box{fill:#f6f8fa;stroke:#57606a;stroke-width:1.2;rx:6}
+  svg .hifill{fill:#ddf4ff;stroke:#0969da;stroke-width:1.2}
+  svg .okfill{fill:#e6f4ea;stroke:#1a7f37;stroke-width:1.2}
+  svg .badfill{fill:#ffebe9;stroke:#cf222e;stroke-width:1.2}
+  svg .ghostfill{fill:#f8f4fe;stroke:#8250df;stroke-width:1.2;stroke-dasharray:4 3}
+  svg .arrow{stroke:#57606a;stroke-width:1.2;fill:none;marker-end:url(#arr)}
+  .btnrow{margin:4px 0 12px}
+  button.mini{font:12px ui-monospace,monospace;padding:4px 10px;border:1px solid var(--line);border-radius:6px;background:var(--panel);cursor:pointer}
+  button.mini:hover{background:#eaeef2}
+  .toc-h{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--dim);margin:12px 0 4px;padding-left:8px}
+  ul.tight{margin:6px 0;padding-left:22px}
+  ul.tight li{margin:3px 0}
+  .kv{font-size:13px}
+  .kv b{display:inline-block;min-width:130px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1>jobfucker — Project Audit</h1>
+  <p>High-level as-is audit: every feature, module, and behavior — in <b>reality</b> and in <b>docs</b> —
+  with contradiction evidence, provenance classification (wanted / hallucinated / vestigial), and complexity findings.
+  Phase 1 of the audit track. Written 2026-08-20 from full source read (~12.6k LOC) + all specs.
+  Evidence anchors are <span class="ev">file:line</span>. This document describes what <i>is</i>, not what should be.</p>
+</header>
+
+<div class="layout">
+<nav class="toc" id="toc">
+  <div class="toc-h">Orientation</div>
+  <a href="#vitals">0 · Vitals</a>
+  <a href="#verdict">1 · Executive verdict</a>
+  <a href="#mental">2 · Mental model</a>
+  <div class="toc-h">System</div>
+  <a href="#arch">3 · Architecture &amp; modules</a>
+  <a href="#data">4 · Data model</a>
+  <a href="#lifecycle">5 · Pipeline lifecycle &amp; config</a>
+  <a href="#stages">6 · Stage engine</a>
+  <a href="#fetch">7 · Fetch slicing</a>
+  <a href="#limits">8 · Limits &amp; apply</a>
+  <div class="toc-h">Clients</div>
+  <a href="#contract">9 · Client contract</a>
+  <a href="#hh">10 · HH adapter</a>
+  <a href="#captcha">11 · Captcha subsystem</a>
+  <a href="#ai">12 · AI subsystem</a>
+  <div class="toc-h">Surfaces</div>
+  <a href="#cli">13 · CLI surface</a>
+  <a href="#docflow">14 · Vacancy documents</a>
+  <a href="#reporting">15 · Reporting &amp; logging</a>
+  <a href="#tests">16 · Tests</a>
+  <div class="toc-h">Audit findings</div>
+  <a href="#matrix">17 · Reality vs docs matrix</a>
+  <a href="#provenance">18 · Feature provenance</a>
+  <a href="#verbosity">19 · Complexity &amp; verbosity</a>
+  <a href="#tensions">20 · Design tensions</a>
+  <a href="#docshealth">21 · Docs health</a>
+  <a href="#keepkill">22 · Keep / kill / rewrite</a>
+</nav>
+
+<main>
+
+<!-- ============================================================ 0 -->
+<section id="vitals">
+<h2><span class="no">0</span>Vitals</h2>
+<div class="grid3" style="grid-template-columns:repeat(6,1fr)">
+  <div class="stat"><span class="n">62</span><span class="l">src files</span></div>
+  <div class="stat"><span class="n">12,550</span><span class="l">src LOC*</span></div>
+  <div class="stat"><span class="n">20%</span><span class="l">docstring LOC</span></div>
+  <div class="stat"><span class="n">11</span><span class="l">alembic migrations</span></div>
+  <div class="stat"><span class="n">48</span><span class="l">test files</span></div>
+  <div class="stat"><span class="n">~4,000</span><span class="l">doc LOC</span></div>
+</div>
+<p style="margin-top:10px;color:var(--dim);font-size:13px">* excluding <span class="ev">storage/migrations/</span>. Docs = specs (4) + HH wiki (11) + UI spec + impl plan + coding rules.
+Python 3.14.6, uv, typer, SQLAlchemy 2 async + aiosqlite, Alembic, httpx, pydantic, Jinja2, openai, pillow, rusty-results.
+16 runtime deps — including <b>pyside6 + qasync + tomli-w</b> for a GUI that no longer exists (see <a href="#provenance">§18</a>).</p>
+
+<div class="grid3">
+  <div class="card"><h4>What actually runs today</h4>
+  <ul class="tight">
+    <li>Full pipeline <span class="mono">init → run/fetch/score/generate/apply</span> against the <b>mock</b> client, offline, incl. terminal captcha rendering.</li>
+    <li>HH client: <b>auth, captcha (2 kinds), search + enrichment are real</b>; <b>resumes + apply are fail-closed stubs</b> <span class="ev">clients/hh/resumes.py:13</span> <span class="ev">clients/hh/applications.py:13</span>.</li>
+    <li>Vacancy review/edit CLI: <span class="mono">jobfucker vacancies dump|apply|edit</span> — a whole subsystem with its own review/edit document workflow.</li>
+  </ul></div>
+  <div class="card"><h4>What's gone / phantom</h4>
+  <ul class="tight">
+    <li>Qt GUI: removed <span class="ev">git 0643ae0 "remove UI"</span>; Qt deps + shared/shortcuts remain.</li>
+    <li>Generic frameworks with exactly one consumer: <span class="mono">table_documents/</span>, dual-counter <span class="mono">Limits</span>, schema-version machinery, "UI-neutral" <span class="mono">AppServices</span> graph.</li>
+  </ul></div>
+  <div class="card"><h4>Docs state</h4>
+  <ul class="tight">
+    <li>AGENTS.md: truthful status table + doc map (one fact, one home); CLAUDE.md is its symlink.</li>
+    <li>Specs: product 158 lines, architecture 99 (as-built; ORM = schema authority); client-contract + hh-client unchanged.</li>
+    <li>UI spec retained as the GUI future plan; limits semantics + vacancies pipeline filter marked TBD.</li>
+  </ul></div>
+</div>
+</section>
+
+<!-- ============================================================ 1 -->
+<section id="verdict">
+<h2><span class="no">1</span>Executive verdict</h2>
+
+<div class="callout ok"><b>The core is real and coherent.</b> The mock-driven pipeline (config → snapshots → fetch/score/generate/apply → SQLite, Result-style errors, audit log, daily limits) is implemented, typed, and tested. The HH client is further along than any doc admits: browserless login + OAuth + token persistence + both captcha protocols + sliced search with detail enrichment all exist and are BDD-tested against a mock transport. Only resume listing and applying are explicit fail-closed stubs.</div>
+
+<div class="callout ok"><b>The docs match the code.</b> AGENTS.md carries the truthful status table and the full command list; the architecture spec is a compact as-built that declares the ORM the schema authority; the product spec documents behavior and marks unsettled semantics (limits, vacancies filter) as explicit TBD. Remaining doc-code gaps live in the matrix in <a href="#matrix">§17</a>.</div>
+
+<div class="callout info"><b>The "impossible to understand" feeling has a structural cause.</b> 20% of source lines are docstrings (many are 30–50-line essays); generic three-type-parameter frameworks wrap single concrete uses; the same concern is restated in module docstrings that duplicate spec-level facts — docs declare single fact-homes and link, but the docstring essays remain. Complexity inventory in <a href="#verbosity">§19</a>.</div>
+
+<h3>Top findings, ranked by damage</h3>
+<table>
+<tr><th>#</th><th>Finding</th><th>Class</th><th>Evidence</th></tr>
+<tr><td>1</td><td>Qt toolchain (pyside6, qasync, tomli-w, pytest-qt) + shared/shortcuts + "UI-neutral" AppServices kept alive for a removed GUI</td><td><span class="chip c-ghost">VESTIGIAL</span></td><td class="mono">pyproject.toml:17-21, app/services.py</td></tr>
+<tr><td>2</td><td>Generic frameworks with one implementation: <span class="mono">table_documents</span> (3-param Protocol → 1 policy), <span class="mono">Limits</span> (two counters → one value), schema-content-hash versioning (one schema)</td><td><span class="chip c-ghost">PHANTOM</span></td><td class="mono">table_documents/service.py:23-48, limits.py:43-53</td></tr>
+<tr><td>3</td><td>Dangling spec reference: <span class="mono">storage/models.py:4</span> cites <span class="mono">docs/specs/jobfucker.pipeline-snapshots.md</span> as DDL authority — the file does not exist; the ORM is the only authority</td><td><span class="chip c-warn">HYGIENE</span></td><td class="mono">storage/models.py:4</td></tr>
+<tr><td>4</td><td>Recent history is a fix spiral ("fix some problems", "try fix a bug", "fix search slicing?") — agentic churn signature; same for 11 hand-written migrations incl. noop/rename/drop chains</td><td><span class="chip c-warn">HYGIENE</span></td><td class="mono">git log -15</td></tr>
+</table>
+</section>
+
+<!-- ============================================================ 2 -->
+<section id="mental">
+<h2><span class="no">2</span>Mental model — how one command actually flows</h2>
+
+<p>The single most useful thing to know: <b>the DB is the config</b>. After <span class="mono">init</span>, no command reads
+<span class="mono">pipeline.yaml</span> again; every stage run reconstructs a full <span class="mono">PipelineConfig</span> from
+the stored snapshot row ("we trust the db", zero file I/O). The second most useful thing: <b>everything below the CLI is async and returns <span class="mono">Result</span></b> — exceptions are programming errors only.</p>
+
+<figure>
+<svg viewBox="0 0 980 300" width="100%" height="auto" role="img" aria-label="command flow">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#57606a"/></marker></defs>
+<rect class="box" x="20" y="20" width="200" height="52" rx="6"/><text x="120" y="42" text-anchor="middle">jobfucker score --pipeline-id 3</text><text x="120" y="60" text-anchor="middle" class="dim">typer command (cli.py)</text>
+<rect class="box" x="20" y="110" width="200" height="52" rx="6"/><text x="120" y="132" text-anchor="middle">asyncio.run(...)</text><text x="120" y="150" text-anchor="middle" class="dim">one-shot loop per command</text>
+<rect class="hifill" x="270" y="110" width="210" height="52" rx="6"/><text x="375" y="132" text-anchor="middle">AppServices.open()</text><text x="375" y="150" text-anchor="middle" class="dim">storage+migrations, factory, services</text>
+<rect class="hifill" x="530" y="110" width="200" height="52" rx="6"/><text x="630" y="132" text-anchor="middle">PipelineService.resolve(id)</text><text x="630" y="150" text-anchor="middle" class="dim">identity + head snapshot</text>
+<rect class="okfill" x="530" y="200" width="200" height="52" rx="6"/><text x="630" y="222" text-anchor="middle">build_engine_from_pipeline</text><text x="630" y="240" text-anchor="middle" class="dim">snapshot → PipelineConfig (0 file IO)</text>
+<rect class="okfill" x="780" y="200" width="180" height="52" rx="6"/><text x="870" y="222" text-anchor="middle">Engine.score(...)</text><text x="870" y="240" text-anchor="middle" class="dim">run_score stage → SQLite</text>
+<rect class="ghostfill" x="780" y="110" width="180" height="52" rx="6"/><text x="870" y="132" text-anchor="middle">OpenAIWrapper</text><text x="870" y="150" text-anchor="middle" class="dim">typed seam over openai SDK</text>
+<path class="arrow" d="M120 72 L120 110"/><path class="arrow" d="M220 136 L270 136"/>
+<path class="arrow" d="M480 136 L530 136"/><path class="arrow" d="M630 162 L630 200"/>
+<path class="arrow" d="M730 226 L780 226"/><path class="arrow" d="M870 162 L870 200"/>
+<text x="30" y="280" class="dim">Note: AppServices builds a factory that can never construct a client (no section bound) — it exists for validate_cap/status and the removed GUI.</text>
+</svg>
+<figcaption>Lifecycle of one stage command. The engine is rebuilt from DB state on every invocation; clients are constructed per stage call and closed in <span class="mono">finally</span>.</figcaption>
+</figure>
+
+<details><summary>Pseudocode — the five invariants that explain most code you'll read</summary><div class="body">
+<pre><span class="c"># 1. Errors are values. Every boundary returns Result[T, E]; unwrap_err paths are the error handling.</span>
+<span class="k">async def</span> <span class="f">stage</span>(...) -> Result[Report, str]:        <span class="c"># whole-batch Err (auth/transport/plan)</span>
+    ...                                            <span class="c"># per-item failures are FIELDS on rows, never aborts</span>
+
+<span class="c"># 2. Config lives in the DB, snapshot per real change, reconstructed with zero file I/O.</span>
+snapshot = storage.snapshots.current(pipeline_id)
+config   = reconstruct_pipeline_config(to_persisted_refs(snapshot))   <span class="c"># login/password/resume/api_key/prompts are CONTENT columns</span>
+
+<span class="c"># 3. Provenance: every artifact column records which snapshot produced it.</span>
+vacancy.scored_snapshot_id = engine.snapshot_id   <span class="c"># + fetched/generated/applied_snapshot_id</span>
+
+<span class="c"># 4. Fetch is an insert-only mirror sync; --refresh overwrites listing fields only.</span>
+fetch:  insert new ids; existing rows untouched        <span class="c"># stored ids excluded client-side</span>
+score:  skip if --skip-already-processed and row has result
+
+<span class="c"># 5. One shared daily counter per (service, login, date); two caps checked against that ONE value.</span>
+can_apply = used &lt; per_auth_cap <span class="k">and</span> used &lt; per_pipeline_limit   <span class="c"># limits.py:53, called as can_apply(used, used)</span></pre>
+</div></details>
+</section>
+
+<!-- ============================================================ 3 -->
+<section id="arch">
+<h2><span class="no">3</span>Architecture &amp; module inventory</h2>
+
+<figure>
+<svg viewBox="0 0 980 430" width="100%" height="auto" role="img" aria-label="layer diagram">
+<rect class="box" x="10" y="10" width="960" height="80" rx="8" fill="#f6f8fa" stroke="#d8dee4"/>
+<text x="24" y="30" class="dim">PRESENTATION</text>
+<rect class="hifill" x="30" y="40" width="220" height="38" rx="6"/><text x="140" y="63" text-anchor="middle">cli.py (typer, 739)</text>
+<rect class="hifill" x="270" y="40" width="300" height="38" rx="6"/><text x="420" y="63" text-anchor="middle">cli_commands/vacancies.py (292)</text>
+<rect class="ghostfill" x="590" y="40" width="360" height="38" rx="6"/><text x="770" y="56" text-anchor="middle">Qt GUI — REMOVED (0643ae0)</text><text x="770" y="70" text-anchor="middle" class="dim">specs + Qt deps remain</text>
+<rect class="box" x="10" y="105" width="960" height="110" rx="8" fill="#f6f8fa" stroke="#d8dee4"/>
+<text x="24" y="125" class="dim">APPLICATION / DOMAIN</text>
+<rect class="hifill" x="30" y="135" width="150" height="38" rx="6"/><text x="105" y="158" text-anchor="middle">engine.py (367)</text>
+<rect class="box" x="200" y="135" width="170" height="38" rx="6"/><text x="285" y="158" text-anchor="middle">stages/ (6 files, 1634)</text>
+<rect class="box" x="390" y="135" width="170" height="38" rx="6"/><text x="475" y="158" text-anchor="middle">app/ (5 files, 1213)</text>
+<rect class="box" x="580" y="135" width="180" height="38" rx="6"/><text x="670" y="158" text-anchor="middle">table_documents/ (456)</text>
+<rect class="box" x="780" y="135" width="170" height="38" rx="6"/><text x="865" y="151" text-anchor="middle">config.py (735)</text><text x="865" y="166" text-anchor="middle" class="dim">+ bootstrap.py (266)</text>
+<rect class="box" x="200" y="180" width="360" height="24" rx="6"/><text x="380" y="196" text-anchor="middle">ai.py (532) · reporting.py (131) · limits.py (61) · runtime.py (95)</text>
+<rect class="box" x="10" y="230" width="960" height="90" rx="8" fill="#f6f8fa" stroke="#d8dee4"/>
+<text x="24" y="250" class="dim">CLIENT CONTRACT + ADAPTERS</text>
+<rect class="okfill" x="30" y="260" width="180" height="38" rx="6"/><text x="120" y="277" text-anchor="middle">clients/base.py (398)</text><text x="120" y="292" text-anchor="middle" class="dim">Client protocol + models</text>
+<rect class="box" x="230" y="260" width="180" height="38" rx="6"/><text x="320" y="277" text-anchor="middle">clients/hh/ (8 files, 2031)</text><text x="320" y="292" text-anchor="middle" class="dim">transport/auth/captcha/search</text>
+<rect class="box" x="430" y="260" width="180" height="38" rx="6"/><text x="520" y="277" text-anchor="middle">clients/mock/ (627)</text><text x="520" y="292" text-anchor="middle" class="dim">scriptable offline adapter</text>
+<rect class="box" x="630" y="260" width="160" height="38" rx="6"/><text x="710" y="277" text-anchor="middle">clients/paging.py</text><text x="710" y="292" text-anchor="middle" class="dim">shared slice walker</text>
+<rect class="box" x="810" y="260" width="140" height="38" rx="6"/><text x="880" y="277" text-anchor="middle">clients/factory.py</text><text x="880" y="292" text-anchor="middle" class="dim">service → adapter</text>
+<rect class="box" x="10" y="335" width="470" height="80" rx="8" fill="#f6f8fa" stroke="#d8dee4"/>
+<text x="24" y="355" class="dim">INFRASTRUCTURE</text>
+<rect class="box" x="30" y="365" width="200" height="38" rx="6"/><text x="130" y="388" text-anchor="middle">storage/ (1512 + migrations)</text>
+<rect class="box" x="250" y="365" width="210" height="38" rx="6"/><text x="355" y="388" text-anchor="middle">captcha/ (658, board-agnostic)</text>
+<rect class="box" x="490" y="335" width="480" height="80" rx="8" fill="#f6f8fa" stroke="#d8dee4"/>
+<text x="504" y="355" class="dim">SHARED TEMPLATE RESIDUE (from coding_rules_python scaffold)</text>
+<rect class="ghostfill" x="510" y="365" width="200" height="38" rx="6"/><text x="610" y="382" text-anchor="middle">shared/linting (6 linters)</text><text x="610" y="396" text-anchor="middle" class="dim">+ shared_tests/</text>
+<rect class="ghostfill" x="730" y="365" width="220" height="38" rx="6"/><text x="840" y="382" text-anchor="middle">shared/shortcuts + logging</text><text x="840" y="396" text-anchor="middle" class="dim">shortcuts needs PySide6</text>
+</svg>
+<figcaption>Layer map with LOC per module. Dependency flow is downward only; SQLAlchemy confined to storage/ (ruff TID251 ban); core never imports a board. Purple dashed = vestigial/phantom mass.</figcaption>
+</figure>
+
+<h3>Module inventory — what each thing actually does</h3>
+<div class="btnrow"><button class="mini" onclick="document.querySelectorAll('#arch details').forEach(d=>d.open=true)">expand all</button><button class="mini" onclick="document.querySelectorAll('#arch details').forEach(d=>d.open=false)">collapse all</button></div>
+
+<details><summary>cli.py + cli_commands/ — presentation shell (1,031 LOC)</summary><div class="body">
+<p>Thin typer shell. Global callback wires file logging (<span class="mono">$DATA_DIR/logs/jobfucker.log</span>) + optional colored stderr. Each command = parse → <span class="mono">asyncio.run</span> → <span class="mono">_with_services</span> (open AppServices, close in finally) → <span class="mono">build_engine_from_pipeline</span> → call engine → print report aggregates. <span class="mono">CliReporter</span> prints live <span class="mono">RunEvent</span>s filtered by <span class="mono">-v/-vv</span>.</p>
+<p class="kv"><b>Verdict:</b> <span class="chip c-real">REAL</span> Reasonably thin; the report-printing helpers and per-command plumbing repeat 5× (score/generate/apply are near-clones).</p>
+</div></details>
+
+<details><summary>engine.py — orchestrator (367)</summary><div class="body">
+<p><span class="mono">Engine</span> = composition root per run: storage + factory + config + AI + snapshot_id + reporter. Methods <span class="mono">fetch/score/generate_cv/apply/run</span>. Owns <span class="mono">BatchSelector</span> (from/to/take/skip_already_processed → 0-based offsets into the id-ordered list). Constructs a fresh client per stage call, closes it in finally.</p>
+<p class="kv"><b>Verdict:</b> <span class="chip c-real">REAL</span> Clean. Note: <span class="mono">run</span> passes the selector only to the three batch stages (score/generate/apply) — fetch always uses its own window params.</p>
+</div></details>
+
+<details><summary>config.py — pipeline.yaml load + DB reconstruction (735)</summary><div class="body">
+<p>Pydantic models for the whole config; xor "file OR inline" slot validation for every content slot (login/password/resume/api_key/prompts); file contents injected + <span class="mono">strip()</span>ed; per-board section registry <span class="mono">SERVICE_SECTION_MODELS = {hh, mock}</span>; serialization round-trip (<span class="mono">dump_service_section/load_service_section</span>, <span class="mono">dump/load_openai_captcha</span>); <span class="mono">reconstruct_pipeline_config</span> (zero file I/O); <span class="mono">validate_cap</span>.</p>
+<p class="kv"><b>Verdict:</b> <span class="chip c-warn">HEAVY</span> 735 lines for config is 3–4× what the job needs; the xor-slot machinery + dual serialization corridors are the bulk. Functionally correct.</p>
+</div></details>
+
+<details><summary>app/ — application services (1,213)</summary><div class="body">
+<ul class="tight">
+<li><span class="mono">services.py</span> — AppServices: "UI-neutral" graph (storage+factory+PipelineService+VacancyDocumentService). Its factory has no section → can never build a client. Exists for cap validation, status commands, and the removed GUI. <span class="chip c-ghost">VESTIGIAL lean</span></li>
+<li><span class="mono">pipeline_service.py</span> — create / get-or-keep / new_snapshot (dedupes no-op edits) / resolve / list. <span class="chip c-real">REAL</span> core of the lifecycle.</li>
+<li><span class="mono">mapping.py</span> — config↔DTO corridor both directions. <span class="chip c-real">REAL</span> but is a 4th representation hop (ORM row → DTO → refs → config).</li>
+<li><span class="mono">vacancy_documents.py</span> (487) + <span class="mono">vacancy_document_schema.py</span> (191) — the dump/apply policy: 7 editable fields, base hashes, identity checks, soft-delete/restore accounting. <span class="chip c-warn">HEAVY</span></li>
+</ul>
+</div></details>
+
+<details><summary>table_documents/ — generic document framework (456) <span class="chip c-ghost">PHANTOM</span></summary><div class="body">
+<p>Generic YAML/JSON codec (dup-key rejection, alias/anchor ban, 16MB/10k-row limits, jsonschema validation, atomic write), generic three-way field planner (sha256 canonical hashes), and a 3-type-parameter <span class="mono">TableDocumentService[DocumentT, PlanT, SummaryT]</span> Protocol. Exactly ONE policy implements it: vacancies. Built generic-first for a second table that never came. This is the machinery under <span class="mono">jobfucker vacancies</span>.</p>
+</div></details>
+
+<details><summary>stages/ — fetch, fetch_plan, score, generate_cv, apply, prompts (1,634)</summary><div class="body">
+<p>The heart of the product; each stage is a free function taking storage + pipeline + inputs, returning a frozen report. See <a href="#stages">§6</a> for behaviors.</p>
+<p class="kv"><b>Verdict:</b> <span class="chip c-real">REAL</span> The most valuable code in the repo. Slight bloat: per-item reporter-event builder functions double line counts.</p>
+</div></details>
+
+<details><summary>clients/ — contract + adapters (3,332)</summary><div class="body">
+<p><span class="mono">base.py</span>: the Client protocol, vendor-neutral models (Vacancy/SearchSlice/ApplyResult union), 10-member ClientError union, CaptchaHandler/AuthInteractionProvider seams, ClientDeps, ServiceConfigSection. <span class="mono">factory.py</span>: registry. <span class="mono">paging.py</span>: <span class="mono">plan_pages</span> (pure math) + <span class="mono">scan_slice</span> (walk; short page = exhausted; page failure = partial result, never bare Err). Adapters: <b>hh</b> (see §10), <b>mock</b> (canned vacancies + scriptable behavior + offline captcha, self-configured from its own yaml section).</p>
+<p class="kv"><b>Verdict:</b> <span class="chip c-real">REAL</span> Contract quality is genuinely good and matches the client-contract spec closely. The mock's <span class="mono">Field(title/description/examples)</span> metadata exists "for schema-driven UI forms" (params.py:18-19) — for the removed GUI. <span class="chip c-ghost">VESTIGIAL</span> rationale.</p>
+</div></details>
+
+<details><summary>captcha/ — board-agnostic handling (658)</summary><div class="body">
+<p>Selector (flag &gt; AI &gt; autodetect &gt; fail), pure-Python sixel encoder (256-color quantize, RLE, 6-row bands), kitty base64 encoder, TMUX/Zellij passthrough, terminal capability map (<span class="mono">data/terminal_capabilities.json</span>), TerminalCaptchaHandler (render + prompt via to_thread), AiCaptchaHandler (vision model, <span class="mono">openai_captcha</span> section only, hardcoded English instruction).</p>
+<p class="kv"><b>Verdict:</b> <span class="chip c-real">REAL</span> This matches the user's standing constraints (generic, client-level, any-call detection; human-URL fallback via CaptchaSolvingError.recovery_url).</p>
+</div></details>
+
+<details><summary>storage/ — SQLAlchemy repos (1,512 + 11 migrations)</summary><div class="body">
+<p><span class="mono">models.py</span> ORM = canonical schema; <span class="mono">dto.py</span> frozen board-neutral DTOs; <span class="mono">db.py</span> (891) five repositories with row↔DTO mapping, atomic snapshot ops (create_identity_with_snapshot, create_and_set_current), vacancy upsert as a dumb full-field copy (soft-delete lifecycle handled by the caller + manual <span class="mono">soft_deleted_at</span>), FK pragma, migrations runner; <span class="mono">vacancy_documents.py</span> atomic apply + audit; <span class="mono">testing.py</span> harness.</p>
+<p class="kv"><b>Verdict:</b> <span class="chip c-real">REAL</span> <span class="chip c-warn">HEAVY</span> 901-line db.py is the repo's biggest file; row↔DTO mapping is ~170 lines of boilerplate ×5 tables. Fetch stage does per-vacancy <span class="mono">get_by_external_id</span> + <span class="mono">upsert</span> (2 queries/vacancy, N+1).</p>
+</div></details>
+
+<details><summary>ai.py — typed OpenAI wrapper (532)</summary><div class="body">
+<p><span class="mono">OpenAIWrapper</span>: user-message-only prompting; scoring via Structured Outputs JSON Schema (<span class="mono">{fit_score 1..5, comment}</span>); retry loop (3 attempts, exp backoff) covering network AND validation failures; markdown-fence/prose JSON extraction tolerance; DEBUG request/response logging; per-call client (no pool leak). Injected <span class="mono">CompletionsFn</span> seam for tests.</p>
+<p class="kv"><b>Verdict:</b> <span class="chip c-real">REAL</span> Solid. Note the JSON-extraction tolerance exists because some providers ignore response_format — pragmatic, correct.</p>
+</div></details>
+
+<details><summary>support: reporting / limits / runtime / bootstrap / schema_generation / testing</summary><div class="body">
+<ul class="tight">
+<li><span class="mono">reporting.py</span> — RunEvent/Reporter/NullReporter + severity→verbosity map. <span class="chip c-real">REAL</span> Second output channel beside logging (by design, for the GUI).</li>
+<li><span class="mono">limits.py</span> — Limits.can_apply(used_per_auth, used_per_pipeline); caller passes the SAME value twice. <span class="chip c-ghost">PHANTOM generality</span></li>
+<li><span class="mono">runtime.py</span> — CONFIG_DIR/DATA_DIR/XDG resolution. <span class="chip c-real">REAL</span> lean.</li>
+<li><span class="mono">bootstrap.py</span> — CLI-only engine rebuild facade + TerminalAuthInteraction; the REAL second composition root (builds its own factory with captcha handler + section). Naming acknowledged as confusing (user TODO notes suggest rename; see §22).</li>
+<li><span class="mono">schema_generation.py</span> + <span class="mono">schema_source.py</span> + packaged schema resource — generates the vacancy-doc JSON Schema, version = sha256 of schema content, written to docs/schemas AND src/jobfucker/resources/schemas. <span class="chip c-ghost">PHANTOM</span> content-hash versioning for one local doc type.</li>
+<li><span class="mono">testing/step_runner.py</span> — async_run_result helper so sync BDD steps can drive async domain (pytest-bdd cannot await; async steps silently no-op → false green).</li>
+</ul>
+</div></details>
+</section>
+
+<!-- ============================================================ 4 -->
+<section id="data">
+<h2><span class="no">4</span>Data model</h2>
+
+<p>Five tables. The docstring of <span class="mono">storage/models.py:4</span> cites <span class="mono">docs/specs/jobfucker.pipeline-snapshots.md</span> as the DDL authority — <b>that file does not exist</b>; the ORM is the only authority, as the <a href="#docshealth">architecture spec (§21)</a> states explicitly.</p>
+
+<figure>
+<svg viewBox="0 0 980 470" width="100%" height="auto" role="img" aria-label="ER diagram">
+<defs><marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#57606a"/></marker></defs>
+<rect class="hifill" x="30" y="30" width="250" height="120" rx="8"/>
+<text x="45" y="52" font-weight="bold">pipelines (identity only)</text>
+<text x="45" y="72">id · name (uniq, active) · description</text>
+<text x="45" y="88">current_snapshot_id → snapshot</text>
+<text x="45" y="104">created/updated_at · soft_deleted_at</text>
+<text x="45" y="126" class="dim">NO config — by design</text>
+<rect class="hifill" x="360" y="20" width="280" height="170" rx="8"/>
+<text x="375" y="42" font-weight="bold">pipeline_snapshot (append-only)</text>
+<text x="375" y="62">id · pipeline_id · snapshot_no (1,2,3…) · source · note</text>
+<text x="375" y="78">query · service · service_section (opaque JSON)</text>
+<text x="375" y="94">openai_captcha (opaque JSON) · login · password</text>
+<text x="375" y="110">resume · openai_model/base_url/api_key/effort</text>
+<text x="375" y="126">min_required_score · scoring_prompt · apply_prompt</text>
+<text x="375" y="142">daily_apply_limit · created_at</text>
+<text x="375" y="164" class="dim">= the whole pipeline.yaml as CONTENT columns</text>
+<rect class="box" x="720" y="30" width="240" height="180" rx="8"/>
+<text x="735" y="52" font-weight="bold">vacancies</text>
+<text x="735" y="72">id · pipeline_id · external_id</text>
+<text x="735" y="88">title · url · company · description · salary</text>
+<text x="735" y="104">score · score_reasoning · score_error</text>
+<text x="735" y="120">cover_letter · cover_letter_error</text>
+<text x="735" y="136">apply_status CHECK(4) · apply_error · applied_at</text>
+<text x="735" y="152">manual_skip(+reason) · notes · soft_deleted_at</text>
+<text x="735" y="168">fetched/scored/generated/user_edited_at (staleness)</text>
+<text x="735" y="184">fetched/scored/generated/applied_snapshot_id</text>
+<text x="735" y="202" class="dim">ordered by id</text>
+<rect class="box" x="30" y="250" width="250" height="100" rx="8"/>
+<text x="45" y="272" font-weight="bold">audit_log</text>
+<text x="45" y="292">id · pipeline_id · pipeline_snapshot_id</text>
+<text x="45" y="308">action ('fetch'|'score'|'generate'|'apply'</text>
+<text x="45" y="324">|'vacancies_document') · details JSON</text>
+<text x="45" y="340">created_at</text>
+<rect class="okfill" x="360" y="250" width="280" height="100" rx="8"/>
+<text x="375" y="272" font-weight="bold">daily_limits — ONE counter per auth/day</text>
+<text x="375" y="292">id · service · login · date (YYYY-MM-DD)</text>
+<text x="375" y="308">count · timestamps</text>
+<text x="375" y="330" class="dim">UNIQUE(service, login, date) — NO pipeline_id:</text>
+<text x="375" y="344" class="dim">shared across all pipelines on the account</text>
+<rect class="box" x="720" y="250" width="240" height="90" rx="8"/>
+<text x="735" y="272" font-weight="bold">hh auth-state.json (outside SQL)</text>
+<text x="735" y="292">$DATA_DIR/hh/&lt;sha256(login)&gt;/</text>
+<text x="735" y="308">access/refresh token · expires_at · cookies</text>
+<text x="735" y="324" class="dim">0600, atomic write (TokenStore)</text>
+<path class="arrow" d="M280 85 L360 85"/><text x="292" y="78" class="dim">1 : N (current)</text>
+<path class="arrow" d="M640 110 L720 110"/><text x="650" y="103" class="dim">1 : N</text>
+<path class="arrow" d="M280 300 L360 300" style="stroke-dasharray:4 3"/><text x="292" y="293" class="dim">snapshots (4 FKs)</text>
+<path class="arrow" d="M155 150 L155 250" style="stroke-dasharray:4 3"/><text x="165" y="210" class="dim">1 : N</text>
+</svg>
+<figcaption>Actual schema (ORM truth). Migration history: initial → service_section → config snapshot → content columns rename → identity/snapshot split → position uniqueness drop → reasoning_effort add/drop thinking_level → noop chain-fix → timestamp-staleness + drop position_index/archived. Eleven migrations for a schema age of ~2 weeks.</figcaption>
+</figure>
+
+<details><summary>Provenance semantics — the part worth keeping</summary><div class="body">
+<p>Every artifact field records the snapshot whose config produced it: <span class="mono">fetched/scored/generated/applied_snapshot_id</span>.
+Fetch is insert-only and never resets results: existing rows keep their score/letter/apply state and provenance verbatim;
+<span class="mono">--refresh</span> overwrites listing fields only and bumps <span class="mono">fetched_at</span>, which is what marks
+the row stale (score/letter/user) until the stage re-runs (<span class="ev">stages/fetch.py:169-209</span>). This is the
+"old cfg ids stay attached to old step results" idea from the spec — implemented more rigorously than the spec describes.</p>
+</div></details>
+</section>
+
+<!-- ============================================================ 5 -->
+<section id="lifecycle">
+<h2><span class="no">5</span>Pipeline lifecycle &amp; config</h2>
+
+<figure>
+<svg viewBox="0 0 980 240" width="100%" height="auto" role="img" aria-label="lifecycle state machine">
+<rect class="box" x="20" y="80" width="180" height="60" rx="8"/><text x="110" y="105" text-anchor="middle">init --config x.yaml</text><text x="110" y="123" text-anchor="middle" class="dim">get-or-keep by NAME</text>
+<rect class="okfill" x="250" y="20" width="170" height="56" rx="8"/><text x="335" y="42" text-anchor="middle">name not found</text><text x="335" y="60" text-anchor="middle" class="dim">create identity + snap #1</text>
+<rect class="okfill" x="250" y="90" width="170" height="56" rx="8"/><text x="335" y="112" text-anchor="middle">name exists</text><text x="335" y="130" text-anchor="middle" class="dim">diff vs head snapshot</text>
+<rect class="box" x="470" y="90" width="150" height="56" rx="8"/><text x="545" y="112" text-anchor="middle">same → unchanged</text><text x="545" y="130" text-anchor="middle" class="dim">no row written</text>
+<rect class="box" x="470" y="20" width="150" height="56" rx="8"/><text x="545" y="42" text-anchor="middle">differs → append</text><text x="545" y="60" text-anchor="middle" class="dim">snap #(n+1), repoint head</text>
+<rect class="box" x="680" y="55" width="270" height="56" rx="8"/><text x="815" y="77" text-anchor="middle">update = same append path (explicit)</text><text x="815" y="95" text-anchor="middle" class="dim">never re-ids, never soft-deletes</text>
+<path class="arrow" d="M200 95 L250 50"/><path class="arrow" d="M200 110 L250 118"/>
+<path class="arrow" d="M420 48 L470 48"/><path class="arrow" d="M420 118 L470 118"/>
+<path class="arrow" d="M620 48 L680 75"/>
+</svg>
+<figcaption>Pipeline identity/snapshot lifecycle as implemented (app/pipeline_service.py): update appends a snapshot under the same identity, never deletes.</figcaption>
+</figure>
+
+<h3>Config loading rules (as coded)</h3>
+<ul class="tight">
+<li><span class="mono">service:</span> must be a mapping with exactly ONE board key; that key is the adapter selector string. The loader takes only the mapping form; <span class="ev">docs/examples/pipeline.example.yaml</span> is the reference example.</li>
+<li>Every content slot is exclusive-or: file reference or inline value (auth login/password, resume, api_key ×2, both prompts). Both present → Err; required slot missing → Err. Pre-checked on raw YAML before pydantic for clear messages.</li>
+<li>File contents are read once at init/update, <span class="mono">strip()</span>ed, stored as CONTENT in the snapshot. Later runs never re-read files.</li>
+<li><span class="mono">daily_apply_limit</span> validated ≤ adapter's <span class="mono">per_auth_daily_cap</span> at init/update time (fail = Err, nothing persisted).</li>
+<li>Reconstruction re-validates the opaque <span class="mono">service_section</span>/<span class="mono">openai_captcha</span> JSON through the registry; corrupt row = clear Err ("re-run init").</li>
+</ul>
+</section>
+
+<!-- ============================================================ 6 -->
+<section id="stages">
+<h2><span class="no">6</span>Stage engine — real behaviors</h2>
+
+<figure>
+<svg viewBox="0 0 980 260" width="100%" height="auto" role="img" aria-label="stage pipeline">
+<rect class="box" x="20" y="40" width="190" height="110" rx="8"/>
+<text x="115" y="62" text-anchor="middle" font-weight="bold">fetch</text>
+<text x="115" y="82" text-anchor="middle" class="dim">window/slice → 1 client call</text>
+<text x="115" y="100" text-anchor="middle" class="dim">insert-only mirror sync</text>
+<text x="115" y="118" text-anchor="middle" class="dim">--refresh: listing fields only</text>
+<text x="115" y="136" text-anchor="middle" class="dim">stored ids excluded client-side</text>
+<rect class="box" x="255" y="40" width="190" height="110" rx="8"/>
+<text x="350" y="62" text-anchor="middle" font-weight="bold">score (AI)</text>
+<text x="350" y="82" text-anchor="middle" class="dim">Jinja2 render resume+vacancy</text>
+<text x="350" y="100" text-anchor="middle" class="dim">structured {fit_score, comment}</text>
+<text x="350" y="118" text-anchor="middle" class="dim">&lt; min_required_score</text>
+<text x="350" y="136" text-anchor="middle" class="dim">→ apply_status='skipped'</text>
+<rect class="box" x="490" y="40" width="190" height="110" rx="8"/>
+<text x="585" y="62" text-anchor="middle" font-weight="bold">generate_cv (AI)</text>
+<text x="585" y="82" text-anchor="middle" class="dim">only score ≥ threshold</text>
+<text x="585" y="100" text-anchor="middle" class="dim">plain-text cover letter</text>
+<text x="585" y="118" text-anchor="middle" class="dim">per-item error fields</text>
+<text x="585" y="136" text-anchor="middle" class="dim">never aborts batch</text>
+<rect class="box" x="725" y="40" width="190" height="110" rx="8"/>
+<text x="820" y="62" text-anchor="middle" font-weight="bold">apply (client)</text>
+<text x="820" y="82" text-anchor="middle" class="dim">eligible: cover_letter + score≥min</text>
+<text x="820" y="100" text-anchor="middle" class="dim">+ not manual_skip/decided</text>
+<text x="820" y="118" text-anchor="middle" class="dim">dual caps vs ONE shared count</text>
+<text x="820" y="136" text-anchor="middle" class="dim">limit stop = Ok, leaves pending</text>
+<path class="arrow" d="M210 95 L255 95"/><path class="arrow" d="M445 95 L490 95"/><path class="arrow" d="M680 95 L725 95"/>
+<text x="20" y="190" class="dim">Every stage: writes audit_log (JSON details), stamps *_snapshot_id, emits RunEvents (fetch per item; score start+finish; apply outcome), returns frozen *Report.</text>
+<text x="20" y="210" class="dim">Batch selection: BatchSelector(from,to,take,skip) → offsets into the id-ordered list; skip_already_processed subtracts rows that already have a result.</text>
+</svg>
+<figcaption>Stage chain. <span class="mono">run</span> = fetch(default window) → score → generate_cv → apply, first whole-batch Err stops the chain.</figcaption>
+</figure>
+
+<details><summary>Pseudocode — apply eligibility &amp; outcome mapping (stages/apply.py)</summary><div class="body">
+<pre><span class="k">def</span> <span class="f">eligible</span>(v, min_score):
+    <span class="k">return not</span> v.manual_skip                        <span class="c"># soft-deleted rows never reach this (list filters them)</span>
+       <span class="k">and</span> v.cover_letter <span class="k">is not</span> None                 <span class="c"># must have a letter</span>
+       <span class="k">and</span> v.apply_status <span class="k">not in</span> {applied, skipped, error} <span class="c"># idempotency</span>
+       <span class="k">and</span> v.score <span class="k">is not</span> None <span class="k">and</span> v.score &gt;= min_score
+
+<span class="k">for</span> vacancy <span class="k">in</span> candidates:                       <span class="c"># ordered by... insertion (list_by_pipeline order)</span>
+    <span class="k">if not</span> limits.can_apply(used, used):            <span class="c"># SAME value twice — one shared counter</span>
+        stop_early; <span class="k">break</span>                          <span class="c"># remaining stay pending; Ok report w/ limit_reached</span>
+    r = client.apply_to_vacancy(resume_id, external_id, message=cover_letter)
+    <span class="k">match</span> r:
+      Err(LimitExceededError) -&gt; pending, stop
+      Err(other)               -&gt; apply_status=error, continue    <span class="c"># per-item, never abort</span>
+      Ok(ApplySucceeded)       -&gt; applied, applied_at=now, daily_limits.increment(service, login, date)
+      Ok(ApplySkipped(skip))   -&gt; skipped
+      Ok(ApplyFailed(err))     -&gt; error</pre>
+</div></details>
+
+<details><summary>Pseudocode — fetch stage contract (stages/fetch.py)</summary><div class="body">
+<pre>plan = plan_fetch(params, max_search_items)        <span class="c"># pure validation, BEFORE any I/O</span>
+stored = repo.list_external_ids(pipeline.id)       <span class="c"># exclusion set for the client call</span>
+slice = client.search_vacancies(query, offset=plan.slice_start,
+                                limit=plan.slice_end-plan.slice_start,
+                                page_size=plan.page_size,
+                                exclude=stored)    <span class="c"># stored ids skipped on the client</span>
+<span class="k">for</span> vacancy <span class="k">in</span> slice.items:                       <span class="c"># non-excluded only</span>
+    existing = repo.get_by_external_id(pipeline.id, vacancy.external_id)
+    <span class="k">if</span> existing <span class="k">is</span> None:  insert                        <span class="c"># insert-only mirror sync</span>
+    <span class="k">elif</span> existing.soft_deleted_at:  skip               <span class="c"># fetch never touches these</span>
+    <span class="k">elif not</span> inputs.refresh:  skip                    <span class="c"># already stored; --refresh to overwrite</span>
+    <span class="k">elif</span> listing unchanged:  skip                    <span class="c"># dirty-check: no write, no fetched_at bump</span>
+    <span class="k">else</span>:  overwrite listing fields + fetched_at only   <span class="c"># derived/user fields untouched</span>
+<span class="c"># soft_deleted_at is the only deletion and is set manually, never by fetch.</span>
+<span class="k">if</span> slice.failure:                                 <span class="c"># mid-walk page failure</span>
+    persist-everything-loaded; <span class="k">return</span> Err(<span class="s">"failed on page X/N; pages A-B (k vacancies) persisted; re-run with --from M ..."</span>)
+audit(action=<span class="s">'fetch'</span>, details={window, slice, pages, fetched, skipped_saved, exhausted})</pre>
+</div></details>
+
+<details><summary>Prompt rendering (stages/prompts.py)</summary><div class="body">
+<p>Templates = optional YAML frontmatter + Jinja2 body. Context is EXACTLY two variables: <span class="mono">resume_formatted</span>, <span class="mono">vacancy_formatted</span> (code formats the vacancy: Title/Company/Salary/Description). <span class="mono">StrictUndefined</span> → unknown variable = clear Err. Real prompts live at <span class="mono">pipelines/prompts/*.xml.j2</span> (346-line Russian scoring rubric incl. the AI-engineering focus rules; apply template is a near-verbatim letter with Telegram/portfolio links).</p>
+</div></details>
+</section>
+
+<!-- ============================================================ 7 -->
+<section id="fetch">
+<h2><span class="no">7</span>Fetch slicing — geometry &amp; rules</h2>
+
+<figure>
+<svg viewBox="0 0 980 190" width="100%" height="auto" role="img" aria-label="fetch window slice">
+<line x1="40" y1="120" x2="940" y2="120" stroke="#57606a" stroke-width="2"/>
+<g font-size="11">
+<text x="40" y="140" class="dim">0</text><text x="185" y="140" class="dim">200</text><text x="335" y="140" class="dim">400</text><text x="485" y="140" class="dim">600</text><text x="635" y="140" class="dim">800</text><text x="935" y="140" class="dim">…2000 (HH cap)</text>
+</g>
+<rect x="40" y="85" width="450" height="26" fill="#ddf4ff" stroke="#0969da" rx="4"/>
+<text x="265" y="103" text-anchor="middle">WINDOW = [first_page·ps, first_page·ps + take_pages·ps)</text>
+<rect x="185" y="50" width="180" height="26" fill="#e6f4ea" stroke="#1a7f37" rx="4"/>
+<text x="275" y="68" text-anchor="middle">SLICE = [from, from+take)</text>
+<g stroke="#8b949e" stroke-dasharray="3 3"><line x1="185" y1="40" x2="185" y2="120"/><line x1="365" y1="40" x2="365" y2="120"/></g>
+<text x="40" y="168" class="dim">Example: --first-page 2 --page-size 100 --take-pages 4 --from 245 --take 118 → window [200,600), slice [245,363),</text>
+<text x="40" y="184" class="dim">client walks native pages 2..3 (keep-trimmed), enriches ONLY the 118 slice items, reports scanned [200,400).</text>
+</svg>
+<figcaption>Window vs slice. All flags cross-validated by pure <span class="mono">plan_fetch</span> before any network call.</figcaption>
+</figure>
+
+<table>
+<tr><th>Rule</th><th>Source</th></tr>
+<tr><td>page_size ∈ {20,50,100} (product restriction, tighter than API's 1..100)</td><td class="mono">fetch_plan.py:22</td></tr>
+<tr><td>to+take mutually exclusive; first_page mutually exclusive with from/to; take without from starts at 0; to is inclusive</td><td class="mono">fetch_plan.py:68-93</td></tr>
+<tr><td>window_end ≤ service.max_search_items (HH 2000) or Err before I/O</td><td class="mono">fetch_plan.py:84-88</td></tr>
+<tr><td>Client-side: only pages overlapping the slice are walked; only in-slice items get detail GETs (--take 202 = 202 detail calls, not 300); stored external_ids excluded client-side (exclude set) so a default re-fetch enriches nothing already saved</td><td class="mono">clients/paging.py + hh/search.py:121-127, fetch.py:263-268</td></tr>
+<tr><td>Mid-slice page failure = partial Ok from client (items loaded so far) + Err from stage with resume hint; Err otherwise reserved for pre-scan failures (auth/args/config)</td><td class="mono">paging.py:141-152, fetch.py:363-383</td></tr>
+<tr><td>No position column: rows ordered by id; position-stage flags (--from/--to/--take) are run-time offsets into that id-ordered list</td><td class="mono">migration a0b1c2d3e4f5, models.py:144-149</td></tr>
+<tr><td>Persistence = insert-only mirror sync; --refresh overwrites listing fields only (dirty-check skips no-op), derived/user fields and soft-deleted rows never touched</td><td class="mono">fetch.py:283-361, models.py:144-149</td></tr>
+</table>
+</section>
+
+<!-- ============================================================ 8 -->
+<section id="limits">
+<h2><span class="no">8</span>Limits — what is actually tracked</h2>
+<div class="grid2">
+<div class="card">
+<h4>Reality</h4>
+<p>ONE counter per <span class="mono">(service, login, date)</span> in <span class="mono">daily_limits</span>, shared across all pipelines on the account. Before each apply, that single count is checked against BOTH caps: adapter's <span class="mono">per_auth_daily_cap</span> (hh=200, mock=200) and the pipeline's <span class="mono">daily_apply_limit</span>. Effective stop = tighter cap. Incremented only on <span class="mono">ApplySucceeded</span>. Board's <span class="mono">LimitExceededError</span> also stops the batch (leaves rest pending, Ok report).</p>
+<p class="mono" style="font-size:12px">limits.py:53 → used &lt; per_auth_cap and used &lt; per_pipeline_limit<br>apply.py:168 → can_apply(used, used)  # same value twice</p>
+</div>
+  <div class="card">
+  <h4>Spec says</h4>
+  <p>Semantics are <b>TBD</b>: the product spec treats the current shape as corrupted by design drift (the API models two counters; the DB and callers have one) and documents only what is verifiable — one shared count checked against both caps. No settled per-pipeline semantics exists.</p>
+  <p class="chip c-warn">OPEN: is a true per-pipeline counter wanted? Decide before relying on limits.</p>
+  </div>
+</div>
+
+<div class="callout user"><span class="unote-tag">User note</span>
+<p>The <span class="mono">Limits</span> two-counter finding — "API models two counters; DB + callers have one. Speculative generality that misleads readers." — <b>sounds not ok</b>; will address it later.</p>
+</div>
+</section>
+
+<!-- ============================================================ 9 -->
+<section id="contract">
+<h2><span class="no">9</span>Client contract (clients/base.py)</h2>
+<p>The most spec-faithful part of the codebase. <span class="mono">Client</span> protocol: <span class="mono">authorize / search_vacancies(query, offset, limit, page_size) / get_resumes / apply_to_vacancy(resume_id, vacancy_id, message) / aclose</span>, all async, all <span class="mono">Result[T, ClientError]</span>. ClientError = closed 10-member union; redirects are NOT errors (external apply → <span class="mono">ApplySkipped(reason=external_application, redirect_url)</span>); captcha is adapter-internal (no CaptchaRequired error — an unsolvable challenge collapses into <span class="mono">CaptchaSolvingError</span> with <span class="mono">recovery_url</span>, matching the user's human-solve-URL fallback requirement).</p>
+<table>
+<tr><th>Doc delta</th><th>Detail</th></tr>
+<tr><td><span class="chip c-real">OK</span></td><td>client-contract.md's model listing and the code both carry no <span class="mono">archived</span> field; the contract was updated with the client-side <span class="mono">exclude</span> set and insert-only persistence semantics — spec and code now match.</td></tr>
+<tr><td><span class="chip c-real">OK</span></td><td>Slice semantics, partial-failure SearchSlice, ClientDeps, factory, section protocol — spec and code match closely.</td></tr>
+</table>
+</section>
+
+<!-- ============================================================ 10 -->
+<section id="hh">
+<h2><span class="no">10</span>HH adapter</h2>
+
+<h3>Component status</h3>
+<table>
+<tr><th>Component</th><th>File</th><th>Status</th><th>What it really does</th></tr>
+<tr><td>Transport</td><td class="mono">transport.py (302)</td><td><span class="chip c-real">REAL</span></td><td>One httpx.AsyncClient; origins hh.ru/api.hh.ru; Chrome UA; redirects off; pacing lock ≥0.345s between requests (0 for mock transport); GET retried 3× on connect errors + 502/503/504; POSTs retried only pre-connection; cookie allow-list hh.ru/* (excludes israel.*); error messages leak no query/body.</td></tr>
+<tr><td>Auth</td><td class="mono">auth.py (466)</td><td><span class="chip c-real">REAL</span></td><td>Full browserless flow: login page → XSRF → multipart credential POST (legacy OAuth form incl. duplicated password field, isBot=false, EMPLOYER accountType — as researched) → /oauth/authorize (custom hhandroid:// redirect, random state) → /oauth/token → /me healthcheck (applicant check) → atomic 0600 auth-state.json with cookies+tokens. Refresh path with expiry skew. 401/403 → full re-auth.</td></tr>
+<tr><td>Captcha</td><td class="mono">captcha.py (556)</td><td><span class="chip c-real">REAL</span></td><td><span class="mono">classify_challenge</span> runs before status mapping on EVERY response (generic detection, per user constraint): envelope captcha errors, standalone page markers, embedded-login markers (model + byte markers), reCAPTCHA markers, 403+captcha fallback. Standalone solve: /account/captcha?state → POST /captcha → GET /captcha/picture (PNG validated: type/size/dims/decompression) → handler → POST /account/captcha → strict same-origin success-redirect check → bounded attempts (fresh key per wrong answer). Embedded-login solve: re-POST login form with captchaKey/Text/State.</td></tr>
+<tr><td>Search</td><td class="mono">search.py (281)</td><td><span class="chip c-real">REAL</span></td><td>catalog (<span class="mono">/vacancies</span>) or resume_similar (<span class="mono">/resumes/{id}/similar_vacancies</span>) by explicit config; only area/schedule/experience/only_with_salary filters accepted (others fail closed as ConfigurationError); page metadata validated; detail GET per kept item; HTML→plaintext via HTMLParser block-element newlines; error-envelope-in-200 detection.</td></tr>
+<tr><td>Resumes</td><td class="mono">resumes.py (15)</td><td><span class="chip c-stub">STUB</span></td><td>Always <span class="mono">Err(ConfigurationError("not implemented in this build"))</span>.</td></tr>
+<tr><td>Apply</td><td class="mono">applications.py (22)</td><td><span class="chip c-stub">STUB</span></td><td>Always Err — not implemented. (Spec describes full preflight/POST /negotiations/reconciliation — none of it exists.)</td></tr>
+<tr><td>Models</td><td class="mono">models.py (166)</td><td><span class="chip c-real">REAL</span></td><td>Strict pydantic DTOs for token/login/me/search/detail/captcha responses + PersistedAuthState/PersistedCookie.</td></tr>
+</table>
+
+<figure>
+<svg viewBox="0 0 980 330" width="100%" height="auto" role="img" aria-label="hh auth state machine">
+<rect class="box" x="20" y="30" width="170" height="50" rx="6"/><text x="105" y="50" text-anchor="middle">load auth-state.json</text><text x="105" y="66" text-anchor="middle" class="dim">+ restore cookies</text>
+<rect class="box" x="240" y="10" width="150" height="44" rx="6"/><text x="315" y="30" text-anchor="middle">token expired?</text><text x="315" y="45" text-anchor="middle" class="dim">±30s skew</text>
+<rect class="box" x="240" y="70" width="150" height="44" rx="6"/><text x="315" y="90" text-anchor="middle">GET /me</text><text x="315" y="105" text-anchor="middle" class="dim">healthcheck</text>
+<rect class="okfill" x="440" y="70" width="150" height="44" rx="6"/><text x="515" y="90" text-anchor="middle">authorized</text><text x="515" y="105" text-anchor="middle" class="dim">applicant? → done</text>
+<rect class="box" x="440" y="130" width="150" height="44" rx="6"/><text x="515" y="150" text-anchor="middle">challenge?</text><text x="515" y="165" text-anchor="middle" class="dim">solve + replay once</text>
+<rect class="box" x="240" y="200" width="150" height="44" rx="6"/><text x="315" y="220" text-anchor="middle">refresh token</text><text x="315" y="235" text-anchor="middle" class="dim">POST /oauth/token</text>
+<rect class="hifill" x="20" y="260" width="430" height="56" rx="6"/><text x="235" y="280" text-anchor="middle">FULL AUTH: login page (XSRF) → POST /account/login</text><text x="235" y="298" text-anchor="middle" class="dim">embedded captcha? → solve_login loop (re-POST form w/ answer)</text>
+<rect class="hifill" x="480" y="260" width="470" height="56" rx="6"/><text x="715" y="280" text-anchor="middle">/oauth/authorize (state) → hhandroid://code → /oauth/token</text><text x="715" y="298" text-anchor="middle" class="dim">→ /me verify → persist auth-state.json (atomic, 0600)</text>
+<path class="arrow" d="M190 50 L240 32"/><path class="arrow" d="M190 55 L240 92"/>
+<path class="arrow" d="M390 32 C440 32 440 80 440 88" /><path class="arrow" d="M390 92 L440 92"/>
+<path class="arrow" d="M390 105 L440 148"/><path class="arrow" d="M515 114 L515 130"/>
+<path class="arrow" d="M315 54 L315 70" style="stroke-dasharray:3 3"/>
+<path class="arrow" d="M315 244 L315 260"/>
+<path class="arrow" d="M450 288 L480 288"/>
+</svg>
+<figcaption>ensure_authorized() as coded (auth.py:139-167): bounded recovery — one challenge solve + one replay per operation; rejected healthcheck → full auth; failed verify → Err.</figcaption>
+</figure>
+
+<details><summary>Doc deltas for the HH adapter specifically</summary><div class="body">
+<ul class="tight">
+<li><b>OAuth client id/secret</b>: the documented hhandroid third-party app credentials, hardcoded with a "not a user secret" note (<span class="ev">auth.py:39-41</span>) — consistent with the wiki.</li>
+</ul>
+</div></details>
+</section>
+
+<!-- ============================================================ 11 -->
+<section id="captcha">
+<h2><span class="no">11</span>Captcha subsystem (generic)</h2>
+<figure>
+<svg viewBox="0 0 980 200" width="100%" height="auto" role="img" aria-label="captcha selector">
+<rect class="box" x="20" y="80" width="240" height="44" rx="6"/><text x="140" y="100" text-anchor="middle">--use-sixel / --use-kitty?</text><text x="140" y="116" text-anchor="middle" class="dim">(mutually exclusive; explicit flag WINS)</text>
+<rect class="okfill" x="320" y="80" width="200" height="44" rx="6"/><text x="420" y="100" text-anchor="middle">openai_captcha configured</text><text x="420" y="116" text-anchor="middle" class="dim">and not --no-captcha-ai?</text>
+<rect class="box" x="580" y="80" width="180" height="44" rx="6"/><text x="670" y="100" text-anchor="middle">terminal autodetect</text><text x="670" y="116" text-anchor="middle" class="dim">TERM_PROGRAM / TERM json</text>
+<rect class="badfill" x="800" y="80" width="160" height="44" rx="6"/><text x="880" y="100" text-anchor="middle">Err (Russian msg)</text><text x="880" y="116" text-anchor="middle" class="dim">fail fast</text>
+<path class="arrow" d="M260 102 L320 102"/><path class="arrow" d="M520 102 L580 102"/><path class="arrow" d="M760 102 L800 102"/>
+<text x="20" y="160" class="dim">Chosen: TerminalCaptchaHandler(sixel|kitty) — render + "Введите текст с картинки" via to_thread; or AiCaptchaHandler — vision call on openai_captcha config only.</text>
+<text x="20" y="180" class="dim">Sixel: pure-python 256-color RLE encoder. Kitty: b64 PNG. TMUX/Zellij passthrough wrapping. Capability map: data/terminal_capabilities.json (kitty preferred over sixel).</text>
+</svg>
+<figcaption>Handler selection as coded (captcha/selector.py).</figcaption>
+</figure>
+<p>Matches the user's standing constraints: generic client-level detection on every call (HH classify runs before status mapping on all responses), no hard-coded captcha expectations in business paths, human-URL fallback surfaced via <span class="mono">CaptchaSolvingError.recovery_url</span>. Mock can script challenges on authorize/search/apply for offline testing of the whole render/solve path.</p>
+</section>
+
+<!-- ============================================================ 12 -->
+<section id="ai">
+<h2><span class="no">12</span>AI subsystem</h2>
+<ul class="tight">
+<li><b>Scoring</b>: structured output, JSON Schema forced <span class="mono">{fit_score int 1..5, comment str}</span>; strict; user-message-only (no system message); invalid JSON/out-of-range retried within 3-attempt budget (backoff 1s,2s) together with network failures; markdown-fence/prose extraction fallback with a warning log; persistent failure = per-item <span class="mono">score_error</span>.</li>
+<li><b>Cover letter</b>: plain text, same retry seam, accepted verbatim.</li>
+<li><b>Client</b>: per-call <span class="mono">AsyncOpenAI</span>, closed in finally; <span class="mono">reasoning_effort</span> free-form passthrough (None omits); DEBUG logs full request/response (no credentials in payload).</li>
+<li><b>Open question from specs</b>: TODO notes float making the openai section optional / renaming openai→openai_text, openai_captcha→openai_vision; adding user-defined response-schema fields; consensus voting across 3-5 vision calls for captcha. None implemented. (Kept here as roadmap signal for the new specs phase.)</li>
+</ul>
+</section>
+
+<!-- ============================================================ 13 -->
+<section id="cli">
+<h2><span class="no">13</span>CLI surface — full reality</h2>
+<pre>jobfucker [--log-level L] [--log-stderr] &lt;command&gt;
+│
+├─ init      --config FILE            create/get-or-keep pipeline (+cap validation)
+├─ update    --config FILE            append snapshot under existing identity (never deletes)
+├─ run       (--pipeline-id | --new-from-config)  full chain
+│            [--from/--to/--take/--skip-already-processed]      batch stages (id-ordered offsets)
+│            [--first-page/--page-size/--take-pages]            fetch window
+│            [--use-sixel/--use-kitty/--no-captcha-ai] [-v..-vv]
+├─ fetch     --pipeline-id + window/slice flags + captcha flags + [--refresh]   (insert-only mirror sync; --refresh = listing fields only)
+├─ score     --pipeline-id + batch flags [-v]
+├─ generate  --pipeline-id + batch flags [-v]
+├─ apply     --pipeline-id + batch + captcha flags [-v]
+├─ status    [--pipeline-id]          per-pipeline vacancy status counts
+├─ pipelines-list [--snapshots]       identities (+ snapshot history)
+│
+└─ vacancies                                    <span class="c">review/edit subsystem</span>
+   ├─ dump    [--output F] [--format yaml|json] [--force]   ALL vacancies of ALL pipelines (incl. soft-deleted)
+   ├─ apply   [--source F|stdin] [--format] [--dry-run]     validate + conflict-check + apply doc
+   └─ edit                                                  dump → $EDITOR (0600 tempfile) → preview → confirm → apply
+                                            designed for: dump | yq/jq filter | $EDITOR | apply</pre>
+<p>Documented in AGENTS.md's command list and in <a href="#docflow">§14</a>.</p>
+</section>
+
+<!-- ============================================================ 14 -->
+<section id="docflow">
+<h2><span class="no">14</span>Vacancy document workflow</h2>
+
+<p>A git-merge-style review/edit loop over the vacancy table, implemented as a generic "table documents" framework with exactly one concrete table. YAML (or JSON) doc: read-only context block (listing + staleness timestamps + computed stale flags), editable block (7 fields: score, score_reasoning, cover_letter, notes, manual_skip, manual_skip_reason, deleted), technical metadata block (primary key, provenance, per-field sha256 base hashes), schema URL + embedded editing instructions + content-hash schema version.</p>
+
+<figure>
+<svg viewBox="0 0 980 260" width="100%" height="auto" role="img" aria-label="document merge flow">
+<rect class="box" x="20" y="60" width="170" height="60" rx="6"/><text x="105" y="82" text-anchor="middle">dump</text><text x="105" y="100" text-anchor="middle" class="dim">DB → typed doc → YAML</text>
+<rect class="box" x="20" y="160" width="170" height="50" rx="6"/><text x="105" y="182" text-anchor="middle">edit / yq / jq</text><text x="105" y="198" text-anchor="middle" class="dim">filter rows, edit fields</text>
+<rect class="box" x="240" y="60" width="200" height="60" rx="6"/><text x="340" y="82" text-anchor="middle">decode + JSON-Schema validate</text><text x="340" y="100" text-anchor="middle" class="dim">dup keys banned; anchors banned;</text><text x="340" y="114" text-anchor="middle" class="dim">≤16MB, ≤10k rows</text>
+<rect class="box" x="490" y="60" width="220" height="60" rx="6"/><text x="600" y="82" text-anchor="middle">plan: per-field three-way merge</text><text x="600" y="100" text-anchor="middle" class="dim">base_hash vs current DB vs incoming</text><text x="600" y="114" text-anchor="middle" class="dim">identity re-check per row</text>
+<rect class="okfill" x="770" y="30" width="180" height="50" rx="6"/><text x="860" y="50" text-anchor="middle">no conflicts</text><text x="860" y="66" text-anchor="middle" class="dim">apply (1 tx) + audit</text>
+<rect class="badfill" x="770" y="100" width="180" height="50" rx="6"/><text x="860" y="120" text-anchor="middle">conflict → refuse</text><text x="860" y="136" text-anchor="middle" class="dim">both sides changed a field</text>
+<path class="arrow" d="M190 90 L240 90"/><path class="arrow" d="M105 160 L105 120" style="stroke-dasharray:3 3"/>
+<path class="arrow" d="M440 90 L490 90"/><path class="arrow" d="M710 85 L770 60"/><path class="arrow" d="M710 95 L770 120"/>
+<text x="20" y="235" class="dim">Soft-delete/restore via editable 'deleted' bool. Removed rows from doc = smaller batch selection, never deletion. Apply re-verifies base hashes in-tx (changed-after-planning → refuse). Edit flow preserves tempfile on failure paths.</text>
+</svg>
+<figcaption>The three-way merge: base hash (dump-time) / current (DB now) / incoming (edited doc). Both-sides-changed = conflict; DB-changed-only = ignored; incoming-only = change.</figcaption>
+</figure>
+
+<h3>Audit view</h3>
+<div class="grid2">
+<div class="card"><h4>Legitimate core need</h4>
+<p>Review/edit vacancies with real tools ($EDITOR, yq/jq filtering for "only score ≥ 4"), batch-select a subset for apply, manual corrections with audit trail. The workflow itself is coherent and the atomicity/conflict thinking is careful.</p></div>
+<div class="card"><h4>Overbuilt for its consumer</h4>
+<p>Concurrent-writer conflict detection for a single-user local DB; content-hash schema versioning with dual artifact copies (docs/ + packaged resource) for one document type; a generic 3-type-param framework for one policy; global cross-pipeline dump (no --pipeline-id filter!). This is the clearest "artificial feature baked into DNA" specimen: useful seed, ~5× the necessary machinery.</p></div>
+</div>
+</section>
+
+<!-- ============================================================ 15 -->
+<section id="reporting">
+<h2><span class="no">15</span>Reporting &amp; logging — two parallel output systems</h2>
+<ul class="tight">
+<li><b>RunEvents</b> (reporting.py): live semantic events (stage, level, index/total, item, url, message) → CLI prints filtered by -v (success/warn/error at 0, info at -v, debug at -vv). Designed so a GUI could bind the same stream. GUI is gone; the stream still earns its keep for -v output.</li>
+<li><b>Logging</b> (shared/logging): always-on file log at $DATA_DIR/logs/jobfucker.log, level via --log-level (debug = full AI request/response exchange); optional colored stderr mirror; noisy third-party loggers pinned to WARNING.</li>
+<li>TODO floats a third idea (intercept reporters into the log). Not implemented.</li>
+</ul>
+</section>
+
+<!-- ============================================================ 16 -->
+<section id="tests">
+<h2><span class="no">16</span>Test landscape</h2>
+<table>
+<tr><th>Area</th><th>What exists</th></tr>
+<tr><td>Suite shape</td><td>48 test files under <span class="mono">test/</span> + <span class="mono">shared_tests/</span> (scaffold's own linter tests). pytest-xdist worksteal, asyncio auto, coverage wired into addopts.</td></tr>
+<tr><td>BDD</td><td>9 .feature files: config, storage, pipeline_flow, score, generate_cv, acceptance smoke, HH authentication, HH captcha, HH vacancy search. Sync steps drive async domain via <span class="mono">async_run_result</span> (there's even a tripwire test asserting steps don't silently no-op).</td></tr>
+<tr><td>Contract</td><td><span class="mono">test/contract/</span> fake-conformance + factory tests; in-memory fake client in <span class="mono">test/fakes/</span>.</td></tr>
+<tr><td>HH adapter</td><td>Tested against httpx.MockTransport with canned responses (real adapter code, no patching of internals) — matches the spec's testing strategy.</td></tr>
+<tr><td>E2E</td><td>CLI e2e via isolated CONFIG_DIR/DATA_DIR + mock client; gated live-HH e2e marker (--run-e2e).</td></tr>
+<tr><td>Known gap (user TODO)</td><td>"many tests are not BDD" — the mix of plain unit files and BDD files is inconsistent by the project's own standard.</td></tr>
+</table>
+</section>
+
+<!-- ============================================================ 17 -->
+<section id="matrix">
+<h2><span class="no">17</span>Reality vs docs — full contradiction matrix</h2>
+<p>Legend: <span class="chip c-real">MATCH</span> doc correct · <span class="chip c-warn">PARTIAL</span> gap/ambiguity · <span class="chip c-warn">DANGLING</span> reference to a nonexistent doc</p>
+<table>
+<tr><th>#</th><th>Claim in docs</th><th>Where</th><th>Reality in code</th><th>Where</th><th>Verdict</th></tr>
+<tr><td>1</td><td>Limits semantics unsettled: the <span class="mono">Limits</span> API models two counters; the DB and callers have one shared count checked against both caps</td><td class="mono">limits.py:53, apply.py:168</td><td>Product spec marks the semantics <b>TBD</b> and documents only the verifiable shared-count behavior</td><td class="mono">specs/jobfucker.md § Limits</td><td><span class="chip c-warn">PARTIAL</span></td></tr>
+<tr><td>2</td><td>DDL authority = docs/specs/jobfucker.pipeline-snapshots.md (in a code docstring)</td><td class="mono">storage/models.py:4</td><td>File does not exist; ORM is the only authority</td><td class="mono">docs/specs/</td><td><span class="chip c-warn">DANGLING</span></td></tr>
+<tr><td>3</td><td>Fetch window/slice flags, page sizes {20,50,100}, 2000 cap, resume hints, client-side slicing</td><td class="mono">specs/jobfucker.md § Stage semantics, impl-plan 2026-08-18</td><td>All implemented exactly (incl. partial-persist + resume hint + insert-only/--refresh + client-side exclude)</td><td class="mono">fetch_plan.py, paging.py, fetch.py</td><td><span class="chip c-real">MATCH</span></td></tr>
+<tr><td>4</td><td>Snapshot/provenance model, config-from-DB reconstruction</td><td class="mono">architecture.md invariants</td><td>Implemented more rigorously than documented (4 provenance FKs)</td><td class="mono">storage/, config.py:616+</td><td><span class="chip c-warn">PARTIAL</span></td></tr>
+<tr><td>5</td><td>Mock client, behavior scripting, offline captcha</td><td class="mono">AGENTS.md manual-testing section</td><td>Accurate</td><td class="mono">clients/mock/</td><td><span class="chip c-real">MATCH</span></td></tr>
+<tr><td>6</td><td>HH wiki (docs/hh/, 11 files, validated 2026-08-17)</td><td class="mono">docs/hh/*</td><td>Consistent with adapter code; the freshest doc set in the repo</td><td class="mono">clients/hh/</td><td><span class="chip c-real">MATCH</span></td></tr>
+<tr><td>7</td><td>Local root <span class="mono">pipeline.schema.json</span> is hand-maintained: not registered in <span class="mono">schema_generation.py</span> (poe schemas only generates the vacancies-dump schema), so it can drift silently; the example yaml references it locally</td><td class="mono">pipeline.schema.json, schema_generation.py:56</td><td>Schema roughly current; example validates against it</td><td class="mono">docs/examples/pipeline.example.yaml</td><td><span class="chip c-warn">PARTIAL</span></td></tr>
+</table>
+</section>
+
+<!-- ============================================================ 18 -->
+<section id="provenance">
+<h2><span class="no">18</span>Feature provenance — wanted vs hallucinated</h2>
+<p>Classification based on: user's standing decisions in project memory, spec history, and code shape. This is raw material for the "what do I actually want" spec phase — flagged, not decided.</p>
+
+<table>
+<tr><th>Feature</th><th>Provenance judgment</th><th>Rationale</th></tr>
+<tr><td>Core pipeline (fetch/score/generate/apply, snapshots, limits, audit)</td><td><span class="chip c-real">WANTED</span></td><td>Original product objective; matches memory (HH API-first strategy, daily limits, scoring focus rules are literally encoded in the live prompt).</td></tr>
+<tr><td>Own HTTP-only HH client (login/OAuth/captcha/search)</td><td><span class="chip c-real">WANTED</span></td><td>Explicit decision in memory: API if possible, browser-clicking only as fallback; captcha generic client-level detection is a recorded constraint. Code honors it.</td></tr>
+<tr><td>Captcha: sixel/kitty terminal + AI vision + recovery URL</td><td><span class="chip c-real">WANTED</span></td><td>Memory: captcha first-class, generic detection, human-solve-URL fallback. All present.</td></tr>
+<tr><td>Mock client for offline product runs</td><td><span class="chip c-real">WANTED</span></td><td>Manual testing + CI foundation; documented in AGENTS.md.</td></tr>
+<tr><td>Fetch window/slice machinery</td><td><span class="chip c-real">WANTED</span></td><td>Deliberate 2026-08-18 design (impl plan) fixing real over-fetch; user-confirmed decisions inside.</td></tr>
+<tr><td>Vacancies dump/apply/edit workflow (the seed)</td><td><span class="chip c-warn">PROBABLY WANTED</span></td><td>User references "edit/dump CLI" as a real feature whose docs went stale — the capability is wanted; its current generic-framework shape is the question.</td></tr>
+<tr><td>table_documents generic framework (3-type-param Protocol, generic planner/codec)</td><td><span class="chip c-ghost">HALLUCINATED SHAPE</span></td><td>Generality with zero second consumers; the "second table" never existed. Capability wanted, framework speculative.</td></tr>
+<tr><td>JSON-Schema artifact + content-hash versioning + packaged resource copy</td><td><span class="chip c-ghost">HALLUCINATED</span></td><td>Local single-user doc format; version machinery solves a problem the deployment model doesn't have.</td></tr>
+<tr><td>Three-way merge with per-field sha256 base hashes</td><td><span class="chip c-ghost">OVERKILL</span></td><td>Concurrent-editor protection for a DB with one writer. Simple last-write-wins + updatedAt would cover the actual workflow.</td></tr>
+<tr><td>AppServices "UI-neutral composition root"</td><td><span class="chip c-ghost">VESTIGIAL</span></td><td>Built for the removed GUI; its factory can't construct clients; bootstrap.py is the real composition root. Half of a dead abstraction.</td></tr>
+<tr><td>Limits two-counter API</td><td><span class="chip c-ghost">PHANTOM</span></td><td>API models two counters; DB + callers have one. Speculative generality that misleads readers.</td></tr>
+<tr><td>Mock/HH config Field(title/description/examples) "for schema-driven UI forms"</td><td><span class="chip c-ghost">VESTIGIAL</span></td><td>Justified by the removed GUI (client-contract.md §6.2); currently serves nothing executable.</td></tr>
+<tr><td>pyside6/qasync/tomli-w/pytest-qt deps + shared/shortcuts</td><td><span class="chip c-ghost">VESTIGIAL</span></td><td>Kept "for the planned GUI rewrite" + because shared/shortcuts imports PySide6. Whole-toolchain residue; decision needed: keep for rewrite, or drop until the rewrite exists.</td></tr>
+<tr><td>shared/ linting (6 custom linters) + lint-ignore comment protocol</td><td><span class="chip c-warn">SCAFFOLD</span></td><td>From the coding_rules_python template. Enforces real strictness (frozen dataclasses, no raw dicts, ignored-Results) but adds a second linting dialect on top of ruff+pyright; TODO notes auditing the ignores.</td></tr>
+<tr><td>reasoning_effort passthrough, openai_captcha independence, xor file/inline config slots</td><td><span class="chip c-real">WANTED (small)</span></td><td>Deliberate, documented micro-decisions; low cost.</td></tr>
+<tr><td>Qt GUI (removed) + ui spec</td><td><span class="chip c-removed">REMOVED; UI SPEC = PLAN</span></td><td>GUI removed (implementation didn't work); the ui spec is retained as the re-implementation plan and the Qt toolchain stays in deps for it. Specs no longer state GUI policy; re-verify the ui spec against the codebase when GUI work starts.</td></tr>
+</table>
+
+<div class="callout user"><span class="unote-tag">User note</span>
+<p>On <span class="mono">table_documents</span> and the three-way merge with per-field sha256 base hashes: while they are indeed overengineered, it works, and it was <b>not hallucinated — just overengineered</b>. Won't remove it right now because it works fine and causes no problems.</p>
+</div>
+
+<div class="callout user"><span class="unote-tag">User note</span>
+<p>JSON-Schema artifact + content-hash versioning + packaged resource copy: <b>NOT hallucinated</b>. Same case as above — overengineering that works OK.</p>
+</div>
+
+<div class="callout user"><span class="unote-tag">User note</span>
+<p>The <span class="mono">AppServices</span> "UI-neutral composition root, its factory can't construct clients; bootstrap.py is the real composition root" reading <b>sounds indeed VESTIGIAL</b>. Won't touch for now, but noted.</p>
+</div>
+</section>
+
+<!-- ============================================================ 19 -->
+<section id="verbosity">
+<h2><span class="no">19</span>Complexity &amp; verbosity audit (the anti-caveman evidence)</h2>
+
+<div class="grid3">
+<div class="stat"><span class="n">20%</span><span class="l">docstring LOC</span></div>
+<div class="stat"><span class="n">2,513</span><span class="l">docstring lines</span></div>
+<div class="stat"><span class="n">~90</span><span class="l">lint-ignore markers</span></div>
+</div>
+<ul class="tight" style="margin-top:12px">
+<li><b>Docstrings as essays.</b> Module docstrings regularly 30–50 lines (cli.py 48, config.py 42, engine.py 30, services.py 14 + per-class 20+). Method docstrings restate the spec with history ("Phase 5B, task 5.1", "removed in Slice B") — archaeology notes baked into runtime files. Docs now declare single fact-homes and link instead of restating; the docstring essays remain the residual duplication.
+<div class="callout user"><span class="unote-tag">User note</span>
+<p><b>Yep, very bad</b> — but out of scope right now.</p>
+</div></li>
+<li><b>Representation hops.</b> Config travels ORM row → frozen DTO → PersistedPipelineRefs → PipelineConfig via two mapping modules (config.py reconstruct + app/mapping.py) with name/description merging done in a third place (bootstrap.py). Four shapes of one object.
+<div class="callout user"><span class="unote-tag">User note</span>
+<p><b>Yep, good to simplify this later.</b></p>
+</div></li>
+<li><b>Boilerplate per unit.</b> db.py spends ~170 lines on row↔DTO mapping for 5 tables; every Result cascade repeats unwrap_err-stringify; report-printing helpers ×4 in cli.py; per-event builder functions double stage file sizes.</li>
+<li><b>Generality with n=1.</b> table_documents (3 type params, 1 policy), Limits (2 counters, 1 value), TableDocumentService (Protocol for 1), schema versioning (1 schema), AppServices (2 consumers, 1 left). Each individually defensible; collectively they're the "randomly baked into DNA" feeling — abstractions authored for futures that didn't arrive.</li>
+<li><b>Lint dialect.</b> ruff + basedpyright strict + 6 homegrown linters + lint-ignore[...] comment protocol + extensive per-file-ignores in pyproject (40+ lines). Strictness is real, but the cognitive cost of three enforcement layers shows in nearly every file.</li>
+<li><b>N+1 persistence.</b> fetch stage: 2 queries per vacancy (get_by_external_id + upsert), no batching. Fine at 1000 vacancies, worth noting.</li>
+</ul>
+</section>
+
+<!-- ============================================================ 20 -->
+<section id="tensions">
+<h2><span class="no">20</span>Design tensions &amp; risks (carry into the rewrite planning)</h2>
+<table>
+<tr><th>Tension</th><th>Detail</th><th>Severity</th></tr>
+<tr><td>Dual composition roots</td><td>AppServices (UI-neutral, client-less) vs bootstrap.py (CLI-real). Two factories, two ClientDeps, duplicated adapter registration. Any future GUI must reconcile them.</td><td>medium</td></tr>
+<tr><td>Limits semantics ambiguity</td><td>One shared count vs min(caps) is implemented; the API pretends two counters; semantics unsettled and marked TBD in the product spec; user TODO even notes the counter breaks if the user also applies via the website.</td><td>medium — semantics TBD</td></tr>
+<tr><td>HH apply + resumes unimplemented</td><td>The product's namesake operation (fucking apply) is a stub; spec describes negotiation reconciliation, preflight, randomized pre-apply delay (1–3s) — none exists. Everything else is in place around it.</td><td>known gap (by design, sequenced)</td></tr>
+<tr><td>captcha code split</td><td>auth.py interleaves captcha recovery (healthcheck replay, login submitter lambda) with captcha.py's coordinator — the user TODO itself asks "why so much captcha code in auth file?". Reasonable consumer/supplier split, but the seams are subtle.</td><td>low</td></tr>
+<tr><td>Global vacancies dump</td><td>dump/apply operate across ALL pipelines with no pipeline filter — surprising for a per-pipeline-minded product; handle collision safety relies on per-row identity checks.</td><td>low-medium</td></tr>
+</table>
+</section>
+
+<!-- ============================================================ 21 -->
+<section id="docshealth">
+<h2><span class="no">21</span>Docs health, per file</h2>
+<table>
+<tr><th>Doc</th><th>Lines</th><th>Health</th><th>Notes</th></tr>
+<tr><td class="mono">AGENTS.md</td><td>192</td><td><span class="chip c-real">GOOD</span></td><td>Truthful status table (HH real except resumes/apply stubs; GUI removed/planned), full command list incl. vacancies, doc map with a one-fact-one-home rule. CLAUDE.md is its symlink.</td></tr>
+<tr><td class="mono">specs/jobfucker.md</td><td>158</td><td><span class="chip c-real">GOOD</span></td><td>Compact product spec: user flows, stage semantics, CLI-era success criteria. Limits semantics and the vacancies --pipeline-id filter are explicitly marked TBD. GUI appears only as a roadmap link.</td></tr>
+<tr><td class="mono">specs/architecture.md</td><td>99</td><td><span class="chip c-real">GOOD</span></td><td>As-built: layer map, module inventory, real 5-table data summary, five invariants, captcha truths (selector order, hardcoded AI prompt, verified embedded login captcha). Declares the ORM the schema authority.</td></tr>
+<tr><td class="mono">specs/client-contract.md</td><td>434</td><td><span class="chip c-real">GOOD</span></td><td>Strongest spec; exclude param + insert-only persistence semantics added in lockstep with the fetch rewrite.</td></tr>
+<tr><td class="mono">specs/hh-client.md</td><td>388</td><td><span class="chip c-real">GOOD</span></td><td>Matches implementation incl. embedded captcha; describes unimplemented resumes/apply as requirements (correct — it's a spec).</td></tr>
+<tr><td class="mono">docs/hh/ (11 files)</td><td>~1,500</td><td><span class="chip c-real">GOOD</span></td><td>Freshest set (validated 2026-08-17); the wiki model works.</td></tr>
+<tr><td class="mono">ui/jobfucker.ui.md</td><td>302</td><td><span class="chip c-real">FUTURE PLAN</span></td><td>The GUI re-implementation plan; retained in place. No other spec states GUI policy. Re-verify against the codebase when GUI work starts.</td></tr>
+<tr><td class="mono">implementation-plans/…fetch-slicing</td><td>199</td><td><span class="chip c-real">GOOD</span></td><td>Implemented as written; historical value.</td></tr>
+<tr><td class="mono">coding_rules.md</td><td>471</td><td><span class="chip c-real">GOOD</span></td><td>Template rules; enforced by toolchain.</td></tr>
+<tr><td class="mono">pipeline.example.yaml</td><td>93</td><td><span class="chip c-real">OK</span></td><td>References the local root <span class="mono">pipeline.schema.json</span>; content validates (openai_captcha.base_url present). The schema itself is hand-maintained, unwired to poe schemas (matrix #7).</td></tr>
+<tr><td class="mono">captcha-benchmarking/doc.md</td><td>27</td><td><span class="chip c-real">OK</span></td><td>Model accuracy benchmarks (nex-n2-mini/qwen3.7-flash shine); feeds the openai_captcha model choice.</td></tr>
+<tr><td class="mono">TODO.md</td><td>43</td><td><span class="chip c-warn">HUMAN-ONLY</span></td><td>Explicitly not for agents; excluded from this audit's evidence (quoted roadmap items above came from code-visible sources or are marked as such).</td></tr>
+</table>
+</section>
+
+<div class="callout info"><b>Next steps in the audit track</b> (as agreed): (2) write new specs for the product you actually want — not what exists; (3) plan migration/rewrite/simplification. This document is the as-is baseline those phases start from.</div>
+
+<p style="margin-top:60px;color:var(--dim);font-size:12px;border-top:1px solid var(--line);padding-top:12px">
+Generated 2026-08-20 · jobfucker high-level audit · evidence anchors reference the working tree at audit time (git 1dd3598).
+Single self-contained file; no external assets; native details/summary interactivity.
+</p>
+</main>
+</div>
+</body>
+</html>

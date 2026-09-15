@@ -1,0 +1,115 @@
+# Mock pipeline example — exercise the CLI/GUI end-to-end with NO live board.
+# Jinja2 template rendered by the ``mock_pipeline_yaml`` fixture in conftest.
+# The referenced files (login, password, resume, api_key, apply prompt) are
+# injected as absolute paths pointing at per-test files, so the rendered config
+# is fully hermetic and never depends on a gitignored ``secrets/`` dir.
+#
+# The ``vacancies`` below mirror test/fixtures/mock_vacancies.yaml (the shared
+# canned dataset) inline, because a Jinja fragment cannot slot into the deep
+# `service.mock.searches[0].vacancies` indent without mangling the YAML — keep
+# them in sync.
+name: "mock-demo"
+description: "Offline demo pipeline against the mock client"
+
+service:
+  mock:
+    resume_id: "mock-resume-1"
+    searches:
+      - query: "python"
+        filter:
+          area: [1]
+          schedule: ["fullDay", "remote"]
+          experience: "between1And3"
+          only_with_salary: true
+        vacancies:
+          - external_id: "mock-1"
+            title: "Python Backend Developer (Mock)"
+            url: "https://mock.example/vacancies/python-backend-1"
+            company: "MockCorp"
+            description: |
+              We are looking for a Python backend developer to build distributed services.
+
+              Responsibilities:
+              - Design and implement REST APIs with FastAPI;
+              - Work with PostgreSQL and Redis;
+              - Containerise services with Docker;
+              - Collaborate with frontend and QA teams.
+
+              Requirements:
+              - 3+ years of Python experience;
+              - Strong knowledge of async programming (asyncio);
+              - Experience with SQLAlchemy;
+              - English at reading level.
+
+              We offer remote work, a modern tech stack and a friendly team.
+            key_skills: ["Python", "FastAPI", "PostgreSQL", "Docker", "SQLAlchemy"]
+            salary:
+              from: 250000
+              to: 350000
+              currency: "RUR"
+              gross: false
+          - external_id: "mock-2"
+            title: "DevOps Engineer (Mock)"
+            url: "https://mock.example/vacancies/devops-2"
+            company: "CloudStack Example"
+            description: |
+              Help us run a multi-region Kubernetes platform.
+
+              Responsibilities:
+              - Maintain and scale Kubernetes clusters;
+              - Build CI/CD pipelines with GitLab;
+              - Automate infrastructure with Terraform and Ansible;
+              - Monitor services with Prometheus and Grafana.
+
+              Requirements:
+              - 2+ years of DevOps/SRE experience;
+              - Hands-on Kubernetes and Helm;
+              - Linux administration;
+              - Scripting in Python or Go.
+
+              We value automation, reliability and blameless culture.
+            key_skills: ["Kubernetes", "Terraform", "GitLab CI", "Prometheus", "Linux"]
+            salary:
+              from: 300000
+              to: 400000
+              currency: "RUR"
+              gross: true
+          - external_id: "mock-3"
+            title: "Frontend Developer (Mock)"
+            url: "https://mock.example/vacancies/frontend-3"
+            company: null
+            description: |
+              Join our product team building a modern web dashboard.
+
+              Responsibilities:
+              - Build UI with React and TypeScript;
+              - Integrate with REST APIs;
+              - Write unit and e2e tests;
+              - Care about accessibility and performance.
+
+              Requirements:
+              - 2+ years of frontend experience;
+              - Strong TypeScript and React skills;
+              - Familiarity with CSS-in-JS;
+              - Basic understanding of backend APIs.
+
+              Remote-friendly schedule and a flat hierarchy.
+            key_skills: ["React", "TypeScript", "CSS", "Testing", "REST"]
+            salary: null
+
+auth:
+  login_file: "{{ login_file }}"
+  password_file: "{{ password_file }}"
+resume:
+  path: "{{ resume_path }}"
+openai:
+  model: "gpt-5-mini"
+  base_url: "https://api.openai.com/v1"
+  api_key_file: "{{ api_key_file }}"
+scoring:
+  min_required_score: 3
+  scoring_prompt_file: "{{ scoring_prompt_file }}"
+apply:
+  apply_prompt_file: "{{ apply_prompt_file }}"
+limits:
+  daily_apply_limit: 5

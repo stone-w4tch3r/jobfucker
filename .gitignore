@@ -1,0 +1,54 @@
+# ---- Python / uv ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+.venv/
+venv/
+dist/
+build/
+.mypy_cache/
+.ruff_cache/
+.pyright/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# ---- agent worktrees ----
+wrktrs/
+.worktrees/
+
+# ---- Environment ----
+.env
+.env.local
+
+# ---- jobfucker runtime ----
+# Runtime isolation dir (config, DB, cookies, logs, browser state)
+.jobfucker/
+
+# ---- personal pipelines/prompts (kept locally, never published) ----
+pipelines/
+
+# ---- secrets / credentials (referenced by pipeline.yaml, never committed) ----
+secrets/
+
+# ---- logs and other artifacts ----
+
+/logs/
+
+# ---- editor / OS ----
+.idea/
+# Ignore VS Code dir contents but keep the editor config files we DO want tracked
+# (basedpyright/ruff/interpreter settings for this self-contained subproject).
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

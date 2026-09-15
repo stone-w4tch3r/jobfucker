@@ -1,0 +1,2002 @@
+{
+  "$defs": {
+    "Currency": {
+      "description": "Salary currency.",
+      "enum": [
+        "rur",
+        "usd",
+        "eur",
+        "kzt"
+      ],
+      "title": "Currency",
+      "type": "string"
+    },
+    "EducationLevel": {
+      "description": "Required education level.",
+      "enum": [
+        "any",
+        "special_secondary",
+        "higher"
+      ],
+      "title": "EducationLevel",
+      "type": "string"
+    },
+    "EmploymentForm": {
+      "description": "Form of employment (modern HH vocabulary).",
+      "enum": [
+        "full",
+        "part",
+        "project",
+        "fly_in_fly_out"
+      ],
+      "title": "EmploymentForm",
+      "type": "string"
+    },
+    "EmploymentType": {
+      "description": "Type of employment (classic HH vocabulary; legacy_params group).",
+      "enum": [
+        "full",
+        "part",
+        "project",
+        "volunteer",
+        "probation"
+      ],
+      "title": "EmploymentType",
+      "type": "string"
+    },
+    "ExperienceLevel": {
+      "description": "Required work-experience bucket.",
+      "enum": [
+        "no_experience",
+        "between_1_and_3_years",
+        "between_3_and_6_years",
+        "more_than_6_years"
+      ],
+      "title": "ExperienceLevel",
+      "type": "string"
+    },
+    "HHDistancePoint": {
+      "additionalProperties": false,
+      "description": "Geographic point for distance sorting.",
+      "properties": {
+        "lat": {
+          "examples": [
+            55.75
+          ],
+          "maximum": 90.0,
+          "minimum": -90.0,
+          "title": "Latitude",
+          "type": "number"
+        },
+        "lng": {
+          "examples": [
+            37.61
+          ],
+          "maximum": 180.0,
+          "minimum": -180.0,
+          "title": "Longitude",
+          "type": "number"
+        }
+      },
+      "required": [
+        "lat",
+        "lng"
+      ],
+      "title": "Distance point",
+      "type": "object"
+    },
+    "HHFilterConfig": {
+      "additionalProperties": false,
+      "description": "User-facing nested filter contract for ``service.hh.filter``.\n\nEvery field carries UI annotations; ``to_search_filters()`` is the one-way\nbridge to the wire model. Groups are optional; an empty config sends no\nfilter params.",
+      "properties": {
+        "location": {
+          "$ref": "#/$defs/HHLocationFilters"
+        },
+        "ordering": {
+          "$ref": "#/$defs/HHOrderingFilters"
+        },
+        "published": {
+          "$ref": "#/$defs/HHPublishedFilters"
+        },
+        "query": {
+          "$ref": "#/$defs/HHQueryFilters"
+        },
+        "response_extras": {
+          "$ref": "#/$defs/HHResponseExtras"
+        },
+        "salary": {
+          "$ref": "#/$defs/HHSalaryFilters"
+        },
+        "targeting": {
+          "$ref": "#/$defs/HHTargetingFilters"
+        },
+        "work_arrangement": {
+          "$ref": "#/$defs/HHWorkArrangementFilters"
+        }
+      },
+      "title": "HH vacancy-search filter",
+      "type": "object"
+    },
+    "HHGeoCorner": {
+      "additionalProperties": false,
+      "description": "One rectangular-area corner (``[lat, lng]``).",
+      "properties": {
+        "lat": {
+          "examples": [
+            55.4
+          ],
+          "maximum": 90.0,
+          "minimum": -90.0,
+          "title": "Latitude",
+          "type": "number"
+        },
+        "lng": {
+          "examples": [
+            37.2
+          ],
+          "maximum": 180.0,
+          "minimum": -180.0,
+          "title": "Longitude",
+          "type": "number"
+        }
+      },
+      "required": [
+        "lat",
+        "lng"
+      ],
+      "title": "Geo corner",
+      "type": "object"
+    },
+    "HHLegacyWorkParams": {
+      "additionalProperties": false,
+      "description": "Classic HH work vocabulary (parallel to the modern one; expected untouched).\n\nKept because its value coverage differs from the modern families\n(docs/hh/api/search.md): both vocabularies remain functional upstream.",
+      "properties": {
+        "employment_types": {
+          "default": [],
+          "description": "Classic employment vocabulary (\u0442\u0438\u043f \u0437\u0430\u043d\u044f\u0442\u043e\u0441\u0442\u0438).",
+          "examples": [
+            [
+              "full"
+            ]
+          ],
+          "items": {
+            "$ref": "#/$defs/EmploymentType"
+          },
+          "title": "Employment types",
+          "type": "array"
+        },
+        "work_schedules": {
+          "default": [],
+          "description": "Classic schedule vocabulary (\u0433\u0440\u0430\u0444\u0438\u043a \u0440\u0430\u0431\u043e\u0442\u044b).",
+          "examples": [
+            [
+              "remote"
+            ]
+          ],
+          "items": {
+            "$ref": "#/$defs/WorkSchedule"
+          },
+          "title": "Work schedules",
+          "type": "array"
+        }
+      },
+      "title": "Legacy work params",
+      "type": "object"
+    },
+    "HHLocationFilters": {
+      "additionalProperties": false,
+      "description": "Location contract.",
+      "properties": {
+        "districts": {
+          "default": [],
+          "description": "Administrative-district ids.",
+          "examples": [
+            [
+              1205
+            ]
+          ],
+          "items": {
+            "type": "integer"
+          },
+          "title": "Districts",
+          "type": "array"
+        },
+        "metro_stations": {
+          "default": [],
+          "description": "``line.station`` ids (e.g. ``1.118``).",
+          "examples": [
+            [
+              "1.118"
+            ]
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Metro stations",
+          "type": "array"
+        },
+        "rectangular_area": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "$ref": "#/$defs/HHGeoCorner"
+                },
+                {
+                  "$ref": "#/$defs/HHGeoCorner"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Exactly two corners: south-west then north-east.",
+          "title": "Rectangular area"
+        },
+        "regions": {
+          "default": [],
+          "description": "HH area ids (1=\u041c\u043e\u0441\u043a\u0432\u0430, 88=\u041a\u0430\u0437\u0430\u043d\u044c, 16=\u0411\u0435\u043b\u0430\u0440\u0443\u0441\u044c).",
+          "examples": [
+            [
+              1
+            ]
+          ],
+          "items": {
+            "type": "integer"
+          },
+          "title": "Regions",
+          "type": "array"
+        }
+      },
+      "title": "Location",
+      "type": "object"
+    },
+    "HHOrderingFilters": {
+      "additionalProperties": false,
+      "description": "Result-ordering contract.",
+      "properties": {
+        "distance_from_point": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HHDistancePoint"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reference point; required by and only allowed with ``sort_results_by: distance``.",
+          "title": "Distance from point"
+        },
+        "sort_results_by": {
+          "$ref": "#/$defs/SortBy",
+          "default": "relevance",
+          "description": "DISTANCE sorts by proximity to ``distance_from_point``.",
+          "examples": [
+            "publication_time"
+          ],
+          "title": "Sort results by"
+        }
+      },
+      "title": "Ordering",
+      "type": "object"
+    },
+    "HHPublishedFilters": {
+      "additionalProperties": false,
+      "description": "Publication-freshness contract (``within_days`` XOR from/to).",
+      "properties": {
+        "from": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Publication date lower bound (YYYY-MM-DD).",
+          "examples": [
+            "2026-08-01"
+          ],
+          "title": "Published from"
+        },
+        "to": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Publication date upper bound (YYYY-MM-DD); requires ``from``.",
+          "examples": [
+            "2026-08-29"
+          ],
+          "title": "Published to"
+        },
+        "within_days": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Vacancy age in days; cannot coexist with ``from``/``to``.",
+          "examples": [
+            30
+          ],
+          "title": "Published within days"
+        }
+      },
+      "title": "Published",
+      "type": "object"
+    },
+    "HHQueryFilters": {
+      "additionalProperties": false,
+      "description": "Text-query contract: how the pipeline query is matched and narrowed.",
+      "properties": {
+        "exclude_words": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Comma-separated words that disqualify a vacancy.",
+          "examples": [
+            "\u0441\u0442\u0430\u0436\u0435\u0440,intern"
+          ],
+          "title": "Exclude words"
+        },
+        "fields_to_search_in": {
+          "default": [],
+          "description": "Vacancy fields the query matches; requires a non-empty pipeline query.",
+          "examples": [
+            [
+              "name",
+              "description"
+            ]
+          ],
+          "items": {
+            "$ref": "#/$defs/SearchIn"
+          },
+          "title": "Fields to search in",
+          "type": "array"
+        },
+        "use_hh_query_language": {
+          "default": true,
+          "description": "false sends the pipeline query verbatim (no HH query-language operators).",
+          "examples": [
+            true
+          ],
+          "title": "Use HH query language",
+          "type": "boolean"
+        }
+      },
+      "title": "Query",
+      "type": "object"
+    },
+    "HHResponseExtras": {
+      "additionalProperties": false,
+      "description": "Response-decoration flags (rarely needed by the engine; full parity kept).",
+      "properties": {
+        "include_arguments_description": {
+          "default": false,
+          "description": "Return the server's description of the applied arguments.",
+          "examples": [
+            true
+          ],
+          "title": "Include arguments description",
+          "type": "boolean"
+        },
+        "include_clusters": {
+          "default": false,
+          "description": "Return facet cluster counts in the search response.",
+          "examples": [
+            true
+          ],
+          "title": "Include clusters",
+          "type": "boolean"
+        },
+        "include_responses_count": {
+          "default": false,
+          "description": "Return per-vacancy response counts.",
+          "examples": [
+            true
+          ],
+          "title": "Include responses count",
+          "type": "boolean"
+        }
+      },
+      "title": "Response extras",
+      "type": "object"
+    },
+    "HHSalaryFilters": {
+      "additionalProperties": false,
+      "description": "Salary contract fork.",
+      "properties": {
+        "currency": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Currency"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Currency of the ``from`` bound.",
+          "examples": [
+            "rur"
+          ],
+          "title": "Currency"
+        },
+        "from": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Minimum salary fork; unstated-salary vacancies remain unless only_with_salary.",
+          "examples": [
+            250000
+          ],
+          "title": "Salary from"
+        },
+        "measured_in": {
+          "default": [],
+          "description": "Unit the stated salary is measured in.",
+          "examples": [
+            [
+              "per_month"
+            ]
+          ],
+          "items": {
+            "$ref": "#/$defs/SalaryUnit"
+          },
+          "title": "Measured in",
+          "type": "array"
+        },
+        "only_with_salary": {
+          "default": false,
+          "description": "Return only vacancies that state a salary.",
+          "examples": [
+            true
+          ],
+          "title": "Only with salary",
+          "type": "boolean"
+        },
+        "paid": {
+          "default": [],
+          "description": "How often the salary is paid.",
+          "examples": [
+            [
+              "monthly"
+            ]
+          ],
+          "items": {
+            "$ref": "#/$defs/SalaryPaid"
+          },
+          "title": "Paid",
+          "type": "array"
+        }
+      },
+      "title": "Salary",
+      "type": "object"
+    },
+    "HHSearchEntry": {
+      "additionalProperties": false,
+      "description": "One ordered ``service.hh.searches[]`` entry: query + HH filter (+ window).\n\nSelf-contained by design: each entry carries its own board query string and\nits own typed :class:`HHFilterConfig` (no defaulting/merging between\nentries \u2014 every verified search set is copied verbatim into the pool). The\n``window`` base field optionally scopes this entry's fetch window.",
+      "properties": {
+        "filter": {
+          "$ref": "#/$defs/HHFilterConfig"
+        },
+        "query": {
+          "description": "Board query-language search text for this entry.",
+          "title": "Query",
+          "type": "string"
+        },
+        "window": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SearchWindow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional per-entry fetch window/slice; omitted = the default window.",
+          "title": "Fetch window"
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "title": "HH search entry",
+      "type": "object"
+    },
+    "HHSearchMode": {
+      "description": "The explicit HH vacancy-search endpoint selection.",
+      "enum": [
+        "catalog",
+        "resume_similar"
+      ],
+      "title": "HHSearchMode",
+      "type": "string"
+    },
+    "HHServiceConfig": {
+      "additionalProperties": false,
+      "description": "Validated ``service.hh`` pipeline section.",
+      "properties": {
+        "captcha_max_attempts": {
+          "default": 4,
+          "description": "Maximum fresh HH text-CAPTCHA images solved for one challenge.",
+          "maximum": 10,
+          "minimum": 1,
+          "title": "CAPTCHA answer attempts",
+          "type": "integer"
+        },
+        "resume_id": {
+          "minLength": 1,
+          "title": "Resume Id",
+          "type": "string"
+        },
+        "search_mode": {
+          "$ref": "#/$defs/HHSearchMode",
+          "default": "catalog"
+        },
+        "searches": {
+          "description": "Ordered search entries fetched one after another into the same DB; an entry's position is its stable search_index.",
+          "items": {
+            "$ref": "#/$defs/HHSearchEntry"
+          },
+          "minItems": 1,
+          "title": "Search pool",
+          "type": "array"
+        }
+      },
+      "required": [
+        "resume_id",
+        "searches"
+      ],
+      "title": "HHServiceConfig",
+      "type": "object"
+    },
+    "HHTargetingFilters": {
+      "additionalProperties": false,
+      "description": "Employer/role/badge targeting contract.",
+      "properties": {
+        "employers": {
+          "default": [],
+          "description": "Only these employer ids.",
+          "examples": [
+            [
+              1455
+            ]
+          ],
+          "items": {
+            "type": "integer"
+          },
+          "title": "Employers",
+          "type": "array"
+        },
+        "exclude_employers": {
+          "default": [],
+          "description": "Never these employer ids.",
+          "examples": [
+            [
+              391
+            ]
+          ],
+          "items": {
+            "type": "integer"
+          },
+          "title": "Exclude employers",
+          "type": "array"
+        },
+        "industries": {
+          "default": [],
+          "description": "HH industry ids (7=IT).",
+          "examples": [
+            [
+              7
+            ]
+          ],
+          "items": {
+            "type": "integer"
+          },
+          "title": "Industries",
+          "type": "array"
+        },
+        "professional_roles": {
+          "default": [],
+          "description": "HH professional-role ids (96=programmer, 165=data scientist).",
+          "examples": [
+            [
+              96
+            ]
+          ],
+          "items": {
+            "type": "integer"
+          },
+          "title": "Professional roles",
+          "type": "array"
+        },
+        "saved_search": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Account-owned saved-search id; catalog mode only.",
+          "title": "Saved search"
+        },
+        "vacancy_labels": {
+          "default": [],
+          "description": "Required vacancy badges.",
+          "examples": [
+            [
+              "with_salary"
+            ]
+          ],
+          "items": {
+            "$ref": "#/$defs/VacancyLabel"
+          },
+          "title": "Vacancy labels",
+          "type": "array"
+        }
+      },
+      "title": "Targeting",
+      "type": "object"
+    },
+    "HHWorkArrangementFilters": {
+      "additionalProperties": false,
+      "description": "Work-arrangement contract (when/where/how the work is done).",
+      "properties": {
+        "employment_forms": {
+          "default": [],
+          "description": "Form of employment (modern vocabulary).",
+          "examples": [
+            [
+              "full"
+            ]
+          ],
+          "items": {
+            "$ref": "#/$defs/EmploymentForm"
+          },
+          "title": "Employment forms",
+          "type": "array"
+        },
+        "hours_per_day": {
+          "default": [],
+          "description": "Working-hours-per-day buckets.",
+          "examples": [
+            [
+              "hours_8"
+            ]
+          ],
+          "items": {
+            "$ref": "#/$defs/HoursPerDay"
+          },
+          "title": "Hours per day",
+          "type": "array"
+        },
+        "legacy_params": {
+          "$ref": "#/$defs/HHLegacyWorkParams",
+          "description": "Classic HH vocabulary (schedule/employment); expected untouched."
+        },
+        "part_time_options": {
+          "default": [],
+          "description": "Composite part-time checkbox filters (\u043f\u043e\u0434\u0440\u0430\u0431\u043e\u0442\u043a\u0430).",
+          "examples": [
+            [
+              "weekends_only"
+            ]
+          ],
+          "items": {
+            "$ref": "#/$defs/PartTimeOption"
+          },
+          "title": "Part-time options",
+          "type": "array"
+        },
+        "required_education": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EducationLevel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Education level the vacancy requires; unset means any.",
+          "examples": [
+            "higher"
+          ],
+          "title": "Required education"
+        },
+        "required_experience": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExperienceLevel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Experience bucket the vacancy requires; unset means any.",
+          "examples": [
+            "between_1_and_3_years"
+          ],
+          "title": "Required experience"
+        },
+        "shift_rotations": {
+          "default": [],
+          "description": "Days-on/days-off rotation patterns.",
+          "examples": [
+            [
+              "6_on_1_off"
+            ]
+          ],
+          "items": {
+            "$ref": "#/$defs/ShiftRotation"
+          },
+          "title": "Shift rotations",
+          "type": "array"
+        },
+        "temporary_jobs_only": {
+          "default": false,
+          "description": "Restrict to vacancies marked for temporary work.",
+          "examples": [
+            true
+          ],
+          "title": "Temporary jobs only",
+          "type": "boolean"
+        },
+        "work_formats": {
+          "default": [],
+          "description": "Where the work is performed (modern vocabulary).",
+          "examples": [
+            [
+              "remote"
+            ]
+          ],
+          "items": {
+            "$ref": "#/$defs/WorkFormat"
+          },
+          "title": "Work formats",
+          "type": "array"
+        }
+      },
+      "title": "Work arrangement",
+      "type": "object"
+    },
+    "HoursPerDay": {
+      "description": "Working-hours-per-day bucket (``AROUND_THE_CLOCK`` = 24-hour shift day).",
+      "enum": [
+        "hours_2",
+        "hours_3",
+        "hours_4",
+        "hours_5",
+        "hours_6",
+        "hours_7",
+        "hours_8",
+        "hours_9",
+        "hours_10",
+        "hours_11",
+        "hours_12",
+        "around_the_clock",
+        "flexible",
+        "other"
+      ],
+      "title": "HoursPerDay",
+      "type": "string"
+    },
+    "MockApplyBehaviorConfig": {
+      "description": "A single programmable apply outcome for the mock's ``behavior`` block.\n\n``outcome`` maps to the four mock behaviors: ``applied``/``skipped`` are\n``ApplyResult`` successes, ``error`` is a per-vacancy ``Err(BadRequestError)``,\nand ``limit_exceeded`` is the stop signal ``Err(LimitExceededError)``.\n\nCarries field metadata so the section's JSON schema renders a labeled,\nenum-driven form (see client-contract.md \u00a76.2).",
+      "properties": {
+        "message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reason text attached to the scripted outcome (skip reason / error text).",
+          "examples": [
+            "mock apply rejected"
+          ],
+          "title": "Message"
+        },
+        "outcome": {
+          "description": "The apply outcome to script for a vacancy (manual-testing only).",
+          "enum": [
+            "applied",
+            "skipped",
+            "error",
+            "limit_exceeded"
+          ],
+          "examples": [
+            "applied"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        }
+      },
+      "required": [
+        "outcome"
+      ],
+      "title": "MockApplyBehaviorConfig",
+      "type": "object"
+    },
+    "MockBehaviorConfig": {
+      "description": "The mock's programmable behavior, read from its own config section.\n\nConsumed only by :class:`MockClient` as a manual-testing seam \u2014 never by\ncore. ``per_vacancy`` keys are external ``str`` vacancy ids and override\n``default_apply`` for those specific vacancies. ``captcha`` scripts an\noffline captcha challenge (see :class:`MockCaptchaConfig`).\n\nCarries field metadata so the section's JSON schema renders a labeled form\n(see client-contract.md \u00a76.2).",
+      "properties": {
+        "authorize_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "When set, the mock's ``authorize`` fails with this message (manual-testing only).",
+          "examples": [
+            "mock auth denied"
+          ],
+          "title": "Authorize error"
+        },
+        "captcha": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MockCaptchaConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional offline captcha challenge to fire before an operation (manual-testing only).",
+          "examples": [
+            {
+              "attempts": 1,
+              "operation": "apply"
+            }
+          ],
+          "title": "Captcha (manual testing)"
+        },
+        "default_apply": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MockApplyBehaviorConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Outcome applied to every vacancy not listed in ``per_vacancy``.",
+          "title": "Default apply outcome"
+        },
+        "per_vacancy": {
+          "additionalProperties": {
+            "$ref": "#/$defs/MockApplyBehaviorConfig"
+          },
+          "description": "Per-external-id outcome overrides (manual-testing only).",
+          "examples": [
+            {
+              "mock-1": {
+                "message": "mock apply rejected",
+                "outcome": "error"
+              }
+            }
+          ],
+          "title": "Per-vacancy outcomes",
+          "type": "object"
+        }
+      },
+      "title": "MockBehaviorConfig",
+      "type": "object"
+    },
+    "MockCaptchaConfig": {
+      "description": "Script a captcha challenge on one mock operation (manual-testing only).\n\nWhen ``operation`` matches, the mock first routes its internal captcha\nimage through the injected :data:`~jobfucker.clients.base.CaptchaHandler`\n(rendering/solving seam) ``attempts`` times before the operation proceeds.\nOn ``search`` the challenge fires **once per slice call** (not per native\npage) \u2014 enough to exercise the human-solve path during a fetch. A handler\nfailure (unsolvable/EOF) collapses into ``Err(CaptchaSolvingError)`` \u2014\nexactly how an unsolvable real captcha surfaces. This lets a human test\nCLI captcha rendering/handling offline without a live board.",
+      "properties": {
+        "attempts": {
+          "default": 1,
+          "description": "How many captcha challenges to solve before the operation proceeds.",
+          "examples": [
+            1
+          ],
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Solve attempts",
+          "type": "integer"
+        },
+        "operation": {
+          "description": "Which mock operation first requires solving a captcha.",
+          "enum": [
+            "authorize",
+            "search",
+            "apply"
+          ],
+          "examples": [
+            "apply"
+          ],
+          "title": "Captcha trigger operation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation"
+      ],
+      "title": "MockCaptchaConfig",
+      "type": "object"
+    },
+    "MockSearchEntry": {
+      "additionalProperties": false,
+      "description": "One ordered ``service.mock.searches[]`` entry.\n\nSelf-contained like every search entry: its own query, an optional fetch\n``window`` (base field), the mock's concrete ``filter``, and its own canned\n``vacancies`` list (offline data \u2014 per entry, so a multi-search pipeline\nexercises distinct pools with no live board).",
+      "properties": {
+        "filter": {
+          "$ref": "#/$defs/MockSearchParams",
+          "description": "The mock's search filter (see :class:`MockSearchParams`).",
+          "title": "Search filter"
+        },
+        "query": {
+          "description": "Board query-language search text for this entry.",
+          "title": "Query",
+          "type": "string"
+        },
+        "vacancies": {
+          "description": "Canned vacancies this entry's search returns (offline data, part of the entry).",
+          "examples": [
+            {
+              "external_id": "mock-1",
+              "title": "Python Backend Developer (Mock)"
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/MockVacancyParams"
+          },
+          "title": "Vacancies",
+          "type": "array"
+        },
+        "window": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SearchWindow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional per-entry fetch window/slice; omitted = the default window.",
+          "title": "Fetch window"
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "title": "Mock search entry",
+      "type": "object"
+    },
+    "MockSearchParams": {
+      "additionalProperties": false,
+      "description": "The mock's concrete, non-abstracted search filter object.\n\nA pydantic model (not a bare dataclass) because it is surfaced to the UI as a\ntyped JSON schema (``model_json_schema()``): titles, descriptions, examples\nand ``Literal`` enums let the form layer render labels + dropdowns instead of\na raw config blob. Mirrors the HH-filter example (area/schedule/experience/\nonly-with-salary) so config-time validation and forms are exercised\nrealistically, but it is fully self-contained \u2014 no board terminology.",
+      "properties": {
+        "area": {
+          "default": [],
+          "description": "Job-board region/city ids to search (mock keeps them generic).",
+          "examples": [
+            [
+              1
+            ]
+          ],
+          "items": {
+            "type": "integer"
+          },
+          "title": "Area",
+          "type": "array"
+        },
+        "experience": {
+          "anyOf": [
+            {
+              "enum": [
+                "noExperience",
+                "between1And3",
+                "between3And6",
+                "moreThan6"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Required work-experience level; null means 'any'.",
+          "examples": [
+            "between1And3"
+          ],
+          "title": "Experience"
+        },
+        "only_with_salary": {
+          "default": false,
+          "description": "Return only vacancies that state a salary.",
+          "examples": [
+            true
+          ],
+          "title": "Only with salary",
+          "type": "boolean"
+        },
+        "schedule": {
+          "default": [],
+          "description": "Employment schedule types to accept (multi-select).",
+          "examples": [
+            [
+              "fullDay",
+              "remote"
+            ]
+          ],
+          "items": {
+            "enum": [
+              "fullDay",
+              "remote",
+              "flexible",
+              "shift",
+              "flyInFlyOut"
+            ],
+            "type": "string"
+          },
+          "title": "Schedule",
+          "type": "array"
+        }
+      },
+      "title": "Mock search filter",
+      "type": "object"
+    },
+    "MockServiceConfig": {
+      "description": "Typed ``service.mock`` pipeline.yaml section.\n\nImplements the contract's ``ServiceConfigSection`` (carries ``resume_id``\nplus the ordered ``searches`` pool); the ``behavior`` sub-block is the\nmock's optional manual-testing seam. The canned three-entry dataset used\nacross the test suite is a test fixture (``test/fixtures/mock_vacancies.yaml``),\nnot code.\n\nFields carry title/description/examples so the section's ``model_json_schema()``\ndrives a labeled, per-service typed form in the UI (client-contract.md \u00a76.2).",
+      "properties": {
+        "behavior": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MockBehaviorConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional programmable offline outcomes for the mock client.",
+          "title": "Behavior (manual testing)"
+        },
+        "resume_id": {
+          "description": "Service resume identifier, passed verbatim to ``apply_to_vacancy``.",
+          "examples": [
+            "mock-resume-1"
+          ],
+          "title": "Resume id",
+          "type": "string"
+        },
+        "searches": {
+          "description": "Ordered search entries fetched one after another into the same DB; an entry's position is its stable search_index.",
+          "items": {
+            "$ref": "#/$defs/MockSearchEntry"
+          },
+          "minItems": 1,
+          "title": "Search pool",
+          "type": "array"
+        }
+      },
+      "required": [
+        "resume_id",
+        "searches"
+      ],
+      "title": "MockServiceConfig",
+      "type": "object"
+    },
+    "MockVacancyParams": {
+      "description": "One canned vacancy in the mock's ``vacancies`` list.\n\nThe mock's ``search_vacancies`` returns exactly these vacancies \u2014 offline\ndata carried by the ``service.mock`` section itself, never read from disk.\n``external_id`` is the board-neutral key\n``behavior.per_vacancy`` matches on and ``apply_to_vacancy`` receives;\n``description`` is full plaintext (enriched by construction \u2014 no snippet\nstep needed for the mock).\n\nFields carry ``title``/``description``/``examples`` so the section's JSON\nschema renders a labeled, per-service typed form (client-contract.md \u00a76.2).",
+      "properties": {
+        "company": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Employer name; ``null`` when the vacancy is anonymous.",
+          "examples": [
+            "MockCorp"
+          ],
+          "title": "Company"
+        },
+        "description": {
+          "description": "Full plaintext vacancy description (multi-sentence prose).",
+          "title": "Description",
+          "type": "string"
+        },
+        "external_id": {
+          "description": "Board-neutral vacancy identifier; matches ``behavior.per_vacancy``.",
+          "examples": [
+            "mock-1"
+          ],
+          "title": "External id",
+          "type": "string"
+        },
+        "key_skills": {
+          "description": "Skills/technologies listed on the vacancy.",
+          "examples": [
+            [
+              "Python",
+              "FastAPI"
+            ]
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Key skills",
+          "type": "array"
+        },
+        "salary": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MockVacancySalary"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional salary bounds of the vacancy.",
+          "title": "Salary"
+        },
+        "title": {
+          "examples": [
+            "Python Backend Developer (Mock)"
+          ],
+          "title": "Title",
+          "type": "string"
+        },
+        "url": {
+          "description": "Absolute page URL of the vacancy.",
+          "examples": [
+            "https://mock.example/vacancies/python-backend-1"
+          ],
+          "title": "URL",
+          "type": "string"
+        }
+      },
+      "required": [
+        "external_id",
+        "title",
+        "url",
+        "description"
+      ],
+      "title": "MockVacancyParams",
+      "type": "object"
+    },
+    "MockVacancySalary": {
+      "description": "Optional salary block of one entry in the mock's ``vacancies`` list.\n\nThe lower bound field is ``from_`` (``from`` is a reserved word) with an\nexplicit ``from`` input/output alias, so the authored config (YAML/JSON)\nsays ``from:`` and the value lands on ``from_`` \u2014 pydantic does not map a\ntrailing-underscore field name to ``from`` on its own.",
+      "properties": {
+        "currency": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ISO currency code of the bounds (``RUR`` for Russia).",
+          "examples": [
+            "RUR"
+          ],
+          "title": "Currency"
+        },
+        "from": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Lower salary bound, in ``currency`` per month.",
+          "examples": [
+            250000
+          ],
+          "title": "From"
+        },
+        "gross": {
+          "default": false,
+          "description": "Whether the bounds are pre-tax (gross) rather than net.",
+          "examples": [
+            false
+          ],
+          "title": "Gross",
+          "type": "boolean"
+        },
+        "to": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Upper salary bound, in ``currency`` per month.",
+          "examples": [
+            350000
+          ],
+          "title": "To"
+        }
+      },
+      "title": "Salary",
+      "type": "object"
+    },
+    "PartTimeOption": {
+      "description": "Part-time / side-job checkbox options (composite HH filter).",
+      "enum": [
+        "project_work",
+        "part_time_employment",
+        "temporary_only",
+        "four_to_six_hours_a_day",
+        "weekends_only",
+        "start_after_4pm"
+      ],
+      "title": "PartTimeOption",
+      "type": "string"
+    },
+    "PipelineApplyYaml": {
+      "additionalProperties": false,
+      "description": "Authored ``apply`` section: exactly one cover-letter prompt source.\n\nSchema twin of ``ApplyConfig`` (``config.py``) \u2014 edit both together.",
+      "oneOf": [
+        {
+          "required": [
+            "apply_prompt_file"
+          ]
+        },
+        {
+          "required": [
+            "apply_prompt"
+          ]
+        }
+      ],
+      "properties": {
+        "apply_prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "not": {
+            "type": "null"
+          },
+          "title": "Apply Prompt"
+        },
+        "apply_prompt_file": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "not": {
+            "type": "null"
+          },
+          "title": "Apply Prompt File"
+        }
+      },
+      "title": "Apply",
+      "type": "object"
+    },
+    "PipelineAuthYaml": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "login_file"
+              ]
+            },
+            {
+              "required": [
+                "login"
+              ]
+            }
+          ]
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "password_file"
+              ]
+            },
+            {
+              "required": [
+                "password"
+              ]
+            }
+          ]
+        }
+      ],
+      "description": "Authored ``auth`` section: one source per credential slot.\n\nSchema twin of ``AuthConfig`` (``config.py``) \u2014 edit both together; the\n``test_authored_models_match_loader_fields`` parity test guards field names.",
+      "properties": {
+        "login": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "not": {
+            "type": "null"
+          },
+          "title": "Login"
+        },
+        "login_file": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "not": {
+            "type": "null"
+          },
+          "title": "Login File"
+        },
+        "password": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "not": {
+            "type": "null"
+          },
+          "title": "Password"
+        },
+        "password_file": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "not": {
+            "type": "null"
+          },
+          "title": "Password File"
+        }
+      },
+      "title": "Credentials",
+      "type": "object"
+    },
+    "PipelineHhTestSolvingYaml": {
+      "additionalProperties": false,
+      "description": "HH-only screening-test solving: AI-solver prompt + enable toggle. The AI solver reuses the main `openai` section.",
+      "not": {
+        "allOf": [
+          {
+            "required": [
+              "test_prompt_file"
+            ]
+          },
+          {
+            "required": [
+              "test_prompt"
+            ]
+          }
+        ]
+      },
+      "properties": {
+        "allow_ai_to_skip_test_when_not_enough_context": {
+          "default": false,
+          "title": "Allow Ai To Skip Test When Not Enough Context",
+          "type": "boolean"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "test_prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "not": {
+            "type": "null"
+          },
+          "title": "Test Prompt"
+        },
+        "test_prompt_file": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "not": {
+            "type": "null"
+          },
+          "title": "Test Prompt File"
+        }
+      },
+      "title": "HH test solving",
+      "type": "object"
+    },
+    "PipelineLimitsYaml": {
+      "additionalProperties": false,
+      "description": "Authored ``limits`` section.\n\nSchema twin of ``LimitsConfig`` (``config.py``) \u2014 edit both together.",
+      "properties": {
+        "daily_apply_limit": {
+          "default": 50,
+          "title": "Daily Apply Limit",
+          "type": "integer"
+        }
+      },
+      "title": "Limits",
+      "type": "object"
+    },
+    "PipelineOpenAiYaml": {
+      "additionalProperties": false,
+      "description": "Authored ``openai``/``openai_captcha`` section (shared shape).\n\nThe api key is optional and may come from either source, never both.\n``consensus_requests`` is meaningful only for ``openai_captcha``.\n\nSchema twin of ``OpenAIConfig`` (``config.py``) \u2014 edit both together.",
+      "not": {
+        "allOf": [
+          {
+            "required": [
+              "api_key_file"
+            ]
+          },
+          {
+            "required": [
+              "api_key"
+            ]
+          }
+        ]
+      },
+      "properties": {
+        "api_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "not": {
+            "type": "null"
+          },
+          "title": "Api Key"
+        },
+        "api_key_file": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "not": {
+            "type": "null"
+          },
+          "title": "Api Key File"
+        },
+        "base_url": {
+          "title": "Base Url",
+          "type": "string"
+        },
+        "consensus_requests": {
+          "default": 4,
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Consensus Requests",
+          "type": "integer"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "reasoning_effort": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "not": {
+            "type": "null"
+          },
+          "title": "Reasoning Effort"
+        }
+      },
+      "required": [
+        "model",
+        "base_url"
+      ],
+      "title": "OpenAI settings",
+      "type": "object"
+    },
+    "PipelineResumeYaml": {
+      "additionalProperties": false,
+      "description": "Authored ``resume`` section: a path reference OR inline contents.\n\nSchema twin of ``ResumeConfig`` (``config.py``) \u2014 edit both together.",
+      "oneOf": [
+        {
+          "required": [
+            "path"
+          ]
+        },
+        {
+          "required": [
+            "contents"
+          ]
+        }
+      ],
+      "properties": {
+        "contents": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "not": {
+            "type": "null"
+          },
+          "title": "Contents"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "not": {
+            "type": "null"
+          },
+          "title": "Path"
+        }
+      },
+      "title": "Resume",
+      "type": "object"
+    },
+    "PipelineScoringYaml": {
+      "additionalProperties": false,
+      "description": "Authored ``scoring`` section: threshold + exactly one prompt source.\n\nSchema twin of ``ScoringConfig`` (``config.py``) \u2014 edit both together.",
+      "oneOf": [
+        {
+          "required": [
+            "scoring_prompt_file"
+          ]
+        },
+        {
+          "required": [
+            "scoring_prompt"
+          ]
+        }
+      ],
+      "properties": {
+        "min_required_score": {
+          "title": "Min Required Score",
+          "type": "integer"
+        },
+        "scoring_prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "not": {
+            "type": "null"
+          },
+          "title": "Scoring Prompt"
+        },
+        "scoring_prompt_file": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "not": {
+            "type": "null"
+          },
+          "title": "Scoring Prompt File"
+        }
+      },
+      "required": [
+        "min_required_score"
+      ],
+      "title": "Scoring",
+      "type": "object"
+    },
+    "PipelineServiceYaml": {
+      "additionalProperties": false,
+      "description": "Exactly one board key; the single key selects the client.",
+      "oneOf": [
+        {
+          "required": [
+            "mock"
+          ]
+        },
+        {
+          "required": [
+            "hh"
+          ]
+        }
+      ],
+      "properties": {
+        "hh": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HHServiceConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "not": {
+            "type": "null"
+          }
+        },
+        "mock": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MockServiceConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "not": {
+            "type": "null"
+          }
+        }
+      },
+      "title": "Board service",
+      "type": "object"
+    },
+    "SalaryPaid": {
+      "description": "How often the salary is paid.",
+      "enum": [
+        "daily",
+        "weekly",
+        "twice_a_month",
+        "monthly",
+        "per_project"
+      ],
+      "title": "SalaryPaid",
+      "type": "string"
+    },
+    "SalaryUnit": {
+      "description": "Unit the stated salary is measured in.",
+      "enum": [
+        "per_month",
+        "per_shift",
+        "per_hour",
+        "per_fly_in_fly_out",
+        "per_service"
+      ],
+      "title": "SalaryUnit",
+      "type": "string"
+    },
+    "SearchIn": {
+      "description": "Vacancy text fields the pipeline query is matched against.",
+      "enum": [
+        "name",
+        "company_name",
+        "description"
+      ],
+      "title": "SearchIn",
+      "type": "string"
+    },
+    "SearchWindow": {
+      "additionalProperties": false,
+      "description": "One search entry's fetch window/slice controls (all 0-based listing positions).\n\nSingle source for the window/slice vocabulary shared by the CLI flags and\nthe pipeline.yaml ``searches[].window`` block: the CLI projects its flags\nhere, a config entry validates its ``window`` block directly into this\nmodel, and the whole validation matrix (page sizes, group exclusivity,\ncap bounds) lives in exactly one place \u2014\n:func:`jobfucker.stages.fetch_plan.plan_fetch`, which consumes this model.\n``first_page``/``page_size``/``take_pages`` define the fetch window\n``W = [first_page*page_size, (first_page + take_pages)*page_size)``;\n``from_``/``to``/``take`` further select a slice inside ``W``.\n\nConfig spelling uses the CLI flag words (``from`` is the yaml key of\n``from_``); pydantic validates types here, never window semantics.",
+      "properties": {
+        "first_page": {
+          "default": 0,
+          "description": "Zero-based first native page of the window.",
+          "title": "First page",
+          "type": "integer"
+        },
+        "from": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "0-based listing position to start the persisted slice at.",
+          "title": "Slice from"
+        },
+        "page_size": {
+          "default": 100,
+          "description": "Vacancies per native page; one of 20, 50, 100.",
+          "title": "Page size",
+          "type": "integer"
+        },
+        "take": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Vacancy count to persist; mutually exclusive with ``to``.",
+          "title": "Slice take"
+        },
+        "take_pages": {
+          "default": 10,
+          "description": "Native pages in the fetch window.",
+          "title": "Take pages",
+          "type": "integer"
+        },
+        "to": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "0-based inclusive end position of the persisted slice; mutually exclusive with ``take``.",
+          "title": "Slice to"
+        }
+      },
+      "title": "SearchWindow",
+      "type": "object"
+    },
+    "ShiftRotation": {
+      "description": "Shift-work rotation pattern (days on / days off).",
+      "enum": [
+        "6_on_1_off",
+        "5_on_2_off",
+        "4_on_3_off",
+        "4_on_2_off",
+        "3_on_3_off",
+        "3_on_2_off",
+        "2_on_2_off",
+        "2_on_1_off",
+        "1_on_3_off",
+        "1_on_2_off",
+        "weekends_only",
+        "4_on_4_off",
+        "flexible",
+        "other"
+      ],
+      "title": "ShiftRotation",
+      "type": "string"
+    },
+    "SortBy": {
+      "description": "Result ordering; ``DISTANCE`` requires ``distance_from_point``.",
+      "enum": [
+        "relevance",
+        "publication_time",
+        "salary_high_to_low",
+        "salary_low_to_high",
+        "distance"
+      ],
+      "title": "SortBy",
+      "type": "string"
+    },
+    "VacancyLabel": {
+      "description": "Vacancy badge (HH ``label``).",
+      "enum": [
+        "with_salary",
+        "direct_employer",
+        "with_office_address",
+        "accepts_teens",
+        "accredited_it",
+        "internship",
+        "night_shifts",
+        "accepts_labor_contract",
+        "low_performance"
+      ],
+      "title": "VacancyLabel",
+      "type": "string"
+    },
+    "WorkFormat": {
+      "description": "Where the work is performed (modern HH vocabulary).",
+      "enum": [
+        "on_site",
+        "remote",
+        "hybrid",
+        "field_work"
+      ],
+      "title": "WorkFormat",
+      "type": "string"
+    },
+    "WorkSchedule": {
+      "description": "Work schedule (classic HH vocabulary; legacy_params group).",
+      "enum": [
+        "full_day",
+        "shift",
+        "flexible",
+        "remote",
+        "fly_in_fly_out"
+      ],
+      "title": "WorkSchedule",
+      "type": "string"
+    }
+  },
+  "$id": "https://raw.githubusercontent.com/stone-w4tch3r/jobfucker/main/docs/schemas/pipeline.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Authored pipeline.yaml (one board per file). Generated from the typed contract \u2014 change the models, then run `uv run poe schemas`.",
+  "properties": {
+    "apply": {
+      "$ref": "#/$defs/PipelineApplyYaml"
+    },
+    "auth": {
+      "$ref": "#/$defs/PipelineAuthYaml"
+    },
+    "description": {
+      "title": "Description",
+      "type": "string"
+    },
+    "hh_test_solving": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PipelineHhTestSolvingYaml"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "limits": {
+      "$ref": "#/$defs/PipelineLimitsYaml"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "openai": {
+      "$ref": "#/$defs/PipelineOpenAiYaml"
+    },
+    "openai_captcha": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PipelineOpenAiYaml"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "resume": {
+      "$ref": "#/$defs/PipelineResumeYaml"
+    },
+    "scoring": {
+      "$ref": "#/$defs/PipelineScoringYaml"
+    },
+    "service": {
+      "$ref": "#/$defs/PipelineServiceYaml"
+    }
+  },
+  "required": [
+    "name",
+    "description",
+    "service",
+    "auth",
+    "resume",
+    "openai",
+    "scoring",
+    "apply",
+    "limits"
+  ],
+  "title": "jobfucker pipeline.yaml",
+  "type": "object",
+  "x-jobfucker-schema-version": "sha256:92967b9fd40ba3dc169130d878dfd3e2330fe4904c27e6f3981763392a3a39bd"
+}

@@ -1,0 +1,295 @@
+# ============================================================================
+# jobfucker — Vacancy application automation engine for Russian job boards (CLI)
+# ============================================================================
+
+[project]
+name = "jobfucker"
+version = "0.1.0"
+description = "Vacancy application automation engine for Russian job boards (CLI)"
+requires-python = ">=3.14"
+dependencies = [
+    # Result pattern for error handling (Client methods return Result[T, E])
+    "rusty-results>=1.1.1",
+    # Colored logging
+    "colorlog>=6.10.1",
+    # Qt toolchain: kept for the tested shared/shortcuts building block and the
+    # planned UI re-implementation from scratch (docs/ui/jobfucker.ui.md)
+    "pyside6>=6.10.1",
+    "qasync>=0.28.0",            # Qt + asyncio bridge for the planned GUI mode
+    "tomli-w>=1.2.0",            # Needed by shared/shortcuts full-copy bootstrap
+    # CLI engine
+    "typer>=0.12.0",             # CLI framework (jobfucker <command>)
+    # AI (scoring, cover-letter generation, optional captcha AI solving)
+    "openai>=1.0.0",
+    # Config: pipeline.yaml parsing + validation
+    "pyyaml>=6.0.0",
+    "pydantic>=2.0.0",
+    "jsonschema>=4.23.0",         # Runtime validation of versioned vacancy documents
+    # Prompts are Jinja2 templates (resume + vacancy injected)
+    "jinja2>=3.1.0",
+    # Client dependencies (own HTTP-only HH client under clients/hh/)
+    "httpx>=0.28.0",
+    "pillow>=10.0.0",            # shared captcha PNG decode / sixel encoding
+    # Captcha browser engine: stealth Chromium for standalone challenge recovery
+    "patchright>=1.62.0",
+    # Storage layer: sync ORM + schema migrations (confined to src/jobfucker/storage/)
+    "sqlalchemy>=2.0.0",
+    "alembic>=1.13.0",
+    "aiosqlite>=0.22.1",
+]
+
+[project.scripts]
+# CLI engine — classic typer CLI with all commands, will include gui subcommand
+jobfucker = "jobfucker.cli:main"
+## Standalone Qt GUI binary — same Qt entry point as `jobfucker gui`
+# jobfucker-gui = "jobfucker.ui.app:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.1",
+    "pytest-xdist>=3.5.0",
+    "pytest-cov>=7.0.0",
+    "pytest-asyncio>=1.3.0",
+    "pytest-qt>=4.5.0",           # Qt manager/widget testing
+    "pytest-bdd>=8.0.0",          # Gherkin .feature + step definitions (Phase 0 spike pinned v8)
+    "ruff>=0.14.6,<0.16",
+    "basedpyright>=1.34.0",
+    "pre-commit",
+    "poethepoet",
+]
+
+# ============================================================================
+# Build System
+# ============================================================================
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/jobfucker", "shared"]
+
+# ============================================================================
+# Type Checking - basedpyright (strict, no Any)
+# ============================================================================
+
+[tool.pyright]
+# Template default for this repo's primary Linux workflow; downstream projects may need a different platform.
+pythonPlatform = "Linux"
+pythonVersion = "3.14"
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "strict"
+reportAny = "error"
+reportImportCycles = "error"
+reportImplicitStringConcatenation = "none"
+# Vendored type stubs for untyped third-party deps with no upstream stubs
+# (currently only `qasync`). See src/stubs/qasync/__init__.pyi.
+stubPath = "src/stubs"
+# basedpyright's generic unused-call rule is noisy here; Result handling is enforced by lint_ignored_results.
+reportUnusedCallResult = "none"
+reportUnnecessaryIsInstance = "none"
+# Lint the shared building blocks, the app package (`src` — see test/AGENTS.md §8), and the app test dir.
+include = ["src", "shared", "shared_tests", "test"]
+exclude = [
+    "**/__pycache__",
+    "**/node_modules",
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    "wrktrs",
+    "test/fixtures",
+    "shared_tests/fixtures",
+    "secrets",
+    # Alembic-generated scaffolding (env.py, versions/*) — built tooling, not
+    # hand-written app code; kept under storage/ but exempt from strict checks.
+    "src/jobfucker/storage/migrations",
+]
+
+# ============================================================================
+# Linting & Formatting - ruff
+# ============================================================================
+
+[tool.ruff]
+line-length = 120
+target-version = "py314"
+include = ["src/**/*.py", "shared/**/*.py", "shared_tests/**/*.py", "test/**/*.py"]
+extend-exclude = [
+    "venv", ".venv", "*.egg", "*.egg-info", "**/dist", "**/build",
+    "**/__pycache__", "*.pyc", "*.pyo", "*.pyd", "*.so", "wrktrs",
+    ".git", ".pytest_cache",
+    "test/fixtures",
+    "shared_tests/fixtures",
+    # Alembic-generated scaffolding (see basedpyright exclude).
+    "src/jobfucker/storage/migrations",
+]
+
+[tool.ruff.lint]
+extend-select = [
+    "E", "F", "W",   # pycodestyle + pyflakes
+    "I",              # isort
+    "N",              # naming
+    "UP",             # pyupgrade
+    "ASYNC",          # async best practices
+    "S",              # bandit security
+    "B",              # bugbear
+    "A",              # builtins
+    "C4",             # comprehensions
+    "SIM",            # simplify
+    "PT",             # pytest style
+    "PERF",           # performance
+    "PLR",            # pylint refactor (max args, complexity)
+    "FBT",            # flake8-boolean-trap (no bool params)
+    "RUF",            # ruff-specific
+]
+ignore = [
+    "S101",           # assert usage (needed in tests and preconditions)
+    "RUF001",         # ambiguous unicode (Russian text — app domain)
+    "RUF012",         # mutable class attrs avoided; shared fixtures need it
+]
+
+[tool.ruff.lint.per-file-ignores]
+# test/** may use S101 (asserts), PT018, FBT001, S106 (placeholder credential
+# paths), PLR2004 (magic numbers) and may import SQLAlchemy directly to build/seed
+# engines; src/jobfucker/storage/** is the SQLAlchemy owner.
+"tests/*" = ["S101", "PT018", "FBT001"]
+"test/*" = ["S101", "S105", "PT018", "FBT001", "TID251", "S106", "PLR2004", "PLR0913"]
+"test/**" = ["S101", "S105", "PT018", "FBT001", "TID251", "S106", "PLR2004", "PLR0913"]
+"src/jobfucker/storage/*" = ["TID251"]
+"src/jobfucker/storage/**" = ["TID251"]
+# cli.py is a typer command surface: typer requires Option(...) in defaults
+# (B008) and command signatures by nature take many/named option params
+# (PLR0913/PLR0917) including booleans (FBT001/FBT003).
+"src/jobfucker/cli.py" = ["B008", "FBT001", "FBT003", "PLR0913", "PLR0917"]
+# Table models override Qt camelCase methods (N802), construct QModelIndex()
+# as a default arg (B008), and use the Generic[T] base-class form to stay
+# compatible with the QAbstractTableModel superclass (UP046). PEP 695 would
+# need `class X[T](QAbstractTableModel)`, which ruff only permits with reasoning.
+"src/jobfucker/ui/models/*" = ["N802", "B008", "UP046"]
+# Qt slots take boolean params positionally for QML invocation (FBT001); the
+# scored-vacancy bounds in _parse_score are magic numbers (PLR2004).
+"src/jobfucker/ui/managers/vacancy_manager.py" = ["FBT001", "PLR2004"]
+# command_builder.py: build_command_string and the CommandBuilder.build QML slot
+# must take the pipeline/stage/batch set positionally (QML invokes slots by
+# position) and include a bool (skip-already) — the same typer-slot rationale as
+# cli.py (FBT/PLR0913/PLR0917).
+"src/jobfucker/ui/command_builder.py" = ["FBT001", "FBT002", "FBT003", "PLR0913", "PLR0917"]
+# bootstrap.py is the composition root: many optional DI seams (config, captcha
+# flags, storage/AI overrides) naturally exceed the arg cap; that is its purpose.
+"src/jobfucker/bootstrap.py" = ["PLR0913"]
+# config.py loader functions are Result cascades: each typed boundary (yaml
+# parse, service section, inline/file xor pre-check, pydantic validate, file
+# inject) must early-return an Err, so the sequential check count exceeds the
+# PLR0911 heuristic; explicit per-slot loading is preferred over batching.
+"src/jobfucker/config.py" = ["PLR0911"]
+# Vacancy document policy deliberately enumerates a closed eight-field contract
+# so types stay narrow and schema/application mutation rules cannot drift.
+"src/jobfucker/app/vacancy_documents.py" = ["PLR0911", "PLR0912"]
+"shared_tests/*" = ["S101", "PT018", "PLW1510", "ISC004"]
+"shared_tests/fixtures/*" = ["C408", "RUF012", "F841", "B018"]
+"shared_tests/test_linting/conftest.py" = ["S603"]
+"shared_tests/test_linting/test_check_frozen_dataclasses.py" = ["PLR2004"]
+"shared_tests/test_linting/test_check_module_mutables.py" = ["S603", "PLR2004"]
+"shared_tests/test_linting/test_check_object_annotations.py" = ["S603", "PLR2004"]
+"shared_tests/test_linting/test_check_raw_dicts.py" = ["S603", "PLR2004"]
+"shared_tests/test_linting/test_check_type_ignore.py" = ["S603", "PLR2004"]
+
+[tool.ruff.lint.pylint]
+max-args = 5
+
+# Wrapper enforcement — ban direct imports of wrapped libraries.
+# Customize this list per project. Common reasons to wrap:
+#   - poorly typed libs (need typed facade)  -> openai (wrapped in ai.py)
+#   - platform-specific libs (need abstraction layer)
+#   - libs you may swap out (need stable internal API)
+#
+# SQLAlchemy is enclosed in the storage layer: engine/CLI/UI consume ONLY frozen
+# domain DTOs and never import SQLAlchemy. The ban is relaxed (via TID251
+# per-file-ignores below) for src/jobfucker/storage/** (the legitimate owner) and
+# for all test/** files (tests may build/seed engines directly).
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"sqlalchemy" = { msg = "SQLAlchemy is confined to src/jobfucker/storage/ (and tests); engine/CLI/UI must consume only frozen domain DTOs" }
+
+# ============================================================================
+# Testing - pytest
+# ============================================================================
+
+[tool.pytest.ini_options]
+# `test/` is the app's test dir (already has fixtures); add it once tests exist.
+testpaths = ["shared_tests", "test"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+# Coverage is wired via addopts + [tool.coverage]; see test/AGENTS.md §8.
+addopts = ["-n", "auto", "--dist", "worksteal", "--cov", "--cov-report=term-missing"]
+# Known upstream deprecations we intentionally do not chase (documented in
+# test/AGENTS.md §11 as open risks); kept scoped to the specific messages.
+filterwarnings = [
+    "ignore:Passing nodeid to _register_fixture is deprecated",
+    "ignore:Passing baseid to FixtureDef is deprecated",
+    "ignore:'maxsplit' is passed as positional argument",
+    "ignore:'asyncio.iscoroutinefunction' is deprecated",
+    "ignore::pytest.PytestRemovedIn10Warning",
+]
+# Coverage is wired in via addopts + [tool.coverage]; see test/AGENTS.md §8.
+markers = [
+    "unit: unit tests",
+    "integration: integration tests",
+    "e2e: end-to-end tests against a live board (opt-in via --run-e2e)",
+]
+
+# ============================================================================
+# Coverage - pytest-cov
+# ============================================================================
+
+[tool.coverage.run]
+# Cover the app package plus the shared building blocks.
+source = ["src", "shared"]
+# Skip test/feature scaffolding from coverage accounting.
+omit = [
+    "test/*",
+    "test/**/*",
+    "shared_tests/*",
+    "shared_tests/**/*",
+    "*/tests/*",
+    "*/tests/**/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+# Coverage is a guideline, not a hard gate (see engineering-principles §5).
+fail_under = 0
+
+# ============================================================================
+# Task Runner - poethepoet
+# ============================================================================
+
+[tool.poe.tasks]
+setup-project = "pre-commit install"
+test = "pytest"
+schemas = "python -m jobfucker.schema_generation"
+# Captcha browser engine: download the patched Chromium binary (patchright)
+browser-install = "patchright install chromium"
+
+# Interactive CLI commands (notably `$EDITOR`) must retain the calling terminal.
+# Poe otherwise starts tasks in a new session, leaving children without `/dev/tty`.
+app = { cmd = "python -m jobfucker", use_exec = true }
+
+# Batches for the real pipelines (scripts/): parallel scoring/letter generation
+# and read-only cross-pipeline intersection detection. Extra CLI args pass
+# through, e.g. `poe parallel score 3 10 100`, `poe intersections`.
+parallel = "bash scripts/parallel.sh"
+intersections = "python scripts/check_intersections.py"
+
+# Linux/POSIX-first shell pipeline; adjust later if the downstream project needs non-POSIX support.
+lint_objects.shell = "find src shared shared_tests test -path shared_tests/fixtures -prune -o -path test/fixtures -prune -o -name '*.py' -print0 | xargs -0 python -m shared.linting.check_object_annotations"
+lint_frozen.shell = "find src shared shared_tests test -path shared_tests/fixtures -prune -o -path test/fixtures -prune -o -name '*.py' -print0 | xargs -0 python -m shared.linting.check_frozen_dataclasses"
+lint_mutables.shell = "find src shared shared_tests test -path shared_tests/fixtures -prune -o -path test/fixtures -prune -o -name '*.py' -print0 | xargs -0 python -m shared.linting.check_module_mutables"
+lint_type_ignore.shell = "find src shared shared_tests test -path shared_tests/fixtures -prune -o -path test/fixtures -prune -o -name '*.py' -print0 | xargs -0 python -m shared.linting.check_type_ignore"
+lint_raw_dicts.shell = "find src shared shared_tests test -path shared_tests/fixtures -prune -o -path test/fixtures -prune -o -name '*.py' -print0 | xargs -0 python -m shared.linting.check_raw_dicts"
+lint_ignored_results.shell = "find src shared shared_tests test -path shared_tests/fixtures -prune -o -path test/fixtures -prune -o -name '*.py' -print0 | xargs -0 python -m shared.linting.check_ignored_results"
+lint_custom_linters.sequence = ["lint_objects", "lint_frozen", "lint_mutables", "lint_type_ignore", "lint_raw_dicts", "lint_ignored_results"]
+lint_full.shell = "basedpyright . && ruff format . && ruff check --fix . && poe lint_custom_linters"

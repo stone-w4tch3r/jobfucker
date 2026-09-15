@@ -1,0 +1,147 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/stone-w4tch3r/jobfucker/main/docs/schemas/pipeline.schema.json
+#
+# Mock pipeline example — exercise the CLI/GUI end-to-end with NO live board.
+# Service `mock` is the first-party offline client (per_auth_daily_cap = 200).
+#
+# Run sequence (real CLI, isolated DB optional):
+#   uv run poe app init --config docs/examples/pipeline.mock.yaml
+#   uv run poe app fetch --pipeline-id <id>
+#   uv run poe app score --pipeline-id <id>
+#   uv run poe app generate --pipeline-id <id>
+#   uv run poe app apply --pipeline-id <id>
+name: "mock-demo"
+description: "Offline demo pipeline against the mock client"
+
+service:
+  mock:
+    resume_id: "mock-resume-1"
+    searches:
+      - query: "python"
+        filter:
+          area: [1]
+          schedule: ["fullDay", "remote"]
+          experience: "between1And3"
+          only_with_salary: true
+        # Canned vacancies returned by this entry's search. They are part of the
+        # entry (never read from a file); omit the block entirely to start with
+        # an empty list. The three demo entries mirror test/fixtures/mock_vacancies.yaml.
+        vacancies:
+          - external_id: "mock-1"
+            title: "Python Backend Developer (Mock)"
+            url: "https://mock.example/vacancies/python-backend-1"
+            company: "MockCorp"
+            description: |
+              We are looking for a Python backend developer to build distributed services.
+
+              Responsibilities:
+              - Design and implement REST APIs with FastAPI;
+              - Work with PostgreSQL and Redis;
+              - Containerise services with Docker;
+              - Collaborate with frontend and QA teams.
+
+              Requirements:
+              - 3+ years of Python experience;
+              - Strong knowledge of async programming (asyncio);
+              - Experience with SQLAlchemy;
+              - English at reading level.
+
+              We offer remote work, a modern tech stack and a friendly team.
+            key_skills: ["Python", "FastAPI", "PostgreSQL", "Docker", "SQLAlchemy"]
+            salary:
+              from: 250000
+              to: 350000
+              currency: "RUR"
+              gross: false
+          - external_id: "mock-2"
+            title: "DevOps Engineer (Mock)"
+            url: "https://mock.example/vacancies/devops-2"
+            company: "CloudStack Example"
+            description: |
+              Help us run a multi-region Kubernetes platform.
+
+              Responsibilities:
+              - Maintain and scale Kubernetes clusters;
+              - Build CI/CD pipelines with GitLab;
+              - Automate infrastructure with Terraform and Ansible;
+              - Monitor services with Prometheus and Grafana.
+
+              Requirements:
+              - 2+ years of DevOps/SRE experience;
+              - Hands-on Kubernetes and Helm;
+              - Linux administration;
+              - Scripting in Python or Go.
+
+              We value automation, reliability and blameless culture.
+            key_skills: ["Kubernetes", "Terraform", "GitLab CI", "Prometheus", "Linux"]
+            salary:
+              from: 300000
+              to: 400000
+              currency: "RUR"
+              gross: true
+          - external_id: "mock-3"
+            title: "Frontend Developer (Mock)"
+            url: "https://mock.example/vacancies/frontend-3"
+            company: null
+            description: |
+              Join our product team building a modern web dashboard.
+
+              Responsibilities:
+              - Build UI with React and TypeScript;
+              - Integrate with REST APIs;
+              - Write unit and e2e tests;
+              - Care about accessibility and performance.
+
+              Requirements:
+              - 2+ years of frontend experience;
+              - Strong TypeScript and React skills;
+              - Familiarity with CSS-in-JS;
+              - Basic understanding of backend APIs.
+
+              Remote-friendly schedule and a flat hierarchy.
+            key_skills: ["React", "TypeScript", "CSS", "Testing", "REST"]
+            salary: null
+    # --- Optional manual-testing control for the mock client ----------------
+    # Uncomment to script the mock's offline outcomes straight from this file.
+    # Each outcome applies to a listed vacancy (per_vacancy, keyed by external_id)
+    # or to every other vacancy (default_apply). Omitted fields keep the mock's
+    # all-success defaults. `limit_exceeded` is the daily-cap STOP signal.
+    # `captcha` fires an offline captcha challenge on one operation (apply |
+    # search | authorize) so the CLI's sixel/kitty rendering + human solving can
+    # be exercised with no live board (run e.g. `apply --use-sixel`).
+    #
+    behavior:
+      authorize_error: null            # a string makes authorize fail
+      default_apply:
+        outcome: "applied"             # applied | skipped | error | limit_exceeded
+        message: null
+      per_vacancy:
+        "mock-1":
+          outcome: "error"
+          message: "mock apply rejected"
+      captcha:
+        operation: "apply"   # apply | search | authorize
+        attempts: 1
+
+auth:
+  login_file: "../secrets/login.txt"
+  password_file: "../secrets/password.txt"
+resume:
+  path: "../test/fixtures/resume.md"
+openai:
+  model: "qwen/qwen3.7-flash"
+  base_url: "https://openrouter.ai/api/v1"
+  api_key_file: "../secrets/api_key.txt"
+  reasoning_effort: "medium"
+openai_captcha:
+  model: "qwen/qwen3.7-flash"
+  base_url: "https://openrouter.ai/api/v1"
+  api_key_file: "../secrets/api_key.txt"
+  reasoning_effort: "medium"
+  consensus_requests: 4
+scoring:
+  min_required_score: 3
+  scoring_prompt_file: "prompts/scoring-mock.xml.j2"
+apply:
+  apply_prompt_file: "prompts/apply-mock.xml.j2"
+limits:
+  daily_apply_limit: 5

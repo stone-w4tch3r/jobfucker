@@ -1,0 +1,54 @@
+{
+  "kitty": {
+    "detect": { "TERM_PROGRAM": "kitty" },
+    "sixel": false,
+    "kitty": true
+  },
+  "ghostty": {
+    "detect": { "TERM_PROGRAM": "ghostty" },
+    "sixel": false,
+    "kitty": true
+  },
+  "konsole": {
+    "detect": { "TERM_PROGRAM": "konsole" },
+    "sixel": true,
+    "kitty": true
+  },
+  "wezterm": {
+    "detect": { "TERM_PROGRAM": "WezTerm" },
+    "sixel": true,
+    "kitty": true
+  },
+  "contour": {
+    "detect": { "TERM_PROGRAM": "contour" },
+    "sixel": true,
+    "kitty": true
+  },
+  "iterm2": {
+    "detect": { "TERM_PROGRAM": "iTerm.app" },
+    "sixel": true,
+    "kitty": true
+  },
+  "warp": {
+    "detect": { "TERM_PROGRAM": "WarpTerminal" },
+    "sixel": false,
+    "kitty": true
+  },
+  "vscode": {
+    "detect": { "TERM_PROGRAM": "vscode" },
+    "sixel": true,
+    "kitty": false
+  },
+  "mintty": {
+    "detect": { "TERM_PROGRAM": "mintty" },
+    "sixel": true,
+    "kitty": false
+  },
+  "foot": { "detect": { "TERM": "foot" }, "sixel": true, "kitty": false },
+  "xterm": { "detect": { "TERM": "xterm" }, "sixel": true, "kitty": false },
+  "xterm-256color": {
+    "detect": { "TERM": "xterm-256color" },
+    "sixel": true,
+    "kitty": false
+  }
+}

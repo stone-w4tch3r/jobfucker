@@ -1,0 +1,1944 @@
+
+<!--
+############################################################################
+#                                                                          #
+#  ⚠️⚠️⚠️  JOBFUCKER GUI — VISUAL MOCKUP (INSPIRATION ONLY)  ⚠️⚠️⚠️          #
+#                                                                          #
+#  THIS FILE IS A STATIC HTML *MOCKUP* / WIREFRAME, NOT THE REAL UI.       #
+#                                                                          #
+#  Purpose: it is an *inspiration and structure reference* — it explores   #
+#  the information architecture, screens, components, and interactions     #
+#  (tabs, headerbar, stage bar, vacancy table, dialogs, modals, status     #
+#  bar, and so on) of the future jobfucker Qt/QML GUI.                    #
+#                                                                          #
+#  What is NOT real:                                                       #
+#    - The list of actions, buttons, screens, and components shown here    #
+#      are NOT what we will finally ship. They are *candidates* and the    #
+#      textual CONTRACT lives in docs/ui/jobfucker.ui.md (the AUTHORITATIVE #
+#      source of UI content).                                              #
+#    - The final UI is built as a Qt Quick (QML) application and will rely #
+#      fully on native Qt themes (Fusion / Breeze / system theme).          #
+#                                                                          #
+#  🚫 THE CSS IN THIS FILE IS A PLACEHOLDER. IT MUST NEVER, IN ANY WAY,    #
+#     BE PORTED TO QML. Do NOT copy colors, sizes, fonts, shadows,          #
+#     spacing, or any styling from here into QML (QML 🔛 native themes).    #
+#                                                                          #
+#  Use cases (read-only):                                                  #
+#    - Visual inspiration for HOW the structure could look/feel.            #
+#    - Reaching interactive behaviors: run stage simulation, apply         #
+#      dry-run preview, captcha/SMS verification modal, tab navigation,     #
+#      pipeline selection, vacancy editing.                                 #
+#                                                                          #
+#  Authoritative reference: docs/ui/jobfucker.ui.md                        #
+#  Visual reference: this file (never the reverse).                         #
+#                                                                          #
+############################################################################
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>jobfucker — Pipelines · Workspace · Audit (B2)</title>
+<style>
+  /* =========================================================================
+     B2 · "title strip + top TabBar, no headerbar" — native-desktop feel
+     Visual language: KDE Plasma 5/6 Breeze light + modern Win11 flat chrome.
+     Light theme :: surfaces #fcfcfc/#eff0f1, 1px borders #d4d7dc,
+     accent Breeze blue #3daee9, restrained color, real window chrome.
+     ========================================================================= */
+  :root {
+    --titlebar-h: 40px;            /* window title strip */
+    --tabbar-h: 42px;              /* top tab strip */
+    --statusbar-h: 28px;           /* persistent status bar */
+
+    --win-bg:      #e4e7ea;        /* desktop behind window */
+    --bg:          #eff0f1;        /* app content background (Breeze light) */
+    --surface:     #fcfcfc;        /* window / panels / dialogs */
+    --surface-2:   #f7f8fa;        /* wells, groupboxes, toolbars */
+    --surface-3:   #e7eaee;        /* recessed wells, pressed */
+    --border:      #d4d7dc;        /* 1px hairlines */
+    --border-2:    #c2c7ce;
+    --text:        #232629;        /* Breeze text */
+    --muted:       #7f8c99;        /* Breeze gray text */
+    --faint:       #a7adb6;
+    --accent:      #3daee9;        /* Breeze blue */
+    --accent-hov:  #2e9fe0;
+    --accent-dim:  #dff0fb;
+    --accent-glow: rgba(61,174,233,.32);
+    --selection:   #2f87bd;        /* active tab bar text */
+    --focus:       #3daee9;
+
+    --green:  #27ae60;  --green-dim:  #e3f4ea;
+    --amber:  #f5a623;  --amber-dim:  #fdf3dd;
+    --red:    #da4453;  --red-dim:    #fbe7ea;
+    --gray:   #8b949e;  --gray-dim:   #eef0f3;
+
+    --mono: "JetBrains Mono","Cascadia Code","Consolas",ui-monospace,monospace;
+    --font: "Segoe UI Variable","Segoe UI",system-ui,-apple-system,"Noto Sans","DejaVu Sans",Roboto,Arial,sans-serif;
+    --radius: 4px;                 /* subtle, native */
+    --radius-sm: 3px;
+    --shadow-pop: 0 6px 24px rgba(30,40,54,.18), 0 2px 6px rgba(30,40,54,.12);
+    --shadow-dlg: 0 10px 40px rgba(20,28,40,.28), 0 4px 14px rgba(20,28,40,.18);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; font-family: var(--font); font-size: 13.5px; color: var(--text);
+    background: var(--win-bg);
+    display: flex; align-items: stretch; justify-content: center;
+    overflow: hidden;
+  }
+  button { font-family: inherit; }
+  input, select, textarea { font-family: inherit; color: var(--text); }
+
+  /* ---------- The window shell ---------- */
+  .window {
+    width: 100%; height: 100%;
+    background: var(--surface);
+    display: flex; flex-direction: column;
+    box-shadow: 0 0 0 1px var(--border-2), 0 18px 60px rgba(24,34,48,.30);
+  }
+
+  /* =========================================================================
+     TITLE STRIP (window chrome)
+     ========================================================================= */
+  .titlebar {
+    height: var(--titlebar-h);
+    background: linear-gradient(#f5f6f8, #e9ecf0);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+    padding: 0 8px 0 12px;
+    user-select: none;
+    flex: 0 0 auto;
+  }
+  .titlebar .appname {
+    font-weight: 600; font-size: 12.5px; color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .titlebar .appname .tri { width: 0; height: 0; border-style: solid;
+    border-width: 4px 0 4px 6px; border-color: transparent transparent transparent var(--accent); }
+  .titlebar .appname .crumb { color: var(--muted); font-size: 12px; margin-left: 6px; font-weight:400; }
+  .titlebar .spacer { flex: 1; }
+  .titlebar .winctrl { display: flex; align-items: stretch; height: 100%; }
+  .titlebar .winctrl button {
+    width: 46px; border: none; background: none; font-size: 13px; color: var(--text);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .titlebar .winctrl button:hover { background: rgba(0,0,0,.06); }
+  .titlebar .winctrl button.close:hover { background: #e81123; color: #fff; }
+
+  /* =========================================================================
+     TAB BAR (primary navigation)
+     ========================================================================= */
+  .tabbar {
+    height: var(--tabbar-h);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: stretch; gap: 2px;
+    padding: 0 10px;
+    flex: 0 0 auto;
+    position: relative; z-index: 50;
+  }
+  .tab {
+    position: relative;
+    border: none; background: none;
+    padding: 0 16px; font-size: 13px; font-weight: 600; color: var(--muted);
+    display: inline-flex; align-items: center; gap: 7px;
+    border-bottom: 2px solid transparent;
+  }
+  .tab:hover { color: var(--text); background: var(--surface-2); }
+  .tab.active { color: var(--selection); border-bottom-color: var(--accent); }
+  .tab .ticon { font-size: 14px; }
+  .tabcount {
+    font-size: 11px; font-weight: 700; color: var(--muted);
+    background: var(--surface-3); border-radius: 8px; padding: 1px 7px; line-height: 1.4;
+  }
+  .tab.active .tabcount { background: var(--accent-dim); color: var(--selection); }
+
+  /* =========================================================================
+     CONTENT AREA
+     ========================================================================= */
+  .content { flex: 1 1 auto; overflow: auto; background: var(--bg); }
+  .view { display: none; height: 100%; }
+  .view.active { display: block; }
+
+  /* generic page header/tool row */
+  .page-toolbar {
+    display: flex; align-items: center; gap: 4px; padding: 10px 12px;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 20;
+  }
+  .page-toolbar .grow { flex: 1; }
+  .page-title { font-size: 14px; font-weight: 700; margin-right: 8px; }
+
+  /* search box */
+  .search {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 0 8px;
+  }
+  .search:focus-within { border-color: var(--focus); box-shadow: 0 0 0 2px var(--accent-glow); }
+  .search .si { color: var(--faint); font-size: 12px; }
+  .search input { border: none; outline: none; background: none; padding: 6px 0; width: 180px; font-size: 13px; }
+  .search input::placeholder { color: var(--faint); }
+
+  .field { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+  .field select, .field input[type=number] {
+    border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
+    padding: 5px 8px; font-size: 12.5px; color: var(--text);
+  }
+  .field select:focus, .field input:focus { border-color: var(--focus); outline: none; box-shadow: 0 0 0 1px var(--accent-glow); }
+
+  /* combo box */
+  .combo {
+    position: relative; display: inline-flex; align-items: center;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  }
+  .combo select {
+    appearance: none; -webkit-appearance: none; -moz-appearance: none;
+    border: none; background: transparent; outline: none;
+    padding: 7px 30px 7px 10px; font-size: 13px; color: var(--text); cursor: pointer;
+    min-width: 200px;
+  }
+  .combo:focus-within { border-color: var(--focus); box-shadow: 0 0 0 2px var(--accent-glow); }
+  .combo .caret { position: absolute; right: 10px; pointer-events: none; color: var(--muted); font-size: 10px; }
+
+  /* segmented buttons */
+  .segment { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+  .segment button {
+    border: none; background: var(--surface); color: var(--text); font-size: 12.5px;
+    padding: 5px 12px; border-right: 1px solid var(--border);
+  }
+  .segment button:last-child { border-right: none; }
+  .segment button:hover { background: var(--surface-2); }
+  .segment button.on { background: var(--accent-dim); color: var(--selection); font-weight: 600; }
+
+  /* flat button */
+  .btn {
+    border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
+    color: var(--text); font-size: 12.5px; padding: 6px 12px; display: inline-flex;
+    align-items: center; gap: 6px; white-space: nowrap; cursor: default;
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn:active { background: var(--surface-3); }
+  .btn.primary { background: var(--accent); border-color: var(--accent-hov); color: #fff; }
+  .btn.primary:hover { background: var(--accent-hov); }
+  .btn.ghost { border-color: transparent; background: none; }
+  .btn.danger { color: var(--red); border-color: #ecb9bf; background: #fff; }
+  .btn.danger:hover { background: var(--red-dim); }
+  .btn.sm { padding: 4px 8px; font-size: 12px; }
+  .btn:disabled { opacity: .45; pointer-events: none; }
+
+  .row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .row .rlbl { font-size: 12.5px; font-weight: 600; color: var(--text); width: 88px; }
+  .checkbox { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; cursor: pointer; }
+  .checkbox input { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
+
+  .group {
+    border: 1px solid var(--border); background: var(--surface);
+  }
+  .group > .gtitle {
+    padding: 8px 12px; font-size: 12px; font-weight: 700; color: var(--text);
+    background: var(--surface-2); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .group > .gbody { padding: 12px; }
+
+  /* =========================================================================
+     PIPELINES TAB
+     ========================================================================= */
+  .list-pane { margin: 12px; border: 1px solid var(--border); background: var(--surface); }
+  .list-head {
+    display: grid; grid-template-columns: 6fr 2fr 2fr 1.6fr; gap: 8px;
+    padding: 8px 12px; font-size: 11.5px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .4px;
+    background: var(--surface-2); border-bottom: 1px solid var(--border);
+  }
+  .prow {
+    display: grid; grid-template-columns: 6fr 2fr 2fr 1.6fr; gap: 8px;
+    padding: 10px 12px; border-bottom: 1px solid var(--border); align-items: center;
+    cursor: default;
+  }
+  .prow:last-child { border-bottom: none; }
+  .prow:hover { background: var(--surface-2); }
+  .prow .pname { font-weight: 600; display: flex; flex-direction: column; gap:3px; }
+  .prow .pname .ptop { display:flex; align-items:center; gap:8px; }
+  .prow .pmeta { color: var(--muted); font-size: 11.5px; }
+  .prow .srvc {
+    font-size: 10.5px; font-weight: 700; color: var(--muted);
+    border: 1px solid var(--border); border-radius: 3px; padding: 1px 5px;
+    background: var(--surface-2);
+  }
+  .prow .pstate { display:flex; align-items:center; gap:8px; }
+  .prow .pstate .dot { width:8px; height:8px; border-radius:50%; }
+  .updated { color: var(--muted); font-size: 12.5px; }
+  .prow .rowops { display:flex; gap:4px; align-items:center; }
+  .pipe-foot { padding:8px 12px; color:var(--faint); font-size:11.5px; border-top:1px solid var(--border); background:var(--surface-2); }
+
+  .empty-hint { padding: 26px; text-align: center; color: var(--muted); }
+
+  /* =========================================================================
+     WORKSPACE TAB
+     ========================================================================= */
+  .ws-wrap { display:flex; flex-direction:column; height:100%; }
+  .ws-runner { padding: 12px 14px; background:var(--surface); border-bottom:1px solid var(--border); }
+  .ws-runner .run-tool { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .ws-runner .cap { font-size:12px; color:var(--muted); }
+
+  /* stage bar — stateful chips */
+  .stagebar { display:flex; align-items:center; gap:8px; }
+  .starchip {
+    display:inline-flex; align-items:center; gap:8px; padding:7px 12px;
+    border:1px solid var(--border); border-radius: 16px; background:var(--surface);
+    font-size:12.5px; font-weight:600; color:var(--text); cursor:pointer; user-select:none;
+  }
+  .starchip .sic { font-size:13px; }
+  .starchip .scnt {
+    font-size:11px; font-weight:700; padding:0 7px; border-radius:8px; color:var(--muted);
+    background:var(--surface-3);
+  }
+  .starchip .sst { font-size:11px; color:var(--gray); text-transform:uppercase; letter-spacing:.3px; }
+  .starchip:hover { background:var(--surface-2); border-color:var(--border-2); }
+  .starchip.idle { border-color: var(--border); }
+  .starchip.done { border-color:#a8d9ba; background:#f6fbf8; color:var(--green); }
+  .starchip.done .scnt { background:var(--green-dim); color:var(--green); }
+  .starchip.done .sst { color:var(--green); }
+  .starchip.run { border-color:var(--amber); background:var(--amber-dim); box-shadow:0 0 0 1px var(--amber-dim); }
+  .starchip.run .scnt { background:#fff; color:#b97b12; }
+  .starchip.run .sst { color:#b97b12; }
+  .starchip.error { border-color:#e9a6ad; background:#fdf6f7; }
+  .starchip.error .scnt { background:var(--red-dim); color:var(--red); }
+  .starchip.error .sst { color:var(--red); }
+  .arrow { color:var(--faint); font-size:12px; }
+
+  .optrow { display:flex; align-items:center; gap:22px; flex-wrap:wrap; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+  .optrow .olbl { font-size:12.5px; font-weight:600; color:var(--text); }
+
+  /* progress row */
+  .progress-row { display:none; align-items:center; gap:12px; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+  .progress-row.show { display:flex; }
+  .progress { height:6px; border-radius:3px; background:var(--surface-3); border:1px solid var(--border); overflow:hidden; flex:1; }
+  .progress > .bar { height:100%; width:0%; background:linear-gradient(90deg, var(--amber), #f8c24d); transition:width .18s linear; border-radius:3px; }
+  #progress-label { font-size:12px; color:var(--muted); width:200px; white-space:nowrap; }
+
+  /* workspace body: table + detail */
+  .ws-body { flex:1 1 auto; display:flex; min-height:0; }
+  .ws-left { flex:1; min-width:0; display:flex; flex-direction:column; }
+
+  /* vacancy working set */
+  .vactool { display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--surface); border-bottom:1px solid var(--border); flex-wrap:wrap; }
+  .subtab { display:inline-flex; }
+  .subtabs .st { border:1px solid var(--border); background:var(--surface); color:var(--text); font-size:12.5px; padding:4px 12px; border-right:none; }
+  .subtabs .st:first-child { border-radius:var(--radius-sm) 0 0 var(--radius-sm); }
+  .subtabs .st:last-child { border-radius:0 var(--radius-sm) var(--radius-sm) 0; border-right:1px solid var(--border); }
+  .subtabs .st:hover { background:var(--surface-2); }
+  .subtabs .st.on { background:var(--accent-dim); color:var(--selection); font-weight:600; }
+
+  .table-scroll { flex:1; overflow:auto; margin:12px; margin-top:8px; border:1px solid var(--border); background: var(--surface); }
+  table.grid { width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.grid th {
+    position: sticky; top: 0; background: var(--surface-2); color: var(--muted);
+    font-size: 11px; text-transform: uppercase; letter-spacing: .4px; text-align: left;
+    padding: 8px 10px; border-bottom: 1px solid var(--border); font-weight: 700;
+    white-space: nowrap; cursor: pointer; user-select: none;
+  }
+  table.grid th.plain { cursor: default; }
+  table.grid th:hover { color: var(--text); }
+  table.grid th .arr { font-size: 9px; margin-left: 4px; color: var(--faint); }
+  table.grid th.sorted .arr { color: var(--selection); }
+  table.grid td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  table.grid tr:last-child td { border-bottom: none; }
+  table.grid tbody tr:hover { background: var(--surface-2); }
+  table.grid tbody tr.arch td { opacity:.55; }
+  .vac-title { font-weight: 600; display:flex; align-items:center; gap:8px; }
+  .vac-title .vacdot { width:9px; height:9px; border-radius:50%; flex:0 0 auto; }
+  .vac-company { color: var(--muted); font-size: 11.5px; }
+  td.vac-check { width: 26px; }
+  td.vac-check input { width:15px; height:15px; accent-color:var(--accent); cursor:pointer; }
+
+  .score { display: inline-flex; width: 54px; justify-content: center; padding: 2px 0; border-radius: var(--radius-sm); font-weight: 700; font-size: 12px; }
+  .score.hi { background: var(--green-dim); color: var(--green); }
+  .score.mid { background: var(--amber-dim); color: #b97b12; }
+  .score.lo { background: var(--red-dim); color: var(--red); }
+  .score.na { background: var(--gray-dim); color: var(--gray); }
+
+  .cvdone { color: var(--green); font-size:12px; }
+  .cvmiss { color: var(--faint); font-size:12px; }
+  .cverr  { color: var(--red); font-size:12px; }
+
+  .rstatus { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; }
+  .rstatus .dot { width:8px; height:8px; border-radius:50%; }
+  .rstatus.applied { color: var(--green); } .rstatus.applied .dot{ background:var(--green); }
+  .rstatus.pending { color: var(--amber); } .rstatus.pending .dot{ background:var(--amber); }
+  .rstatus.failed  { color: var(--red); } .rstatus.failed .dot{ background:var(--red); }
+  .rstatus.skipped { color: var(--gray); } .rstatus.skipped .dot{ background:var(--gray); }
+  .rstatus.untouched{ color:var(--faint);} .rstatus.untouched .dot{ background:var(--faint); }
+
+  .rowacts { display:flex; gap:2px; }
+  .rowacts button.btn.sm { padding:2px 6px; font-size:11px; }
+
+  /* right detail panel */
+  .vac-detail {
+    width: 360px; border-left: 1px solid var(--border); background: var(--surface);
+    display: flex; flex-direction: column; overflow: auto;
+  }
+  .vac-detail .dhead { padding: 10px 12px; border-bottom:1px solid var(--border); display:flex; flex-direction:column; gap:6px; }
+  .vac-detail .dhead h3 { margin:0; font-size:13.5px; }
+  .vac-detail .dbody { padding: 12px; display:flex; flex-direction:column; gap:10px; }
+  .kv { display:flex; flex-direction:column; gap:3px; }
+  .kv label { font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--muted); font-weight:700; }
+  .kv textarea, .kv input, .kv select {
+    border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface);
+    padding:6px 8px; font-size:12.5px; width:100%; resize:vertical; color:var(--text);
+  }
+  .kv textarea:focus, .kv input:focus, .kv select:focus {
+    border-color:var(--focus); outline:none; box-shadow:0 0 0 1px var(--accent-glow);
+  }
+  .kv .reason { background: var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:6px 8px; font-size:11.5px; color:var(--muted); white-space:pre-wrap; }
+  .det-actions { display:flex; gap:6px; margin-top:2px; flex-wrap:wrap; }
+  .score-stars { display:flex; gap:3px; }
+  .score-stars .star { border:none; background:none; font-size:18px; color:var(--faint); padding:0; cursor:pointer; }
+  .score-stars .star.on { color:var(--amber); }
+
+  /* limits strip */
+  .limits-strip { display:flex; align-items:center; gap:12px; padding:6px 12px; background:var(--surface);
+    border-top:1px solid var(--border); font-size:12px; color:var(--text); }
+  .limits-strip .lbar { font-family:var(--mono); letter-spacing:1px; color:var(--selection); font-size:13px; }
+  .limits-strip .lcap { color:var(--muted); }
+
+  /* run log (collapsible) */
+  .runlog { border-top:1px solid var(--border); background:var(--surface); }
+  .runlog .rl-head { display:flex; align-items:center; gap:8px; padding:6px 12px; cursor:pointer; font-size:12.5px; font-weight:700; color:var(--text); }
+  .runlog .rl-head .chev { transition:transform .12s; font-size:10px; color:var(--muted); }
+  .runlog.closed .runlog .rl-head .chev { transform:rotate(-90deg); }
+  .runlog .rl-head:hover { background:var(--surface-2); }
+  .runlog .rl-body { max-height:150px; overflow:auto; padding:2px 12px 8px; }
+  .runlog.closed .rl-body { display:none; }
+  .logline { font-family:var(--mono); font-size:12px; line-height:1.7; color:#39424e; white-space:pre-wrap; }
+  .logline .t { color:var(--faint); margin-right:8px; }
+  .logline.ok { color:var(--green); } .logline.err { color:var(--red); } .logline.warn { color:#b97b12; } .logline.dim { color:var(--muted); }
+
+  /* =========================================================================
+     AUDIT TAB
+     ========================================================================= */
+  .audit-wrap { padding: 12px; }
+  .audit-card { border:1px solid var(--border); background:var(--surface); }
+
+  /* =========================================================================
+     DIALOGS / MODALS
+     ========================================================================= */
+  .overlay {
+    position: fixed; inset:0; background: rgba(28,32,38,.35); z-index: 200;
+    display:none; align-items:flex-start; justify-content:center; padding-top: 5vh;
+  }
+  .overlay.show { display:flex; }
+  .dialog {
+    background: var(--surface); border:1px solid var(--border-2); border-radius: var(--radius);
+    box-shadow: var(--shadow-dlg); width: 720px; max-width: 94vw;
+    display:flex; flex-direction:column; max-height: 90vh;
+  }
+  .dialog.sm { width: 460px; }
+  .dialog.wide { width: 760px; }
+  .dialog .d-titlebar {
+    padding: 10px 14px; background: var(--surface-2); border-bottom:1px solid var(--border);
+    font-weight:700; font-size:13.5px; display:flex; align-items:center; gap:8px;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .dialog .d-titlebar .dial-icon { color: var(--accent); }
+  .dialog .d-titlebar.warn { color: #a36607; }
+  .dialog .d-titlebar.warn .dial-icon { color: var(--amber); }
+  .dialog .d-titlebar.danger { color: var(--red); }
+  .dialog .d-titlebar.danger .dial-icon { color: var(--red); }
+  .dialog .d-titlebar .grow { flex:1; }
+  .dialog .d-titlebar .mclose { border:none; background:none; font-size:14px; color:var(--muted); cursor:pointer; }
+  .dialog .d-titlebar .mclose:hover { color:var(--text); }
+  .dialog .d-body { padding: 14px; overflow:auto; }
+  .dialog .d-foot {
+    padding: 10px 14px; border-top:1px solid var(--border); display:flex;
+    justify-content:flex-end; gap:8px; background: var(--surface-2); align-items:center;
+    border-radius: 0 0 var(--radius) var(--radius);
+  }
+  .dialog .d-foot .grow { flex:1; }
+  .dialog .d-foot .hint { font-size:11.5px; color:var(--faint); }
+
+  .groupbox { border:1px solid var(--border); border-radius: var(--radius-sm); margin-bottom:12px; }
+  .groupbox > legend { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase;
+    letter-spacing:.4px; padding:0 6px; margin-left:10px; }
+  .groupbox .gb-body { padding: 10px 12px 12px; display:flex; flex-direction:column; gap:10px; }
+
+  .formrow { display:grid; grid-template-columns: 190px 1fr; gap:10px; align-items:start; }
+  .formrow label { font-size:12.5px; color:var(--text); padding-top:6px; }
+  .formrow label .req { color:var(--red); }
+  .formrow.two { grid-template-columns: 190px 1fr 1fr; }
+  .formrow.two .grow { flex:1; }
+  .cinput, .ctextarea, .cselect {
+    border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface);
+    padding:6px 9px; font-size:13px; width:100%; color:var(--text);
+  }
+  .cinput:focus, .ctextarea:focus, .cselect:focus { border-color:var(--focus); outline:none; box-shadow:0 0 0 1px var(--accent-glow); }
+  .ctextarea { resize: vertical; min-height: 60px; font-family: var(--mono); font-size: 12px; }
+  .spinwrap { display:inline-flex; align-items:center; border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; }
+  .spinwrap input { border:none; outline:none; width:64px; padding:6px 6px; text-align:center; font-size:13px; }
+  .spinwrap .spinbtns { display:flex; flex-direction:column; border-left:1px solid var(--border); }
+  .spinwrap .spinbtns button { border:none; background:var(--surface-2); width:20px; height:14px; font-size:9px; line-height:1; display:flex; align-items:center; justify-content:center; color:var(--muted); }
+  .spinwrap .spinbtns button:hover { background: var(--surface-3); }
+  .spinwrap .spinbtns button + button { border-top:1px solid var(--border); }
+
+  /* version history */
+  .verlist { border:1px solid var(--border); border-radius:var(--radius-sm); max-height:170px; overflow:auto; }
+  .verrow { display:flex; gap:10px; padding:7px 10px; border-bottom:1px solid var(--border); font-size:12px; align-items:center; }
+  .verrow:last-child{ border-bottom:none; }
+  .verrow .vtag { font-weight:700; color:var(--selection); }
+  .verrow .vnote { color:var(--muted); flex:1; }
+  .verrow .vtime { color:var(--faint); }
+  .verrow .vrestore { border:none; background:none; color:var(--accent); font-size:11.5px; cursor:pointer; }
+
+  /* dry-run banner */
+  .dry-banner { display:flex; gap:8px; align-items:center; background: var(--accent-dim); border:1px solid #bcdcf0;
+    color: #1f6bab; padding:8px 10px; border-radius:var(--radius-sm); font-size:12.5px; font-weight:600; }
+
+  /* apply preview list */
+  .apply-list { display:flex; flex-direction:column; gap:8px; }
+  .apply-item { border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px; background:var(--surface-2); }
+  .apply-item.optout { opacity:.5; }
+  .apply-item .ri-head { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  .apply-item .ri-title { font-weight:600; font-size:12.5px; flex:1; }
+  .apply-item .ri-co { color:var(--muted); font-size:11.5px; }
+  .apply-item .ri-cv { background:#fff; border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:8px; font-family:var(--mono); font-size:11.5px; color:#39424e; white-space:pre-wrap; max-height:90px; overflow:auto; }
+  .apply-item .ri-skip { display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--muted); margin-top:6px; }
+  .apply-item .ri-skip input { width:14px; height:14px; accent-color:var(--accent); }
+
+  /* verification */
+  .captcha-box { border:1px dashed var(--border-2); background:var(--surface-2); border-radius:var(--radius-sm);
+    padding:14px; text-align:center; font-size:12px; color:var(--muted); }
+  .captcha-glyphs { font-size:26px; letter-spacing:8px; color:#39424e; font-weight:700; margin-bottom:8px;
+    background:#fff; border:1px solid var(--border); border-radius:3px; padding:6px; user-select:none; cursor:pointer; }
+  .vstep { display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--muted); }
+  .vstep .chip2 { width:20px; height:20px; border-radius:50%; font-size:11px; font-weight:700;
+    display:inline-flex; align-items:center; justify-content:center; background:var(--surface-3); color:var(--muted); border:1px solid var(--border-2); }
+  .vstep.active { color:var(--text); } .vstep.active .chip2 { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .vstep.done .chip2 { background:var(--green); color:#fff; border-color:var(--green); }
+  .vstep .chip2.waiting { animation: blink 1.2s ease-in-out infinite; }
+  @keyframes blink { 50%{ opacity:.4 } }
+
+  /* =========================================================================
+     STATUS BAR (persistent bottom)
+     ========================================================================= */
+  .statusbar {
+    height: var(--statusbar-h);
+    background: linear-gradient(#f5f6f8, #e9ecf0);
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 0; padding: 0;
+    font-size: 11.5px; color: var(--muted);
+    flex: 0 0 auto;
+    user-select: none;
+  }
+  .statusbar .seg { display:inline-flex; align-items:center; gap:6px; padding:0 12px; height:100%; border-right:1px solid var(--border); white-space:nowrap; }
+  .statusbar .seg b { color: var(--text); font-weight:600; }
+  .statusbar .spacer { flex:1; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display:inline-block; }
+  .dot.ok   { background: var(--green); }
+  .dot.warn { background: var(--amber); }
+  .dot.err  { background: var(--red); }
+  .dot.idle { background: var(--gray); }
+  .dot.running { background: var(--amber); animation: blink 1s ease-in-out infinite; }
+
+  /* tooltip */
+  [data-tip] { position: relative; }
+  [data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+    background: #262c33; color: #f2f4f7; font-size: 11.5px; padding: 4px 8px;
+    border-radius: 3px; white-space: nowrap; z-index: 300; box-shadow: var(--shadow-pop);
+    font-weight: 400; pointer-events: none;
+  }
+
+  /* dropdown menu */
+  .dropdown { position: relative; }
+  .dropdown .menu {
+    position: absolute; top: calc(100% + 6px); left: 0; min-width: 230px;
+    background: var(--surface); border:1px solid var(--border-2); border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-pop); padding: 4px; z-index: 400; display:none;
+  }
+  .dropdown.open .menu { display:block; }
+  .menu .mitem { display:flex; align-items:center; gap:10px; padding:6px 10px; border-radius: var(--radius-sm); font-size:12.5px; cursor:default; }
+  .menu .mitem:hover { background: var(--accent-dim); }
+  .menu .mitem .micon { width:16px; text-align:center; color: var(--muted); }
+  .menu .mitem .accel { margin-left:auto; color: var(--faint); font-size:11px; }
+  .menu .msep { height:1px; background: var(--border); margin:4px 6px; }
+  .menu .mhead { padding:5px 10px 3px; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--faint); font-weight:700; }
+  .menu .mitem.danger { color: var(--red); }
+  .menu .mitem.danger .micon { color: var(--red); }
+
+  .toast {
+    position: fixed; bottom: calc(var(--statusbar-h) + 16px); left: 50%; transform: translateX(-50%);
+    background:#262c33; color:#f2f4f7; padding:8px 16px; border-radius:var(--radius-sm);
+    box-shadow: var(--shadow-pop); font-size:12.5px; z-index:500; display:none; align-items:center; gap:10px;
+  }
+  .toast.show { display:flex; }
+  .toast .ok { color:#6ccb8c; }
+
+  ::-webkit-scrollbar { width: 11px; height: 11px; }
+  ::-webkit-scrollbar-thumb { background: #c6ccd3; border: 3px solid transparent; background-clip: padding-box; border-radius: 6px; }
+  ::-webkit-scrollbar-thumb:hover { background: #aeb5bd; background-clip: padding-box; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  .kbd { font-family: var(--mono); font-size: 10px; border:1px solid var(--border); border-bottom-width:2px;
+    border-radius:3px; padding:0 4px; background:var(--surface); color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="window">
+
+  <!-- ================= TITLE STRIP (window chrome) ================= -->
+  <div class="titlebar">
+    <div class="appname"><span class="tri"></span>jobfucker <span class="crumb">Automation engine</span></div>
+    <div class="spacer"></div>
+    <div class="winctrl">
+      <button class="min" title="Minimize" data-tip="Minimize">—</button>
+      <button class="max" title="Maximize" data-tip="Maximize">▢</button>
+      <button class="close" title="Close" data-tip="Close">✕</button>
+    </div>
+  </div>
+
+  <!-- ================= TAB BAR (primary navigation) ================= -->
+  <nav class="tabbar" id="tabbar">
+    <button class="tab active" data-tab="pipelines"><span class="ticon">▦</span> Pipelines <span class="tabcount" id="c-pipelines">3</span></button>
+    <button class="tab" data-tab="workspace"><span class="ticon">▤</span> Workspace</button>
+    <button class="tab" data-tab="audit"><span class="ticon">🕓</span> Audit</button>
+  </nav>
+
+  <!-- ================= CONTENT ================= -->
+  <div class="content">
+
+    <!-- ============ PIPELINES TAB (§5.1) ============ -->
+    <section id="view-pipelines" class="view active">
+      <div class="page-toolbar">
+        <span class="page-title">Pipelines</span>
+        <button class="btn sm" data-action="new-pipeline">＋ New</button>
+        <button class="btn sm" data-action="import-yaml">⤓ Import YAML</button>
+        <div class="grow"></div>
+        <button class="btn sm" data-action="export-yaml">⤴ Export…</button>
+      </div>
+
+      <div class="list-pane">
+        <div class="list-head">
+          <span>Pipeline</span><span>Service</span><span>Status</span><span>Updated</span>
+        </div>
+        <div id="pipeline-list"></div>
+        <div class="pipe-foot" id="pipe-foot">…</div>
+      </div>
+      <div style="padding:0 12px; color:var(--faint); font-size:11.5px;">
+        Tip: <span class="kbd">Ctrl</span>+<span class="kbd">N</span> new · double-click a row to edit · version history kept on every save
+      </div>
+    </section>
+
+    <!-- ============ WORKSPACE TAB (§5.2) ============ -->
+    <section id="view-workspace" class="view">
+      <div class="ws-wrap">
+
+        <!-- stage runner -->
+        <div class="ws-runner">
+          <div class="run-tool">
+            <span class="page-title">Workspace</span>
+            <span class="cap">pipeline:</span>
+            <div class="combo">
+              <select id="ws-pipeline" title="Scoped pipeline"></select>
+              <span class="caret">▼</span>
+            </div>
+            <div class="grow"></div>
+            <span style="color:var(--faint); font-size:11.5px;">click a stage chip or run all</span>
+          </div>
+
+          <div class="group">
+            <div class="gtitle"><span>Stages</span></div>
+            <div class="gbody">
+              <div class="stagebar" id="stagebar"></div>
+              <div style="margin-top:10px;">
+                <button class="btn primary" id="fullrun-btn">▶ Full run</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="optrow">
+            <div>
+              <span class="olbl">Apply mode</span>
+              <div class="segment" id="applymode-seg" style="margin-top:6px;">
+                <button data-mode="dry" title="Produce previews, send nothing">dry-run</button>
+                <button data-mode="ask" class="on" title="Show preview, ask before sending">ask confirmation</button>
+                <button data-mode="direct" title="Send immediately, no preview">send directly</button>
+              </div>
+            </div>
+            <div>
+              <span class="olbl">Batch scope</span>
+              <div class="segment" id="scope-seg" style="margin-top:6px;">
+                <button data-scope="all" class="on">All</button>
+                <button data-scope="range">From–to</button>
+                <button data-scope="take">Take N</button>
+              </div>
+              <div class="row" id="range-row" style="margin-top:6px; display:none;">
+                <span class="field">from <input type="number" id="scope-from" value="1" min="1"></span>
+                <span class="field">to <input type="number" id="scope-to" value="10" min="1"></span>
+              </div>
+              <div class="row" id="take-row" style="margin-top:6px; display:none;">
+                <span class="field">take <input type="number" id="take-n" value="5" min="1"></span>
+              </div>
+            </div>
+            <label class="checkbox" title="Applies to Score / Generate CV / Apply"><input type="checkbox" id="skip-processed" checked> skip already processed</label>
+          </div>
+
+          <div class="progress-row" id="progress-row">
+            <span class="olbl" style="width:auto;">▲</span>
+            <div class="progress"><div class="bar" id="progress-bar"></div></div>
+            <span id="progress-label">working…</span>
+            <button class="btn sm danger" id="cancel-btn">■ Cancel</button>
+          </div>
+        </div>
+
+        <!-- vacancy working set + detail -->
+        <div class="ws-body">
+          <div class="ws-left">
+            <div class="vactool">
+              <div class="subtabs" id="vac-subtabs">
+                <button class="st on" data-sub="all">All</button>
+                <button class="st" data-sub="needs">Needs action</button>
+                <button class="st" data-sub="archived">Archived</button>
+              </div>
+              <div class="search"><span class="si">🔍</span><input id="vac-search" placeholder="Search title, company…"></div>
+              <div class="field">status <select id="vac-filter">
+                <option value="">All</option>
+                <option value="untouched">Untouched</option>
+                <option value="pending">Pending</option>
+                <option value="applied">Applied</option>
+                <option value="failed">Failed</option>
+                <option value="skipped">Skipped</option>
+              </select></div>
+              <div class="grow"></div>
+              <button class="btn sm" id="bulk-score">Score now</button>
+              <button class="btn sm" id="bulk-cv">Generate CV</button>
+              <button class="btn sm" id="bulk-apply">Apply</button>
+              <button class="btn sm" id="bulk-archive">🗄 Archive</button>
+            </div>
+            <div class="table-scroll">
+              <table class="grid" id="vac-table">
+                <thead id="vac-thead"></thead>
+                <tbody id="vac-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- detail / editor panel -->
+          <div class="vac-detail" id="vac-detail">
+            <div class="dhead">
+              <h3 id="det-title">No selection</h3>
+              <div style="font-size:12px; color:var(--muted);" id="det-sub">Select a vacancy to inspect and edit.</div>
+              <button class="btn sm ghost" id="det-open-modal" style="align-self:flex-start; display:none;">⛶ Open as modal</button>
+            </div>
+            <div class="dbody" id="det-body"></div>
+          </div>
+        </div>
+
+        <!-- limits strip -->
+        <div class="limits-strip">
+          <span class="lcap">today:</span>
+          <span id="limits-label">0 / 0 applied</span>
+          <span class="lbar" id="limits-bar">░░░░░░░░░░</span>
+          <span id="limits-pct">0%</span>
+          <span class="grow" style="flex:1;"></span>
+          <span style="color:var(--faint); font-size:11.5px;">limits tracked per auth (service + login)</span>
+        </div>
+
+        <!-- collapsible run log -->
+        <div class="runlog" id="runlog">
+          <div class="rl-head" id="runlog-head"><span class="chev">▾</span> Run log</div>
+          <div class="rl-body" id="runlog-body"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ AUDIT TAB (§5.3) ============ -->
+    <section id="view-audit" class="view">
+      <div class="audit-wrap">
+        <div class="page-toolbar" style="margin:-12px -12px 12px; position:sticky; top:0;">
+          <span class="page-title">Audit trail</span>
+          <div class="field">action <select id="audit-filter-action">
+            <option value="">All actions</option>
+            <option value="fetch">fetch</option>
+            <option value="score">score</option>
+            <option value="cv">cv</option>
+            <option value="apply">apply</option>
+            <option value="pipeline">pipeline</option>
+            <option value="ui_edit">ui_edit</option>
+            <option value="verify">verify</option>
+          </select></div>
+          <div class="field">pipeline <select id="audit-filter-pipe">
+            <option value="">All pipelines</option>
+          </select></div>
+          <div class="grow"></div>
+          <button class="btn sm" data-action="clear-audit">Clear</button>
+        </div>
+        <div class="audit-card">
+          <table class="grid" id="audit-table" style="width:100%">
+            <thead><tr><th class="plain">Time</th><th class="plain">Pipeline</th><th class="plain">Action</th><th class="plain">Details</th></tr></thead>
+            <tbody id="audit-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ================= STATUS BAR ================= -->
+  <div class="statusbar" id="statusbar">
+    <div class="seg"><span class="dot ok" id="sb-pipe-dot"></span>Pipeline: <b id="sb-pipe">—</b></div>
+    <div class="seg">Stage: <b id="sb-stage">idle</b></div>
+    <div class="seg">Today: <b id="sb-applied">0</b> / <b id="sb-limit">0</b> applied</div>
+    <div class="seg">Last updated: <b id="sb-updated">—</b></div>
+    <div class="spacer"></div>
+    <div class="seg"><span class="dot ok" id="sb-conn-dot"></span>Connection <b id="sb-conn">OK</b></div>
+  </div>
+
+  <!-- ================= PIPELINE EDITOR DIALOG (§6.1 / §5.2) ================= -->
+  <div class="overlay" id="dlg-pipeline">
+    <div class="dialog wide">
+      <div class="d-titlebar"><span class="dial-icon">▦</span><span id="plg-title">New pipeline</span><span class="grow"></span><button class="mclose" data-close="dlg-pipeline">✕</button></div>
+      <div class="d-body">
+        <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:12px;">
+          <div>
+            <div class="groupbox">
+              <legend>Identity &amp; auth</legend>
+              <div class="gb-body">
+                <div class="formrow"><label>Name <span class="req">*</span></label><input class="cinput" id="f-name"></div>
+                <div class="formrow"><label>Service</label>
+                  <select class="cselect" id="f-service"><option value="hh">hh.ru</option><option value="mock">mock</option></select>
+                </div>
+                <div class="formrow"><label>Login</label><input class="cinput" id="f-login" placeholder="user@example.com"></div>
+                <div class="formrow"><label>Password</label><input class="cinput" type="password" id="f-pass" placeholder="••••••••"></div>
+                <div class="formrow"><label>Query</label><input class="cinput" id="f-query" value="Python backend"></div>
+              </div>
+            </div>
+            <div class="groupbox">
+              <legend>Processing</legend>
+              <div class="gb-body">
+                <div class="formrow alt"><label>Resume</label><textarea class="ctextarea" id="f-resume" rows="2">Python developer, 6 yrs Django/Postgres…</textarea></div>
+                <div class="formrow alt"><label>Scoring prompt</label><textarea class="ctextarea" id="f-scoring" rows="2">Score 1-5 based on stack match…</textarea></div>
+                <div class="formrow alt"><label>Apply prompt</label><textarea class="ctextarea" id="f-apply" rows="2">Draft a concise cover letter…</textarea></div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="groupbox">
+              <legend>AI model &amp; limits</legend>
+              <div class="gb-body">
+                <div class="formrow"><label>Model</label>
+                  <select class="cselect" id="f-model">
+                    <option>gpt-4o</option><option>gpt-4o-mini</option><option>claude-3-5-sonnet</option><option>local:llama3</option>
+                  </select></div>
+                <div class="formrow"><label>Temperature</label>
+                  <div class="row"><input type="range" id="f-temp" min="0" max="1" step="0.1" value="0.4" style="accent-color:var(--accent);flex:1;"><span class="field" id="f-temp-val">0.4</span></div>
+                </div>
+                <div class="formrow"><label>API key</label><input class="cinput" type="password" id="f-apikey" placeholder="sk-…"></div>
+                <div class="formrow"><label>Daily apply limit</label>
+                  <div class="spinwrap">
+                    <input type="number" id="f-limit" value="12" min="1">
+                    <div class="spinbtns"><button data-spin="1">▲</button><button data-spin="-1">▼</button></div>
+                  </div>
+                </div>
+                <div class="formrow"><label>Active</label>
+                  <label class="checkbox"><input type="checkbox" id="f-active" checked> Enabled for runs</label></div>
+              </div>
+            </div>
+            <div class="groupbox">
+              <legend>Version history</legend>
+              <div class="verlist" id="ver-history"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="d-foot">
+        <span class="hint">Edits are saved as a new version — previous versions stay restorable.</span>
+        <span class="grow"></span>
+        <button class="btn" id="dlg-pipeline-cancel">Cancel</button>
+        <button class="btn primary" id="dlg-pipeline-ok">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= APPLY PREVIEW / CONFIRMATION DIALOG (§6.2) ================= -->
+  <div class="overlay" id="dlg-apply">
+    <div class="dialog wide">
+      <div class="d-titlebar"><span class="dial-icon">✉</span><span>Apply — review &amp; confirm</span><span class="grow"></span><button class="mclose" data-close="dlg-apply">✕</button></div>
+      <div class="d-body">
+        <div class="dry-banner" id="apply-dry-banner" style="display:none;">🛡 DRY-RUN — nothing will actually be sent. This is a preview for human review.</div>
+        <div class="dry-banner" id="apply-ask-banner" style="display:none; background:var(--amber-dim); border-color:#f0d9a5; color:#8a6107;">👁 ask-confirmation — review, then confirm to send.</div>
+        <div style="height:10px;"></div>
+        <div class="apply-list" id="apply-list"></div>
+        <div style="margin-top:10px; font-size:12px; color:var(--faint);">A captcha / SMS / one-time-code verification may be required after you confirm sending.</div>
+      </div>
+      <div class="d-foot">
+        <span id="apply-summary" class="hint"></span>
+        <span class="grow"></span>
+        <button class="btn" id="dlg-apply-cancel">Cancel</button>
+        <button class="btn danger" id="apply-send-btn">Send applications</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= VERIFICATION (human-in-the-loop) DIALOG (§6.3) ================= -->
+  <div class="overlay" id="dlg-verify">
+    <div class="dialog sm">
+      <div class="d-titlebar warn"><span class="dial-icon">⚠</span><span>Human verification required</span></div>
+      <div class="d-body">
+        <div class="vstep done"><span class="chip2">1</span><span>Job board detected automated traffic</span></div>
+        <div class="vstep done"><span class="chip2">2</span><span>Challenge generated</span></div>
+        <div class="vstep active" style="margin-top:10px;"><span class="chip2 waiting">3</span><span>Waiting for your input below</span></div>
+
+        <div style="height:12px;"></div>
+        <div class="captcha-box">
+          <div class="captcha-glyphs" id="captcha-glyph">Q7mK2F</div>
+          <div>Type the characters shown (simulated reCAPTCHA-style check)</div>
+        </div>
+        <div style="height:10px;"></div>
+        <input class="cinput" id="verify-input" placeholder="Enter verification code" autocomplete="off">
+      </div>
+      <div class="d-foot">
+        <button class="btn" id="dlg-verify-cancel">Cancel</button>
+        <button class="btn primary" id="dlg-verify-ok">Verify &amp; continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= DESTRUCTIVE CONFIRM DIALOG (§6.4) ================= -->
+  <div class="overlay" id="dlg-confirm">
+    <div class="dialog sm">
+      <div class="d-titlebar danger"><span class="dial-icon">⚠</span><span id="confirm-title">Confirm action</span></div>
+      <div class="d-body">
+        <div style="display:flex; gap:12px; align-items:flex-start;">
+          <div style="font-size:22px; color:var(--red);">⚠</div>
+          <div id="confirm-msg" style="font-size:13px; line-height:1.5;">This action cannot be undone.</div>
+        </div>
+      </div>
+      <div class="d-foot">
+        <button class="btn" id="dlg-confirm-cancel">Cancel</button>
+        <button class="btn danger" id="dlg-confirm-ok">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= VACANCY DETAIL MODAL (§5.2 — "open as modal") ================= -->
+  <div class="overlay" id="dlg-detail">
+    <div class="dialog sm">
+      <div class="d-titlebar"><span class="dial-icon">▤</span><span id="m-title">Vacancy detail</span><span class="grow"></span><button class="mclose" data-close="dlg-detail">✕</button></div>
+      <div class="d-body" id="det-modal-body"></div>
+      <div class="d-foot">
+        <span class="hint">Edits are optimistic and audited.</span>
+        <span class="grow"></span>
+        <button class="btn sm" id="m-archive">🗄 Archive</button>
+        <button class="btn sm" id="m-score">Score now</button>
+        <button class="btn sm" id="m-cv">Generate CV</button>
+        <button class="btn sm primary" id="m-save">✓ Apply</button>
+        <button class="btn sm danger" id="m-submit-application">✉ Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- toast -->
+  <div class="toast" id="toast"><span class="ok">✓</span><span id="toast-msg"></span></div>
+
+  <!-- hidden file picker -->
+  <input type="file" id="file-picker" accept=".yaml,.yml,.json" style="display:none;">
+
+</div>
+
+<script>
+/* =========================================================================
+   DATA
+   ========================================================================= */
+const PIPELINES = [
+  { id:"p1", name:"AI Engineer", service:"hh", active:true, login:"ae@example.com",
+    query:"AI engineer", resume:"ML engineer, 5 yrs PyTorch/Transformers…",
+    scoring:"Score 1-5 by ML-stack alignment.", apply:"Concise engineering cover letter.",
+    model:"gpt-4o", temp:0.4, apikey:"sk-…", limit:25, updated:"14:02" },
+  { id:"p2", name:"Backend Python", service:"hh", active:true, login:"bp@example.com",
+    query:"Python backend", resume:"Python developer, 6 yrs Django/Postgres…",
+    scoring:"Score by backend stack match.", apply:"Short backend-focused letter.",
+    model:"gpt-4o-mini", temp:0.5, apikey:"sk-…", limit:25, updated:"09:31" },
+  { id:"p3", name:"Frontend TS", service:"hh", active:false, login:"ft@example.com",
+    query:"frontend typescript", resume:"Frontend dev, React/TS…",
+    scoring:"Score by FE stack.", apply:"Concise FE letter.",
+    model:"local:llama3", temp:0.3, apikey:"", limit:10, updated:"Jul 12" },
+];
+let pipelines = JSON.parse(JSON.stringify(PIPELINES));
+let selPipeline = "p1";
+let pipeSeq = { v: 3 };
+
+const VACANCIES = [
+  { id:"v1", title:"Senior Python Backend", company:"Yandex", url:"hh.ru/v/123", salary:"250–350k", score:4, reason:"Strong stack match: Django, async, Postgres.", cv:"Hello! I'm a senior Python dev with 6 yrs of Django and async services…", apply_status:"pending", notes:"", archived:false, skip:false },
+  { id:"v2", title:"Middle Backend Developer", company:"Tinkoff", url:"hh.ru/v/456", salary:"180–240k", score:4, reason:"Good match; missing Docker depth.", cv:"Hi, I'd like to apply for the backend role…", apply_status:"pending", notes:"", archived:false, skip:false },
+  { id:"v3", title:"Data Engineer", company:"Sber", url:"hh.ru/v/789", salary:"200–280k", score:2, reason:"Too much Spark/Java; low match.", cv:"", apply_status:"untouched", notes:"", archived:false, skip:false },
+  { id:"v4", title:"Python Developer (ML)", company:"Ozon", url:"hh.ru/v/101", salary:"220–300k", score:3, reason:"ML focus, not core.", cv:"", apply_status:"failed", notes:"Captcha blocked.", archived:false, skip:false },
+  { id:"v5", title:"Site Reliability Engineer", company:"Avito", url:"hh.ru/v/112", salary:"250–330k", score:1, reason:"Ops role, weak fit.", cv:"", apply_status:"untouched", notes:"", archived:true, skip:false },
+];
+let vacancies = JSON.parse(JSON.stringify(VACANCIES));
+let todayApplied = 12;
+
+/* Synthetic audit rows — time, pipeline, action, human-readable detail */
+const AUDIT = [
+  { t:"14:33", pipe:"AI Engineer", act:"ui_edit", det:"score → 4 (Yandex)" },
+  { t:"14:32", pipe:"AI Engineer", act:"run_apply", det:"applied 2 vacancies" },
+  { t:"14:31", pipe:"AI Engineer", act:"run_score", det:"scored 4 vacancies (batch all)" },
+  { t:"14:30", pipe:"AI Engineer", act:"verify.captcha", det:"challenge solved for hh.ru" },
+  { t:"14:29", pipe:"AI Engineer", act:"run_fetch", det:"fetch: 4 retrieved" },
+  { t:"13:05", pipe:"Backend Python", act:"pipeline.update", det:"model change (v4)" },
+  { t:"12:48", pipe:"Backend Python", act:"vacancy.skip", det:"manual-skip Sber" },
+  { t:"11:40", pipe:"Backend Python", act:"run_apply", det:"failed: connection lost (Ozon)" },
+];
+let auditLog = JSON.parse(JSON.stringify(AUDIT));
+
+/* =========================================================================
+   HELPERS
+   ========================================================================= */
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+const nowHM = () => new Date().toTimeString().slice(0,5);
+const nowT  = () => new Date().toTimeString().slice(0,8);
+function toast(msg){ const t=$("#toast"); $("#toast-msg").textContent=msg; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"), 2200); }
+function pipe(){ return pipelines.find(p=>p.id===selPipeline) || pipelines[0]; }
+
+function logRun(cls, text){
+  const c=$("#runlog-body");
+  const d=document.createElement("div"); d.className="logline "+cls;
+  d.innerHTML=`<span class="t">${nowT()}</span>`+esc(text);
+  c.appendChild(d); c.scrollTop=c.scrollHeight;
+}
+function pushAudit(act, det, pipeName){
+  const p = pipeName || (pipe()?pipe().name:"—");
+  auditLog.unshift({ t:nowT(), pipe:p, act, det });
+  if($("#view-audit").classList.contains("active")) renderAudit();
+}
+
+/* =========================================================================
+   TAB NAVIGATION + GLOBAL CHROME
+   ========================================================================= */
+function showTab(id){
+  $$(".tab").forEach(t=>t.classList.toggle("active", t.dataset.tab===id));
+  $$(".view").forEach(v=>v.classList.toggle("active", v.id==="view-"+id));
+  if(id==="pipelines") renderPipelineList();
+  if(id==="workspace") renderVacancies();
+  if(id==="audit") renderAudit();
+  refreshUpdated();
+}
+function refreshUpdated(){ $('#sb-updated').textContent = nowT(); }
+
+function renderStatusBar(){
+  const p = pipe();
+  $('#sb-pipe').textContent = p ? p.name : "—";
+  $('#sb-limit').textContent = p ? p.limit : 0;
+  $('#sb-applied').textContent = todayApplied;
+}
+function renderConn(ok){
+  $('#sb-conn').textContent = ok ? "OK" : "offline";
+  const d=$('#sb-conn-dot'); d.className = "dot " + (ok?"ok":"err");
+}
+
+/* =========================================================================
+   PIPELINE SELECTOR + LIST (§5.1)
+   ========================================================================= */
+function pipelabels(){
+  const order = pipelines.map(p=>p.id);
+  return order;
+}
+function renderPipeSelect(){
+  const sel = $("#ws-pipeline"); sel.innerHTML="";
+  pipelines.forEach(p=>{
+    const o=document.createElement("option"); o.value=p.id; o.textContent=p.name+(p.active?"":" (inactive)");
+    o.selected = p.id===selPipeline; sel.appendChild(o);
+  });
+}
+function pipeStatusDot(p){
+  if(!p.active) return '<span class="dot idle"></span>';
+  return '<span class="dot ok"></span>';
+}
+function renderPipelineList(){
+  const c=$("#pipeline-list"); c.innerHTML="";
+  pipelines.forEach(p=>{
+    const row=document.createElement("div"); row.className="prow"; row.dataset.id=p.id;
+    row.innerHTML=`
+      <div class="pname"><div class="ptop"><span style="font-weight:600;">${esc(p.name)}</span><span class="srvc">${esc(p.service)}</span></div>
+        <div class="pmeta">${esc(p.query)} · ${esc(p.model)}</div></div>
+      <div style="color:var(--muted);font-size:12.5px;">${esc(p.service==="hh"?"hh.ru":"mock")}</div>
+      <div class="pstate">${pipeStatusDot(p)}<span style="font-size:12px;color:${p.active?"var(--green)":"var(--gray)"};">${p.active?"active":"inactive"}</span></div>
+      <div class="rowops"><span class="updated">${esc(p.updated)}</span>
+        <button class="btn sm" data-edit="${p.id}">Edit</button>
+        <span class="dropdown"><button class="btn sm" data-row-menu="${p.id}">▾</button>
+          <div class="menu" style="position:absolute;right:0;left:auto;top:calc(100% + 2px);min-width:200px;display:none;">
+            <div class="mitem" data-pact="toggle" data-id="${p.id}"><span class="micon">⏻</span>${p.active?"Deactivate":"Activate"}</div>
+            <div class="mitem" data-pact="duplicate" data-id="${p.id}"><span class="micon">⧉</span> Duplicate</div>
+            <div class="msep"></div>
+            <div class="mitem" data-pact="export" data-id="${p.id}"><span class="micon">⤴</span> Export YAML</div>
+            <div class="msep"></div>
+            <div class="mitem danger" data-pact="delete" data-id="${p.id}"><span class="micon">🗑</span> Delete</div>
+          </div>
+        </span>
+      </div>`;
+    c.appendChild(row);
+  });
+  const nActive = pipelines.filter(p=>p.active).length;
+  $("#pipe-foot").textContent = `${nActive} active · ${pipelines.length-nActive} inactive · ${pipelines.length} total`;
+  $("#c-pipelines").textContent = pipelines.length;
+}
+function toggleRowMenu(btnId){
+  // close all open row menus first
+  $$(".dropdown .menu").forEach(m=>{ m.style.display="none"; });
+  const wrap = $("#pipeline-list").querySelector(`[data-row-menu="${btnId}"]`).parentElement;
+  const menu = wrap.querySelector(".menu");
+  menu.style.display = menu.style.display==="block" ? "none" : "block";
+}
+function pipeMenuAction(id, act){
+  const p = pipelines.find(x=>x.id===id); if(!p) return;
+  if(act==="toggle"){
+    p.active=!p.active; p.updated=nowHM();
+    toast(p.active?"Activated":"Deactivated: "+p.name);
+    renderPipelineList(); renderPipeSelect(); renderStatusBar(); refreshUpdated();
+    pushAudit("pipeline.update", `${p.name} ${p.active?"activated":"deactivated"}`);
+  } else if(act==="duplicate"){
+    const copy={...JSON.parse(JSON.stringify(p)), id:"pX"+Date.now(), name:p.name+" (copy)", active:false, updated:nowHM()};
+    pipelines.push(copy); renderPipelineList(); renderPipeSelect();
+    toast("Duplicated "+p.name); pushAudit("pipeline.create","Duplicated "+p.name);
+  } else if(act==="export"){
+    toast("Exported YAML — "+p.name);
+  } else if(act==="delete"){
+    openConfirm("Delete pipeline?", `Delete "${p.name}" and all its version history? This cannot be undone.`, ()=>{
+      pipelines = pipelines.filter(x=>x.id!==p.id);
+      if(selPipeline===p.id){ selPipeline = pipelines[0]?pipelines[0].id:null; }
+      renderPipelineList(); renderPipeSelect(); renderStatusBar();
+      toast("Deleted "+p.name); pushAudit("pipeline.delete","Deleted "+p.name);
+    });
+  }
+}
+
+/* =========================================================================
+   PIPELINE EDITOR DIALOG (§6.1 / §5.2)
+   ========================================================================= */
+let editingId=null;
+function openPipeDialog(id){
+  editingId = id || null;
+  const p = id ? pipelines.find(x=>x.id===id) : null;
+  $("#plg-title").textContent = p ? ("Edit pipeline — "+p.name) : "New pipeline";
+  $("#f-name").value = p?p.name:"";
+  $("#f-service").value = p?p.service:"hh";
+  $("#f-login").value = p?p.login:"";
+  $("#f-pass").value = p?p.login:"";
+  $("#f-query").value = p?p.query:"";
+  $("#f-resume").value = p?p.resume:"";
+  $("#f-scoring").value = p?p.scoring:"";
+  $("#f-apply").value = p?p.apply:"";
+  $("#f-model").value = p?p.model:"gpt-4o";
+  $("#f-temp").value = p?p.temp:0.4; $("#f-temp-val").textContent = p?p.temp:0.4;
+  $("#f-apikey").value = p?p.apikey:"";
+  $("#f-limit").value = p?p.limit:25;
+  $("#f-active").checked = p?p.active:true;
+  renderVersionHistory(p);
+  $("#dlg-pipeline").classList.add("show");
+}
+function renderVersionHistory(p){
+  const vh=$("#ver-history"); vh.innerHTML="";
+  if(p){
+    const seq=pipeSeq.v;
+    vh.innerHTML=`<div class="verrow"><span class="vtag">v${seq+1}</span><span class="vnote">(unsaved changes)</span><span class="vtime">now</span></div>`;
+    for(let i=seq;i>=1;i--){
+      vh.insertAdjacentHTML("beforeend",
+        `<div class="verrow"><span class="vtag">v${i}</span><span class="vnote">${i===seq?"Config updated":"Created"}</span>
+         <span class="vtime">${p.updated}</span><button class="vrestore" data-vrestore="${i}">restore</button></div>`);
+    }
+  } else {
+    vh.innerHTML=`<div class="verrow"><span class="vtag">—</span><span class="vnote">No versions yet</span><span class="vtime"></span></div>`;
+  }
+}
+function savePipeDialog(){
+  const name = $("#f-name").value.trim() || "Untitled";
+  const now = nowHM();
+  if(editingId){
+    const p = pipelines.find(x=>x.id===editingId);
+    Object.assign(p,{ name, service:$("#f-service").value, login:$("#f-login").value,
+      query:$("#f-query").value, resume:$("#f-resume").value, scoring:$("#f-scoring").value,
+      apply:$("#f-apply").value, model:$("#f-model").value, temp:parseFloat($("#f-temp").value),
+      apikey:$("#f-apikey").value, limit:parseInt($("#f-limit").value)||1, active:$("#f-active").checked, updated:now });
+    pipeSeq.v = (pipeSeq.v||3)+1;
+    pushAudit("pipeline.update", `${p.name} config updated (v${pipeSeq.v})`);
+  } else {
+    const id="p"+(++pipeSeq.v);
+    pipelines.push({ id, name, service:$("#f-service").value, login:$("#f-login").value,
+      query:$("#f-query").value, resume:$("#f-resume").value, scoring:$("#f-scoring").value,
+      apply:$("#f-apply").value, model:$("#f-model").value, temp:parseFloat($("#f-temp").value),
+      apikey:$("#f-apikey").value, limit:parseInt($("#f-limit").value)||1, active:$("#f-active").checked, updated:now });
+    selPipeline = id;
+    pushAudit("pipeline.create","Created "+name);
+  }
+  renderPipeSelect(); renderPipelineList(); renderStatusBar(); renderLimitStrip();
+  toast("Pipeline saved · v"+pipeSeq.v); refreshUpdated();
+}
+function restoreVersion(i){ toast("Restored version v"+i+" (simulated)"); renderVersionHistory(pipe()); }
+
+/* =========================================================================
+   STAGE RUNNER (§5.2)
+   ========================================================================= */
+const STAGES=[
+  { id:"fetch",    name:"Fetch",      icon:"⤓", cnt:0, state:"idle" },
+  { id:"score",    name:"Score",      icon:"★", cnt:0, state:"idle" },
+  { id:"generate", name:"Generate CV",icon:"✎", cnt:0, state:"idle" },
+  { id:"apply",    name:"Apply",      icon:"✉", cnt:0, state:"idle" },
+];
+let applyMode = "ask";           // dry | ask | direct
+let running=false, cancelRequested=false, runTimer=null;
+
+function renderStagebar(){
+  const bar=$("#stagebar"); bar.innerHTML="";
+  STAGES.forEach((s,i)=>{
+    const chip=document.createElement("button");
+    chip.className="starchip "+s.state; chip.dataset.stage=s.id;
+    chip.innerHTML=`<span class="sic">${s.icon}</span><span class="snm">${s.name}</span><span class="scnt">${s.cnt}</span><span class="sst">${s.state==="run"?"running":s.state}</span>`;
+    chip.addEventListener("click", ()=> runStage(s.id, []) );
+    bar.appendChild(chip);
+    if(i<STAGES.length-1){
+      const a=document.createElement("span"); a.className="arrow"; a.textContent="→"; bar.appendChild(a);
+    }
+  });
+}
+function setChip(id, state, cnt){
+  const s = STAGES.find(x=>x.id===id); if(!s) return;
+  s.state = state; if(cnt!==undefined) s.cnt = cnt;
+  const el = $('#stagebar [data-stage="'+id+'"]'); if(!el) return;
+  el.className = "starchip "+state;
+  el.querySelector(".sst").textContent = state==="run" ? "running" : state;
+  el.querySelector(".scnt").textContent = s.cnt;
+}
+function setStatusStage(text){ $('#sb-stage').textContent = text; }
+
+/* batch scope — validate combos (§5.2) */
+function scopeState(){ return $('.segment#scope-seg button.on').dataset.scope; }
+function scopeTargets(list){
+  const all = list.slice();
+  const scope = scopeState();
+  if(scope==="range"){
+    const from=parseInt($("#scope-from").value)||1, to=parseInt($("#scope-to").value)||10;
+    if(from>to){ toast("Invalid range: from > to"); return []; }
+    return all.slice(from-1, to);
+  }
+  if(scope==="take"){
+    const n=parseInt($("#take-n").value)||1; return all.slice(0, n);
+  }
+  return all;
+}
+function applySkip(v){ return !(v.apply_status==="applied" || v.skip); }
+function stageTargets(stageId){
+  // checked rows win; otherwise batch scope over the working set
+  const checked = vacancies.filter(v=>checkedIds.has(v.id));
+  let base = checked.length ? checked : scopeTargets(vacancies.filter(v=>!v.archived));
+  if(stageId!=="fetch") base = base.filter(applySkip);
+  return base;
+}
+
+/* full / single stage run simulation */
+let runQueue=[];
+function runPipeline(){
+  if(running) return;
+  running=true; cancelRequested=false;
+  runQueue=["fetch","score","generate","apply"];
+  runNext();
+}
+function runNext(){
+  if(cancelRequested || !runQueue.length){ finishRunList(); return; }
+  const sid = runQueue.shift();
+  runStage(sid, [], ()=>{ setTimeout(runNext,150); });
+}
+function finishRunList(){
+  if(cancelRequested){ setStatusStage("cancelled"); }
+  else { setStatusStage("idle"); }
+  running=false; runQueue=[];
+  $('#progress-row').classList.remove('show');
+  refreshUpdated();
+}
+function runStage(stageId, targets, onDone){
+  if(running && !onDone) { /* a single run while full run active — ignore */ return; }
+  running=true; cancelRequested=false;
+
+  // apply already handled by caller in some paths; guard
+  const t = targets && targets.length ? targets : stageTargets(stageId);
+  if(stageId==="apply" && applyMode==="send-direct"){ /* still simulate briefly then verify */ }
+  if(stageId==="apply"){ return startApplyStage(t, onDone); }
+
+  setChip(stageId,"run");
+  setStatusStage("running · "+STAGES.find(s=>s.id===stageId).name);
+  showProgress(true);
+  const total = Math.max(1, t.length || 6);
+  let progress=0;
+  runTimer = setInterval(()=>{
+    if(cancelRequested){ stopStageRun(stageId); return; }
+    progress += 9 + Math.random()*7;
+    if(progress>=100) progress=100;
+    $('#progress-bar').style.width=progress+'%';
+    const idx = Math.min(Math.floor(progress/100*total), total);
+    $('#progress-label').textContent = (stageId==="fetch"?"fetching":"processing")+" "+Math.min(idx+1,total)+"/"+total;
+    if(progress>=100){
+      clearInterval(runTimer); runTimer=null;
+      completeStage(stageId, t, onDone);
+    }
+  }, 130);
+}
+function completeStage(stageId, targets, onDone){
+  const n = targets.length;
+  let done=n, failed=0, errName="";
+  if(stageId==="fetch"){
+    // mark untouched as fetched/pending
+    targets.forEach(v=>{ if(v.apply_status==="untouched"){ v.apply_status="pending"; } });
+    logRun("ok", "✓ fetch: "+n+" retrieved");
+    pushAudit("run_fetch","fetch: "+n+" retrieved");
+  } else if(stageId==="score"){
+    targets.forEach(v=>{
+      if(!v.score){ v.score = 1+Math.floor(Math.random()*5); v.reason = "AI match: "+v.score+"/5 based on stack alignment."; }
+    });
+    logRun("ok","✓ score: "+n+" scored, "+failed+" errors");
+    pushAudit("run_score","scored "+n+" vacancies (batch "+scopeState()+")");
+  } else if(stageId==="generate"){
+    targets.forEach(v=>{ if(!v.cv){ v.cv = "Hello! I'd like to apply for "+(v.title||"this role")+". I bring "+ (pipe()?pipe().resume.slice(0,40):"experience") +"… [yours]"; } });
+    logRun("ok","✓ generate_cv: "+n+" letters drafted");
+    pushAudit("run_cv","generated "+n+" cover letters");
+  }
+  stageStateSet(stageId, "done", n);
+  showProgress(false);
+  renderVacancies(); if(selDetail && $("#view-workspace").classList.contains("active")) renderDetail(selDetail, $("#det-body"), "panel");
+  if(selDetail) refreshBothDetail();
+  renderStatusBar(); renderLimitStrip(); refreshUpdated();
+  setStatusStage("done");
+  if(onDone) onDone();
+  else running=false;
+}
+function stageStateSet(id, state, cnt){ setChip(id, state, cnt); }
+function stopStageRun(stageId){
+  clearInterval(runTimer); runTimer=null;
+  setChip(stageId,"idle"); setStatusStage("cancelled");
+  showProgress(false);
+  logRun("warn","⏹ stage aborted: "+stageId);
+  running=false; cancelRequested=false;
+  runQueue=[];
+}
+function showProgress(on){
+  $('#progress-row').classList.toggle("show", !!on);
+  $('#cancel-btn').disabled = !on;
+  if(on){ $('#progress-bar').style.width="0%"; $('#progress-label').textContent="starting…"; }
+}
+
+/* ---- apply stage + flow (§5.2 · §6.2 · §6.3) ---- */
+let applySession = { targets:[], onDone:null }; // ids
+function startApplyStage(targets, onDone){
+  const applicable = targets.filter(applySkip);
+  if(!applicable.length){
+    logRun("warn","✉ apply: no applicable vacancies (nothing to send)");
+    pushAudit("run_apply","nothing to send");
+    setChip("apply","done",0); setStatusStage("done");
+    if(onDone) onDone(); else running=false;
+    renderStatusBar();
+    return;
+  }
+  setChip("apply","run");
+  setStatusStage("running · Apply");
+  showProgress(true);
+  // brief spin, then route per apply mode
+  setTimeout(()=>{
+    showProgress(false);
+    applySession = { targets: applicable.map(v=>v.id), onDone: onDone||null };
+    if(applyMode==="direct"){
+      // no preview dialog — straight to human verification
+      openVerification();
+    } else {
+      openApplyPreview();
+    }
+  }, 600);
+}
+function openApplyPreview(){
+  const targets = applySession.targets.map(id=>vacancies.find(v=>v.id===id)).filter(Boolean);
+  const dry = applyMode==="dry";
+  $("#apply-dry-banner").style.display = dry?"flex":"none";
+  $("#apply-ask-banner").style.display = (!dry && applyMode==="ask")?"flex":"none";
+  const list=$("#apply-list"); list.innerHTML="";
+  targets.forEach(id=>{
+    const v=vacancies.find(x=>x.id===id); if(!v) return;
+    const item=document.createElement("div"); item.className="apply-item"; item.dataset.rid=id;
+    const letter = v.cv || "Hello! I'd like to apply… [draft from resume + apply prompt]";
+    item.innerHTML=`
+      <div class="ri-head"><span class="ri-title">${esc(v.title)}</span><span class="ri-co">${esc(v.company)} · ${esc(v.salary)}</span></div>
+      <div class="ri-cv">${esc(letter)}</div>
+      <div class="ri-skip"><input type="checkbox" class="optout"> opt out of sending this one</div>`;
+    list.appendChild(item);
+  });
+  $("#apply-send-btn").textContent = dry ? "Send "+targets.length+" applications (dry)" : "Send "+targets.length+" applications";
+  $("#apply-summary").textContent = dry ? "Dry-run — nothing is sent." : "Review each letter; you may opt out individually.";
+  $("#dlg-apply").classList.add("show");
+  setStatusStage("running · Apply (awaiting human)");
+}
+function updateApplySendLabel(){
+  const items = $$("#apply-list .apply-item");
+  let n = items.length;
+  items.forEach(it=>{ if(it.querySelector(".optout").checked) n--; });
+  const dry = applyMode==="dry";
+  $("#apply-send-btn").textContent = dry ? "Send "+n+" applications (dry)" : "Send "+n+" applications";
+}
+function closeApplyPreview(){ $("#dlg-apply").classList.remove("show"); }
+
+function applySend(){
+  // gather opted-out ids
+  const optedOut = [];
+  $$("#apply-list .apply-item").forEach(it=>{ if(it.querySelector(".optout").checked) optedOut.push(it.dataset.rid); });
+  applySession.targets = applySession.targets.filter(id=>!optedOut.includes(id));
+  closeApplyPreview();
+  if(applyMode==="dry"){
+    // dry-run: simulate, send nothing, no verification
+    completeApplySend(true);
+  } else {
+    // ask confirmation → human verification before sending
+    openVerification();
+  }
+}
+
+/* ---- verification modal (§6.3) ---- */
+function openVerification(){
+  $("#dlg-verify").classList.add("show");
+  setStatusStage("running · Apply (awaiting verification)");
+  setTimeout(()=>$("#verify-input").focus(),0);
+}
+function completeApplySend(wasDry){
+  const ids = applySession.targets;
+  const sent = ids.map(id=>vacancies.find(v=>v.id===id)).filter(Boolean);
+  if(!wasDry){
+    sent.forEach(v=>{ v.apply_status="applied"; });
+    todayApplied += sent.length;
+  }
+  logRun(wasDry?"warn":"ok", (wasDry?"✉ apply (dry-run) simulated: ":"✓ apply sent: ")+sent.length+" applications");
+  pushAudit("run_apply", (wasDry?"dry-run planned ":"applied ")+sent.length+" vacancies");
+  const cnt = wasDry ? sent.length : sent.length;
+  setChip("apply", "done", cnt);
+  renderVacancies(); refreshBothDetail();
+  renderStatusBar(); renderLimitStrip(); refreshUpdated();
+  setStatusStage("done");
+  const cb=applySession.onDone; applySession={targets:[],onDone:null};
+  if(cb) cb(); else running=false;
+}
+function verifySubmit(){
+  const val=$("#verify-input").value.trim();
+  if(val.length<2){ toast("Enter the code first"); return; }
+  $("#dlg-verify").classList.remove("show");
+  $("#verify-input").value="";
+  $("#captcha-glyph").textContent = newGlyph();
+  completeApplySend(false);
+  toast("Apply sent ✓");
+}
+
+/* =========================================================================
+   VACANCY WORKING SET (§5.2)
+   ========================================================================= */
+let vacSub="all", vacSearch="", vacFilter="";
+let vacSort={ key:"score", dir:-1 };
+let checkedIds=new Set();
+let selDetail=null;
+
+const VAC_HEAD=[
+  ["title","Vacancy"],["salary","Salary"],["score","Score"],["apply_status","Status"],["cv","CV"]
+];
+function needsAction(v){ return v.apply_status!=="applied"; }
+function vacStatusCls(s){ return ['untouched','pending','applied','failed','skipped'].includes(s)?s:"untouched"; }
+function vacDot(v){
+  if(v.skip) return '<span class="vacdot" style="background:var(--gray);"></span>';
+  if(v.archived) return '<span class="vacdot" style="background:var(--faint);"></span>';
+  const m={applied:"var(--green)",pending:"var(--amber)",failed:"var(--red)",untouched:"var(--faint)"};
+  return '<span class="vacdot" style="background:'+m[v.apply_status]+';"></span>';
+}
+function scoreCls(s){ return s>=4?"hi":s>=3?"mid":s===2?"lo":"na"; }
+function cvCell(v){
+  if(v.cv) return '<span class="cvdone">✓ generated</span>';
+  if(v.apply_status==="failed") return '<span class="cverr">✗ error</span>';
+  return '<span class="cvmiss">○ missing</span>';
+}
+function filteredVacancies(){
+  let list = vacancies.filter(v=>{
+    if(vacSub==="archived") return v.archived;
+    if(v.archived) return false;
+    if(vacSub==="needs") return needsAction(v);
+    return true;
+  });
+  if(vacFilter){ list = list.filter(v=>v.apply_status===vacFilter); }
+  if(vacSearch){
+    const q=vacSearch.toLowerCase();
+    list = list.filter(v=>(v.title+" "+v.company+" "+v.notes).toLowerCase().includes(q));
+  }
+  const {key,dir}=vacSort;
+  list.sort((a,b)=>{
+    const va=a[key], vb=b[key];
+    if(typeof va==="string") return va.localeCompare(vb)*dir;
+    return (va-vb)*dir;
+  });
+  return list;
+}
+function renderVacHead(){
+  const h=$("#vac-thead");
+  const colHtml = VAC_HEAD.map(([k,l],i)=>{
+    const sorted=vacSort.key===k; const arr=vacSort.dir>0?"▲":(vacSort.dir<0?"▼":"");
+    return `<th data-key="${k}" class="${sorted?"sorted":""}">${l}<span class="arr">${sorted?arr:""}</span></th>`;
+  }).join("");
+  h.innerHTML=`<tr><th class="plain" style="cursor:default;width:26px;"><input type="checkbox" id="check-all" title="Select all visible"></th>
+    ${colHtml}
+    <th class="plain" style="cursor:default;width:150px;">Actions</th></tr>`;
+}
+function renderVacancies(){
+  renderVacHead();
+  const rows=filteredVacancies(); const tb=$("#vac-tbody"); tb.innerHTML="";
+  if(!rows.length){ tb.innerHTML=`<tr><td colspan="7" style="padding:26px;text-align:center;color:var(--muted);">No matching vacancies.</td></tr>`; return; }
+  rows.forEach(v=>{
+    const tr=document.createElement("tr"); tr.dataset.id=v.id;
+    if(v.archived) tr.classList.add("arch");
+    tr.innerHTML=`
+      <td class="vac-check"><input type="checkbox" class="vchk" ${checkedIds.has(v.id)?"checked":""}></td>
+      <td><div class="vac-title">${vacDot(v)}<span>${esc(v.title)}</span></div><div class="vac-company">${esc(v.company)} · ${esc(v.salary)}${v.skip?" · manual-skip":""}${v.archived?" · archived":""}</div></td>
+      <td>${esc(v.salary)}</td>
+      <td><span class="score ${scoreCls(v.score)}">${v.score||"–"}</span>${v.score?` <span style="color:var(--faint);font-size:11px;">${"★".repeat(v.score)}</span>`:""}</td>
+      <td><span class="rstatus ${vacStatusCls(v.apply_status)}"><span class="dot"></span>${v.apply_status}</span></td>
+      <td>${cvCell(v)}</td>
+      <td class="rowacts">
+        <button class="btn sm" data-ra="score" data-id="${v.id}">Score now</button>
+        <button class="btn sm" data-ra="cv" data-id="${v.id}">Generate CV</button>
+        <button class="btn sm" data-ra="edit" data-id="${v.id}">Preview &amp; edit</button>
+        <button class="btn sm" data-ra="apply" data-id="${v.id}">Apply</button>
+        <button class="btn sm" data-ra="skip" data-id="${v.id}">${v.skip?"Unskip":"Skip"}</button>
+        <button class="btn sm" data-ra="archive" data-id="${v.id}">${v.archived?"Unarchive":"Archive"}</button>
+      </td>`;
+    tb.appendChild(tr);
+  });
+  const chkAll=$("#check-all");
+  if(chkAll){ chkAll.checked = rows.length>0 && rows.every(r=>checkedIds.has(r.id)); }
+}
+function rowAction(id, act){
+  const v=vacancies.find(x=>x.id===id); if(!v) return;
+  if(act==="score"){
+    v.score = 1+Math.floor(Math.random()*5);
+    v.reason = "AI match: "+v.score+"/5 based on stack alignment.";
+    toast("Scored "+v.title); pushAudit("score","score → "+v.score+" ("+v.title+")");
+    renderVacancies(); renderStatusBar();
+  } else if(act==="cv"){
+    v.cv = "Hello! I'd like to apply for "+v.title+". I bring "+ (pipe()?pipe().resume.slice(0,40):"experience")+"… [yours]";
+    toast("Cover letter generated"); pushAudit("cv","generated letter ("+v.title+")");
+    renderVacancies();
+  } else if(act==="edit"){
+    openDetailModal(id);
+  } else if(act==="apply"){
+    applySingle([v.id]);
+  } else if(act==="skip"){
+    v.skip=!v.skip; toast(v.skip?"Skipped":"Unskipped "+v.title);
+    pushAudit("vacancy.skip",(v.skip?"skip":"unskip")+" "+v.title);
+    renderVacancies();
+  } else if(act==="archive"){
+    v.archived=!v.archived;
+    toast(v.archived?"Archived":"Unarchived "+v.title);
+    pushAudit("vacancy.archive",(v.archived?"archive":"unarchive")+" "+v.title);
+    renderVacancies(); refreshBothDetail();
+  }
+  if(selDetail===id && act!=="edit") refreshBothDetail();
+}
+function applySingle(ids){
+  if(running){ toast("A run is already in progress"); return; }
+  applySession = { targets: ids, onDone:null };
+  setChip("apply","run");
+  setStatusStage("running · Apply");
+  setTimeout(()=>{
+    if(applyMode==="direct") openVerification();
+    else openApplyPreview();
+  },400);
+}
+
+/* ---- bulk actions ---- */
+function bulkTargets(){ return vacancies.filter(v=>checkedIds.has(v.id)); }
+function bulkRun(kind){
+  if(running){ toast("A run is already in progress"); return; }
+  const targets = bulkTargets();
+  if(!targets.length){ toast("Select at least one vacancy"); return; }
+  checkedIds.clear();
+  if(kind==="score") runStage("score", targets.filter(applySkip));
+  else if(kind==="cv") runStage("generate", targets.filter(applySkip));
+  else if(kind==="apply") applySingle(targets.map(v=>v.id));
+  else if(kind==="archive"){
+    targets.forEach(v=>{ v.archived=true; });
+    toast("Archived "+targets.length+" vacancies");
+    pushAudit("vacancy.archive","archived "+targets.length+" vacancies");
+    renderVacancies(); refreshBothDetail();
+  }
+}
+
+/* =========================================================================
+   DETAIL / EDITOR (right panel + modal) (§5.2)
+   ========================================================================= */
+function buildDetailHTML(v, prefix){
+  const stars = [1,2,3,4,5].map(i=>`<button class="star ${v.score>=i?"on":""}" data-star="${i}">★</button>`).join("");
+  return `
+    <div class="kv"><label>Score (1–5)</label>
+      <div class="score-stars">${stars}</div></div>
+    <div class="kv"><label>Score reasoning</label><div class="reason">${esc(v.reason||"(not scored yet)")}</div></div>
+    <div class="kv"><label>Cover letter</label><textarea id="${prefix}-cv" rows="4">${esc(v.cv)}</textarea></div>
+    <div class="kv"><label>Notes</label><textarea id="${prefix}-notes" rows="2">${esc(v.notes)}</textarea></div>
+    <div class="kv"><label>Flags</label>
+      <div style="display:flex;gap:16px;">
+        <label class="checkbox"><input type="checkbox" id="${prefix}-skip" ${v.skip?"checked":""}> Skip</label>
+        <label class="checkbox"><input type="checkbox" id="${prefix}-arch" ${v.archived?"checked":""}> Archive</label>
+      </div></div>
+    <div class="det-actions">
+      <button class="btn sm primary" id="${prefix}-save">✓ Apply</button>
+      <button class="btn sm" id="${prefix}-score">Score now</button>
+      <button class="btn sm" id="${prefix}-cvb">Generate CV</button>
+      <button class="btn sm danger" id="${prefix}-submit-application">✉ Apply</button>
+    </div>`;
+}
+function renderDetail(id, container, prefix){
+  const v = vacancies.find(x=>x.id===id);
+  if(!v){
+    if(container.id==="det-body"){
+      $("#det-title").textContent="No selection";
+      $("#det-sub").textContent="Select a vacancy to inspect and edit.";
+      $("#det-open-modal").style.display="none";
+      container.innerHTML="";
+    }
+    return;
+  }
+  selDetail = id;
+  if(container.id==="det-body"){
+    $("#det-title").textContent=v.title;
+    $("#det-sub").textContent=`${v.company} · ${v.salary} · ${v.url}`;
+    $("#det-open-modal").style.display="inline-flex";
+  }
+  container.innerHTML = buildDetailHTML(v, prefix);
+}
+function wireDetail(prefix){
+  // save edits
+  const save=$("#"+prefix+"-save"); if(save) save.addEventListener("click",()=>applyDetail(prefix));
+  const sc=$("#"+prefix+"-score"); if(sc) sc.addEventListener("click",()=>{ rowAction(selDetail,"score"); refreshBothDetail(); });
+  const cv=$("#"+prefix+"-cvb"); if(cv) cv.addEventListener("click",()=>{ rowAction(selDetail,"cv"); refreshBothDetail(); });
+  const submit=$("#"+prefix+"-submit-application"); if(submit) submit.addEventListener("click",()=>{ applySingle([selDetail]); });
+  const stars=$$("#"+prefix+"-wrapper .star, #"+prefix+"-body .star, .score-stars .star");
+  $$(".score-stars .star").forEach(st=>st.addEventListener("click",()=>{
+    const val=parseInt(st.dataset.star);
+    const v=vacancies.find(x=>x.id===selDetail); if(!v) return;
+    v.score=val; v.reason="Manual: score → "+val+".";
+    refreshBothDetail();
+  }));
+}
+function applyDetail(prefix){
+  const v=vacancies.find(x=>x.id===selDetail); if(!v) return;
+  v.cv=$("#"+prefix+"-cv").value;
+  v.notes=$("#"+prefix+"-notes").value;
+  v.skip=$("#"+prefix+"-skip").checked;
+  v.archived=$("#"+prefix+"-arch").checked;
+  renderVacancies();
+  pushAudit("ui_edit",`edit — ${v.title} (optimistic)`);
+  toast("Saved (optimistic — will sync)");
+  refreshBothDetail();
+}
+function refreshDetailPanel(){ renderDetail(selDetail, $("#det-body"), "panel"); wireDetail("panel"); }
+function refreshDetailModal(){ renderDetail(selDetail, $("#det-modal-body"), "modal"); wireDetail("modal"); }
+function refreshBothDetail(){ refreshDetailPanel(); if($("#dlg-detail").classList.contains("show")) refreshDetailModal(); }
+
+function selectVacancy(id){
+  selDetail=id; renderVacancies(); renderDetail(id, $("#det-body"), "panel"); wireDetail("panel");
+}
+function openDetailModal(id){
+  selDetail=id||selDetail;
+  const v=vacancies.find(x=>x.id===selDetail);
+  if(v){ $("#m-title").textContent=v.title+" — "+v.company; }
+  renderDetail(selDetail, $("#det-modal-body"), "modal"); wireDetail("modal");
+  $("#dlg-detail").classList.add("show");
+}
+function modalSubmitApplication(){
+  if(!selDetail) return;
+  applySingle([selDetail]); $("#dlg-detail").classList.remove("show");
+}
+function modalScore(){
+  if(!selDetail) return;
+  rowAction(selDetail,"score"); refreshDetailModal();
+}
+function modalCv(){
+  if(!selDetail) return;
+  rowAction(selDetail,"cv"); refreshDetailModal();
+}
+function modalSave(){
+  applyDetail("modal");
+}
+function modalArchive(){
+  const v=vacancies.find(x=>x.id===selDetail); if(!v) return;
+  v.archived=!v.archived; renderVacancies(); refreshDetailModal(); toast(v.archived?"Archived":"Unarchived");
+}
+
+/* =========================================================================
+   LIMITS STRIP + STATUS BAR
+   ========================================================================= */
+function renderLimitStrip(){
+  const p=pipe(); const limit = p?p.limit:1;
+  const pct = Math.min(100, Math.round(todayApplied/limit*100));
+  const filled=Math.round(pct/100*10);
+  $('#limits-label').textContent = todayApplied+" / "+limit+" applied";
+  $('#limits-bar').textContent = "▓".repeat(filled)+"░".repeat(10-filled);
+  $('#limits-pct').textContent = pct+"%";
+}
+
+/* =========================================================================
+   AUDIT (§5.3)
+   ========================================================================= */
+function renderAudit(){
+  // populate pipeline filter options (once)
+  const pf=$("#audit-filter-pipe");
+  const cur=pf.value;
+  pf.innerHTML='<option value="">All pipelines</option>';
+  pipelines.forEach(p=>{ const o=document.createElement("option"); o.value=p.name; o.textContent=p.name; pf.appendChild(o); });
+  pf.value=cur;
+
+  const act=$("#audit-filter-action").value, pipeName=$("#audit-filter-pipe").value;
+  const rows=auditLog.filter(r=>(!act || r.act===act || r.act.includes(act)) && (!pipeName || r.pipe===pipeName));
+  const b=$("#audit-body"); b.innerHTML="";
+  if(!rows.length){ b.innerHTML=`<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--muted);">No audit entries.</td></tr>`; return; }
+  rows.forEach(r=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td style="color:var(--faint);white-space:nowrap;font-family:var(--mono);font-size:11.5px;">${esc(r.t)}</td>
+      <td>${esc(r.pipe)}</td>
+      <td><span style="font-family:var(--mono);font-size:11.5px;color:var(--selection);">${esc(r.act)}</span></td>
+      <td>${esc(r.det)}</td>`;
+    b.appendChild(tr);
+  });
+}
+function clearAudit(){ auditLog=[]; renderAudit(); toast("Audit cleared"); }
+
+/* =========================================================================
+   CONFIRM DIALOG (§6.4)
+   ========================================================================= */
+let confirmCb=null;
+function openConfirm(title, msg, cb){
+  $("#confirm-title").textContent=title; $("#confirm-msg").textContent=msg; confirmCb=cb;
+  $("#dlg-confirm").classList.add("show");
+}
+
+/* =========================================================================
+   TOAST / FILE / MISC ACTIONS
+   ========================================================================= */
+function newGlyph(){ const s="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let g=""; for(let i=0;i<6;i++)g+=s[Math.random()*s.length|0]; return g; }
+function importYaml(){ $("#file-picker").click(); }
+function exportYaml(){ toast("Export YAML — select a pipeline row ▾ → Export YAML"); }
+function refresh(){ toast("Refreshing…"); setTimeout(()=>{ refreshUpdated(); renderStatusBar(); renderLimitStrip(); toast("Refreshed"); },350); }
+function duplicatePipe(){ const p=pipe(); pipeMenuAction(p.id,"duplicate"); }
+
+/* =========================================================================
+   WIRING
+   ========================================================================= */
+// tabs
+$$(".tab").forEach(t=>t.addEventListener("click",()=>{ document.querySelector(".content").scrollTop=0; showTab(t.dataset.tab); }));
+
+// pipeline list interactions
+$("#pipeline-list").addEventListener("click",e=>{
+  const editBtn=e.target.closest("[data-edit]");
+  if(editBtn){ openPipeDialog(editBtn.dataset.edit); return; }
+  const menuBtn=e.target.closest("[data-row-menu]");
+  if(menuBtn){ e.stopPropagation(); toggleRowMenu(menuBtn.dataset.rowMenu); return; }
+  const pact=e.target.closest("[data-pact]");
+  if(pact){ pipeMenuAction(pact.dataset.id, pact.dataset.pact); return; }
+});
+$("#pipeline-list").addEventListener("dblclick",e=>{ const row=e.target.closest(".prow"); if(row) openPipeDialog(row.dataset.id); });
+document.addEventListener("click",e=>{
+  if(!e.target.closest("#pipeline-list")) $$(".dropdown .menu").forEach(m=>m.style.display="none");
+});
+
+// pipeline editor
+$("#dlg-pipeline-cancel").addEventListener("click",()=>$("#dlg-pipeline").classList.remove("show"));
+$("#dlg-pipeline-ok").addEventListener("click",()=>{ savePipeDialog(); $("#dlg-pipeline").classList.remove("show"); });
+$("#f-temp").addEventListener("input",e=>$("#f-temp-val").textContent=(+e.target.value).toFixed(1));
+$$(".spinbtns button").forEach(b=>b.addEventListener("click",()=>{ const v=parseInt($("#f-limit").value)||1; $("#f-limit").value=Math.max(1,v+(b.dataset.spin=="1"?1:-1)); }));
+$("#ver-history").addEventListener("click",e=>{ const r=e.target.closest("[data-vrestore]"); if(r) restoreVersion(r.dataset.vrestore); });
+
+// workspace pipeline selector
+$("#ws-pipeline").addEventListener("change",e=>{
+  selPipeline=e.target.value;
+  renderStatusBar(); renderLimitStrip(); renderVacancies();
+  refreshUpdated(); toast("Pipeline: "+pipe().name);
+});
+
+// apply mode segmented control
+$$("#applymode-seg button").forEach(b=>b.addEventListener("click",()=>{
+  $$("#applymode-seg button").forEach(x=>x.classList.remove("on")); b.classList.add("on");
+  applyMode=b.dataset.mode;
+  toast({dry:"Apply mode: dry-run (nothing sent)",ask:"Apply mode: ask confirmation",direct:"Apply mode: send directly"}[applyMode]);
+}));
+
+// batch scope
+$$("#scope-seg button").forEach(b=>b.addEventListener("click",()=>{
+  $$("#scope-seg button").forEach(x=>x.classList.remove("on")); b.classList.add("on");
+  const s=b.dataset.scope;
+  $("#range-row").style.display = s==="range"?"flex":"none";
+  $("#take-row").style.display = s==="take"?"flex":"none";
+  if(s==="range"){ if($("#scope-from").value && $("#scope-to").value && parseInt($("#scope-from").value)>parseInt($("#scope-to").value)) toast("Invalid combo: to < from"); }
+}));
+$("#skip-processed").addEventListener("change",e=>toast(e.target.checked?"Will skip already-processed vacancies":"Will reprocess already-processed vacancies"));
+
+// full run + cancel
+$("#fullrun-btn").addEventListener("click",runPipeline);
+$("#cancel-btn").addEventListener("click",()=>{ cancelRequested=true; toast("Cancelling…"); });
+
+// vacancy subtabs / search / filter / sort / check
+$$("#vac-subtabs .st").forEach(b=>b.addEventListener("click",()=>{
+  $$("#vac-subtabs .st").forEach(x=>x.classList.remove("on")); b.classList.add("on");
+  vacSub=b.dataset.sub; renderVacancies();
+}));
+$("#vac-search").addEventListener("input",e=>{ vacSearch=e.target.value; renderVacancies(); });
+$("#vac-filter").addEventListener("change",e=>{ vacFilter=e.target.value; renderVacancies(); });
+$("#vac-thead").addEventListener("click",e=>{
+  const th=e.target.closest("th"); if(!th||!th.dataset.key)return;
+  const k=th.dataset.key;
+  if(vacSort.key===k) vacSort.dir*=-1; else vacSort={key:k,dir:1};
+  renderVacancies();
+});
+$("#vac-table").addEventListener("change",e=>{
+  const chk=e.target;
+  if(chk.id==="check-all"){
+    const rows=filteredVacancies();
+    rows.forEach(v=>{ chk.checked ? checkedIds.add(v.id) : checkedIds.delete(v.id); });
+    renderVacancies();
+  } else if(chk.classList.contains("vchk")){
+    const id=chk.closest("tr").dataset.id;
+    chk.checked ? checkedIds.add(id) : checkedIds.delete(id);
+    const chkAll=$("#check-all"); if(chkAll) chkAll.checked = filteredVacancies().every(v=>checkedIds.has(v.id));
+  } else if(chk.classList.contains("optout")){
+    updateApplySendLabel();
+  }
+});
+// vacancy table row clicks (selection + row actions)
+$("#vac-table").addEventListener("click",e=>{
+  const chk=e.target.closest(".vchk,#check-all"); if(chk) return;
+  const btn=e.target.closest("[data-ra]");
+  if(btn){ rowAction(btn.dataset.id, btn.dataset.ra); return; }
+  const tr=e.target.closest("tr"); if(!tr||!tr.dataset.id) return;
+  selectVacancy(tr.dataset.id);
+});
+
+// bulk actions
+$("#bulk-score").addEventListener("click",()=>bulkRun("score"));
+$("#bulk-cv").addEventListener("click",()=>bulkRun("cv"));
+$("#bulk-apply").addEventListener("click",()=>bulkRun("apply"));
+$("#bulk-archive").addEventListener("click",()=>bulkRun("archive"));
+
+// detail panel -> open modal
+$("#det-open-modal").addEventListener("click",()=>openDetailModal(selDetail));
+
+// apply dialog
+$("#dlg-apply-cancel").addEventListener("click",()=>{
+  closeApplyPreview();
+  setChip("apply","idle"); setStatusStage("cancelled");
+  const cb=applySession.onDone; applySession={targets:[],onDone:null};
+  running=false; if(cb) cb();
+});
+$("#apply-send-btn").addEventListener("click",applySend);
+// opt-out checkboxes in the apply preview update the send-count label live
+$("#apply-list").addEventListener("change",e=>{
+  if(e.target.classList.contains("optout")) updateApplySendLabel();
+});
+
+// verification
+$("#dlg-verify-ok").addEventListener("click",verifySubmit);
+$("#dlg-verify-cancel").addEventListener("click",()=>{
+  $("#dlg-verify").classList.remove("show"); toast("Verification cancelled — progress saved");
+  setChip("apply","idle"); setStatusStage("cancelled");
+  const cb=applySession.onDone; applySession={targets:[],onDone:null};
+  running=false; if(cb) cb();
+});
+$("#verify-input").addEventListener("keydown",e=>{ if(e.key==="Enter") verifySubmit(); });
+$("#captcha-glyph").addEventListener("click",()=>{ $("#captcha-glyph").textContent=newGlyph(); toast("New challenge generated"); });
+
+// confirm dialog
+$("#dlg-confirm-ok").addEventListener("click",()=>{ $("#dlg-confirm").classList.remove("show"); if(confirmCb) confirmCb(); confirmCb=null; });
+$("#dlg-confirm-cancel").addEventListener("click",()=>{ $("#dlg-confirm").classList.remove("show"); confirmCb=null; });
+
+// audit filters
+$("#audit-filter-action").addEventListener("change",renderAudit);
+$("#audit-filter-pipe").addEventListener("change",renderAudit);
+
+// generic data-action buttons
+document.querySelectorAll("[data-action]").forEach(b=>b.addEventListener("click",()=>{
+  const a=b.dataset.action;
+  const map={ "new-pipeline":()=>openPipeDialog(null), "import-yaml":importYaml, "export-yaml":exportYaml, "refresh":refresh, "clear-audit":clearAudit };
+  if(map[a]) map[a]();
+}));
+
+// close buttons on dialogs
+document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click",e=>{
+  e.stopPropagation();
+  const id=b.dataset.close;
+  if(id==="dlg-apply"){ /* same as cancel */ $("#dlg-apply-cancel").click(); }
+  else if(id==="dlg-detail"){ $("#dlg-detail").classList.remove("show"); }
+  else $("#"+id).classList.remove("show");
+}));
+
+// modal detail: action buttons
+$("#dlg-detail").addEventListener("click",e=>{
+  if(e.target.closest("#m-submit-application")) { modalSubmitApplication(); }
+  else if(e.target.closest("#m-score")) { modalScore(); }
+  else if(e.target.closest("#m-cv")) { modalCv(); }
+  else if(e.target.closest("#m-save")) { modalSave(); }
+  else if(e.target.closest("#m-archive")) { modalArchive(); }
+});
+
+// run log collapsible
+$("#runlog-head").addEventListener("click",()=>{ $("#runlog").classList.toggle("closed"); });
+// default open
+
+// file picker
+$("#file-picker").addEventListener("change",e=>{
+  if(e.target.files.length){ toast("Imported "+e.target.files[0].name); e.target.value=""; pushAudit("pipeline.import","Imported "+e.target.files[0].name); }
+});
+
+// window controls
+$(".winctrl .close").addEventListener("click",()=>openConfirm("Quit jobfucker","Close the application?",()=>toast("Close (prototype)")));
+$(".winctrl .min").addEventListener("click",()=>toast("Minimize (prototype)"));
+$(".winctrl .max").addEventListener("click",()=>toast("Maximize (prototype)"));
+
+// keyboard shortcuts (§8)
+document.addEventListener("keydown",e=>{
+  if(e.ctrlKey&&e.key.toLowerCase()==="n"){ e.preventDefault(); openPipeDialog(null); }
+  else if(e.ctrlKey&&e.key.toLowerCase()==="o"){ e.preventDefault(); importYaml(); }
+  else if(e.ctrlKey&&e.key.toLowerCase()==="s"){ e.preventDefault(); if($("#dlg-pipeline").classList.contains("show")) savePipeDialog(); }
+  else if(e.ctrlKey&&e.key.toLowerCase()==="f"){ e.preventDefault(); showTab("workspace"); setTimeout(()=>$("#vac-search").focus(),0); }
+  else if(e.key==="F5"){ e.preventDefault(); refresh(); }
+  else if(e.key==="F9"){ e.preventDefault(); $("#runlog").classList.toggle("closed"); }
+  else if(e.ctrlKey&&e.key==="1"){ showTab("pipelines"); }
+  else if(e.ctrlKey&&e.key==="2"){ showTab("workspace"); }
+  else if(e.ctrlKey&&e.key==="3"){ showTab("audit"); }
+  else if(e.key==="Escape"){ ["dlg-confirm","dlg-pipeline","dlg-apply","dlg-verify","dlg-detail"].forEach(id=>{ if(id==="dlg-apply"){ } else $("#"+id).classList.remove("show"); }); }
+});
+
+// close on overlay backdrop click
+document.querySelectorAll(".overlay").forEach(o=>o.addEventListener("click",e=>{
+  if(e.target===o) o.classList.remove("show");
+}));
+
+/* =========================================================================
+   INIT
+   ========================================================================= */
+function init(){
+  renderPipeSelect();
+  renderPipelineList();
+  renderStagebar();
+  renderVacancies();
+  renderAudit();
+  renderStatusBar();
+  renderLimitStrip();
+  $('#sb-updated').textContent = "14:32";
+  logRun("dim","jobfucker 0.1.0 · Pipelines / Workspace / Audit · ready");
+  logRun("dim","Select a pipeline in Workspace, then run stages or work vacancies.");
+}
+init();
+</script>
+</body>
+</html>
