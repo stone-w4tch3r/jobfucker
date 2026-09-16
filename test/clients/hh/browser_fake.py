@@ -15,6 +15,8 @@ from collections.abc import AsyncGenerator, Sequence
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import Final, Literal
 
+from rusty_results.prelude import Ok, Result
+
 from jobfucker.clients.hh.models import PersistedCookie
 
 SubmitOutcome = Literal["success", "foreign", "error"]
@@ -106,6 +108,12 @@ class FakeBrowserDriver:
         self._image = image
         self.sessions: list[FakeBrowserSession] = []
         self.headless_flags: list[bool] = []
+        self.ensure_engine_calls = 0
+
+    async def ensure_engine(self) -> Result[None, str]:
+        """Successful no-op preflight: the scripted double has no engine."""
+        self.ensure_engine_calls += 1
+        return Ok(None)
 
     def session(self, *, headless: bool) -> AbstractAsyncContextManager[FakeBrowserSession]:
         self.headless_flags.append(headless)

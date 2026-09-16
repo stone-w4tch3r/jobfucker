@@ -28,6 +28,7 @@ from jobfucker.clients.hh.browser import BrowserDriver
 from jobfucker.clients.hh.client import HHClient
 from jobfucker.clients.hh.config import HHServiceConfig
 from jobfucker.clients.hh.models import PersistedAuthState, PersistedCookie
+from test.clients.hh.browser_fake import FakeBrowserDriver
 
 DEFAULT_LOGIN = "person@example.test"
 DEFAULT_PASSWORD = "test-password"
@@ -281,7 +282,12 @@ def hh_client(
     login: str = DEFAULT_LOGIN,
     password: str = DEFAULT_PASSWORD,
 ) -> HHClient:
-    """Construct an HHClient over the scenario's fakes."""
+    """Construct an HHClient over the scenario's fakes.
+
+    ``browser_driver`` defaults to the scripted fake, never the real
+    :class:`PatchrightDriver`: the engine startup preflight must not spawn a
+    node driver (or auto-download an engine) inside BDD scenarios.
+    """
     deps = ClientDeps(
         service="hh",
         profile_id=profile_id,
@@ -294,6 +300,6 @@ def hh_client(
         deps,
         config,
         http_transport=transport,
-        browser_driver=browser_driver,
+        browser_driver=browser_driver if browser_driver is not None else FakeBrowserDriver([]),
         apply_delay=apply_delay,
     )

@@ -140,7 +140,6 @@ See [architecture spec](docs/specs/architecture.md). Short: presentation (typer 
 | Run tests | `uv run poe test` |
 | CLI help | `uv run poe app -h` (`app` = `python -m jobfucker` = `jobfucker`) |
 | Pre-commit verification | `uv run poe lint_full && uv run poe test` |
-| Captcha browser engine install | `uv run poe browser-install` (patchright Chromium; required before first captcha solve) |
 | Register pre-commit hooks | `uv run pre-commit install` |
 
 ---

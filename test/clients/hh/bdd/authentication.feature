@@ -146,3 +146,10 @@ Feature: HH authentication preflight
     Given Windows simulated for the HH token store
     When a token state snapshot is saved
     Then the save succeeds and the snapshot roundtrips without fchmod
+
+  Scenario: A failed browser engine preflight fails the action fast
+    Given a valid persisted HH token
+    And a browser engine whose startup preflight fails
+    When the HH client authorizes
+    Then authorization fails with a browser engine error
+    And HH received no requests at all

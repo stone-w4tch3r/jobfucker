@@ -32,6 +32,7 @@ dependencies = [
     "pillow>=10.0.0",            # shared captcha PNG decode / sixel encoding
     # Captcha browser engine: stealth Chromium for standalone challenge recovery
     "patchright>=1.62.0",
+    "anyio>=4.0.0",              # async Path in the engine auto-install preflight (ASYNC240)
     # Storage layer: sync ORM + schema migrations (confined to src/jobfucker/storage/)
     "sqlalchemy>=2.0.0",
     "alembic>=1.13.0",
@@ -273,8 +274,6 @@ fail_under = 0
 setup-project = "pre-commit install"
 test = "pytest"
 schemas = "python -m jobfucker.schema_generation"
-# Captcha browser engine: download the patched Chromium binary (patchright)
-browser-install = "patchright install chromium"
 
 # Interactive CLI commands (notably `$EDITOR`) must retain the calling terminal.
 # Poe otherwise starts tasks in a new session, leaving children without `/dev/tty`.

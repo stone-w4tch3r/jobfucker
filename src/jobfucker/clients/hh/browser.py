@@ -20,18 +20,22 @@ in one class. All selectors are HH standalone-challenge DOM markers
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import re
+import sys
 from collections.abc import AsyncGenerator, Sequence
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import TYPE_CHECKING, Final, Protocol
 from urllib.parse import parse_qs, urlparse
 
+import anyio
 from rusty_results.prelude import Err, Ok, Result
 
 from jobfucker.clients.base import CaptchaHandler, CaptchaSolvingError, ClientError, ProtocolError
 from jobfucker.clients.hh.captcha import Challenge, log_captcha_image
 from jobfucker.clients.hh.models import PersistedCookie
+from jobfucker.reporting import EventLevel, Reporter, RunEvent
 
 if TYPE_CHECKING:
     from patchright.async_api import BrowserContext, Page, Response
@@ -57,9 +61,16 @@ _CHALLENGE_POST_PATH: Final = "/account/captcha"
 # gate clearer is a hidden ``navigator.webdriver`` (docs/hh/captcha.md §5a).
 _WEBDRIVER_SPOOF: Final = "Object.defineProperty(Navigator.prototype, 'webdriver', { get: () => undefined });"
 
-_BROWSER_UNAVAILABLE_PREFIX: Final = (
+BROWSER_UNAVAILABLE_PREFIX: Final = (
     "Не удалось запустить браузер для решения капчи. Установите движок командой: patchright install chromium"
 )
+
+# Startup preflight (see :func:`ensure_chromium_engine`): the installer shells
+# out to the patchright CLI, which downloads the engine on first use.
+_INSTALL_TIMEOUT_S: Final = 300.0
+# Captured installer output is not streamed; on failure the last lines go into
+# the warning + run event, on success into the DEBUG file log.
+_INSTALL_TAIL_LINES: Final = 20
 
 
 class BrowserSession(Protocol):
@@ -98,13 +109,161 @@ class BrowserSession(Protocol):
 class BrowserDriver(Protocol):
     """Automation-stack seam: launches one stealth browser session."""
 
+    async def ensure_engine(self) -> Result[None, str]:
+        """Best-effort preflight: make the engine binary launchable.
+
+        Runs at client startup (before the auth preflight), so a first run
+        pays the engine download up front instead of mid-challenge. Never
+        raises — an install failure is the ``Err`` reason, and the caller
+        decides whether board work may proceed without the engine.
+        """
+        ...
+
     def session(self, *, headless: bool) -> AbstractAsyncContextManager[BrowserSession]:
         """Open one :class:`BrowserSession` as an async context manager."""
         ...
 
 
+async def _announce(reporter: Reporter | None, level: EventLevel, message: str) -> None:
+    """Publish one engine milestone on the run-event stream (reporters never raise)."""
+    if reporter is not None:
+        await reporter.publish(RunEvent(stage="client", message=message, level=level))
+
+
+def _output_tail(*streams: bytes) -> str:
+    """Last meaningful lines of captured installer output (progress-bar friendly).
+
+    The installer draws \r-carriage progress bars: carriage returns become line
+    breaks so earlier bar frames turn into dropped lines instead of one huge
+    string.
+    """
+    text = "\n".join(stream.decode(errors="replace").replace("\r", "\n") for stream in streams)
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    return "\n".join(lines[-_INSTALL_TAIL_LINES:])
+
+
+class _StreamCapture:
+    """Drains one installer stream into owned chunks that survive cancellation.
+
+    The drained bytes must not live inside the draining task: on timeout the
+    task is cancelled (the orphaned node driver child keeps the pipe write
+    ends open, so waiting for EOF would block until the whole download
+    finishes), and the chunks captured so far are still worth reporting.
+    """
+
+    def __init__(self) -> None:
+        self._chunks: list[bytes] = []
+
+    async def drain(self, reader: asyncio.StreamReader) -> None:
+        while chunk := await reader.read(1 << 16):
+            self._chunks.append(chunk)
+
+    def snapshot(self) -> bytes:
+        return b"".join(self._chunks)
+
+
+async def ensure_chromium_engine(executable_path: str, reporter: Reporter | None = None) -> Result[None, str]:
+    """Install the patchright Chromium engine when ``executable_path`` is absent.
+
+    Check-then-install: ``executable_path`` is the exact binary path the
+    launcher will use (env-resolved, revision-pinned), so an existence check
+    beats parsing launcher errors. Failures log + announce with the captured
+    installer tail and come back as ``Err(reason)``; never raises.
+    """
+    if await anyio.Path(executable_path).is_file():
+        return Ok(None)
+    logger.info(
+        "Browser engine binary missing at %s — installing patchright Chromium (first run only)...",
+        executable_path,
+    )
+    await _announce(reporter, "info", "Browser engine not found — installing patchright Chromium (first run only)...")
+    captured_out, captured_err = _StreamCapture(), _StreamCapture()
+    read_stdout: asyncio.Task[None] | None = None
+    read_stderr: asyncio.Task[None] | None = None
+    try:
+        process = await asyncio.create_subprocess_exec(
+            sys.executable,
+            "-m",
+            "patchright",
+            "install",
+            "chromium",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        assert process.stdout is not None  # PIPEs passed above
+        assert process.stderr is not None
+        read_stdout = asyncio.create_task(captured_out.drain(process.stdout))
+        read_stderr = asyncio.create_task(captured_err.drain(process.stderr))
+        try:
+            async with asyncio.timeout(_INSTALL_TIMEOUT_S):
+                await process.wait()
+        except TimeoutError:
+            # ponytail: kill() is wrapper-only — the node driver child may
+            # outlive it; upgrade to a process-group kill if orphaned
+            # downloads ever matter (start_new_session + killpg/taskkill).
+            with contextlib.suppress(ProcessLookupError):
+                process.kill()
+            await process.wait()
+            # Snapshot what we hold and stop draining: the orphaned node child
+            # keeps the pipe write ends open, so awaiting the readers would
+            # block until its whole download finishes.
+            for reader in (read_stdout, read_stderr):
+                reader.cancel()
+            tail = _output_tail(captured_out.snapshot(), captured_err.snapshot())
+            logger.warning("browser engine auto-install timed out after %ds", _INSTALL_TIMEOUT_S)
+            if tail:
+                logger.warning("browser engine installer output at timeout:\n%s", tail)
+            reason = tail.splitlines()[-1] if tail else f"no output after {_INSTALL_TIMEOUT_S:.0f}s"
+            await _announce(
+                reporter, "warning", f"Browser engine install timed out — captcha solve will report the fix ({reason})"
+            )
+            return Err(f"install timed out after {_INSTALL_TIMEOUT_S:.0f}s ({reason})")
+    except Exception as exc:
+        for reader in (read_stdout, read_stderr):
+            if reader is not None and not reader.done():
+                reader.cancel()
+        logger.warning("browser engine auto-install crashed: %s: %s", type(exc).__name__, exc)
+        await _announce(reporter, "warning", "Browser engine install failed — captcha solve will report the fix")
+        return Err(f"{type(exc).__name__}: {exc}")
+    tail = _output_tail(captured_out.snapshot(), captured_err.snapshot())
+    if process.returncode != 0:
+        logger.warning(
+            "browser engine auto-install failed (exit %d):\n%s",
+            process.returncode,
+            tail,
+        )
+        reason = tail.splitlines()[-1] if tail else f"exit code {process.returncode}"
+        await _announce(
+            reporter, "warning", f"Browser engine install failed — captcha solve will report the fix ({reason})"
+        )
+        return Err(f"exit code {process.returncode} ({reason})")
+    logger.debug("browser engine auto-install output:\n%s", tail)
+    await _announce(reporter, "success", "Browser engine installed")
+    return Ok(None)
+
+
 class PatchrightDriver:
     """:class:`BrowserDriver` over patchright (patched Playwright Chromium)."""
+
+    def __init__(self, reporter: Reporter | None = None) -> None:
+        self._reporter = reporter
+        self._engine_result: Result[None, str] | None = None
+
+    async def ensure_engine(self) -> Result[None, str]:
+        """Preflight the engine once per driver; never raises (see protocol)."""
+        if self._engine_result is not None:
+            return self._engine_result
+        try:
+            from patchright.async_api import async_playwright
+
+            async with async_playwright() as playwright:
+                result = await ensure_chromium_engine(playwright.chromium.executable_path, reporter=self._reporter)
+        except Exception as exc:
+            result: Result[None, str] = Err(f"{type(exc).__name__}: {exc}")
+        # Memoize the outcome, not just success: a broken engine fails every
+        # action identically instead of re-attempting a doomed install.
+        self._engine_result = result
+        return result
 
     @asynccontextmanager
     async def session(self, *, headless: bool) -> AsyncGenerator[PatchrightSession]:
@@ -236,6 +395,10 @@ class BrowserCaptchaSolver:
         self._handler = handler
         self._max_attempts = max_attempts
 
+    async def ensure_engine(self) -> Result[None, str]:
+        """Preflight the automation stack before any board work starts."""
+        return await self._driver.ensure_engine()
+
     async def solve(
         self,
         challenge: Challenge,
@@ -260,7 +423,7 @@ class BrowserCaptchaSolver:
             logger.warning("browser captcha engine unavailable: %s: %s", type(exc).__name__, exc)
             return Err(
                 CaptchaSolvingError(
-                    message=f"{_BROWSER_UNAVAILABLE_PREFIX} ({type(exc).__name__})",
+                    message=f"{BROWSER_UNAVAILABLE_PREFIX} ({type(exc).__name__})",
                     recovery_url=recovery_url,
                 )
             )

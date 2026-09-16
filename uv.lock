@@ -365,6 +365,7 @@ source = { editable = "." }
 dependencies = [
     { name = "aiosqlite" },
     { name = "alembic" },
+    { name = "anyio" },
     { name = "colorlog" },
     { name = "httpx" },
     { name = "jinja2" },
@@ -400,6 +401,7 @@ dev = [
 requires-dist = [
     { name = "aiosqlite", specifier = ">=0.22.1" },
     { name = "alembic", specifier = ">=1.13.0" },
+    { name = "anyio", specifier = ">=4.0.0" },
     { name = "colorlog", specifier = ">=6.10.1" },
     { name = "httpx", specifier = ">=0.28.0" },
     { name = "jinja2", specifier = ">=3.1.0" },

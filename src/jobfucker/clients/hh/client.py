@@ -20,7 +20,12 @@ from jobfucker.clients.base import (
 )
 from jobfucker.clients.hh.applications import ApplicationService, ApplyDelay
 from jobfucker.clients.hh.auth import AuthCoordinator
-from jobfucker.clients.hh.browser import BrowserCaptchaSolver, BrowserDriver, PatchrightDriver
+from jobfucker.clients.hh.browser import (
+    BROWSER_UNAVAILABLE_PREFIX,
+    BrowserCaptchaSolver,
+    BrowserDriver,
+    PatchrightDriver,
+)
 from jobfucker.clients.hh.captcha import CaptchaCoordinator
 from jobfucker.clients.hh.config import HHSearchFilters, HHServiceConfig
 from jobfucker.clients.hh.resumes import ResumeService
@@ -75,10 +80,11 @@ class HHClient(Client, HhTestCapable):
         )
         self._transport = HHTransport(transport=http_transport)
         standalone_solver = BrowserCaptchaSolver(
-            browser_driver if browser_driver is not None else PatchrightDriver(),
+            browser_driver if browser_driver is not None else PatchrightDriver(reporter=deps.reporter),
             deps.captcha_handler,
             max_attempts=section.captcha_max_attempts,
         )
+        self._standalone_solver = standalone_solver
         captcha = CaptchaCoordinator(
             self._transport,
             deps.captcha_handler,
@@ -97,6 +103,19 @@ class HHClient(Client, HhTestCapable):
 
     async def authorize(self) -> Result[None, ClientError]:
         """Ensure current persisted or newly-created HH authorization is healthy."""
+        return await self._ensure_authorized()
+
+    async def _ensure_authorized(self) -> Result[None, ClientError]:
+        """Shared board-action preflight: browser engine (once) + healthy auth.
+
+        Nearly every board-facing action can hit a standalone CAPTCHA, so the
+        first action installs the engine up front (client startup). A failed
+        preflight fails the action fast — without the engine the run would die
+        mid-batch on the first standalone CAPTCHA anyway.
+        """
+        engine = await self._standalone_solver.ensure_engine()
+        if engine.is_err:
+            return Err(ConfigurationError(message=f"{BROWSER_UNAVAILABLE_PREFIX} ({engine.unwrap_err()})"))
         return await self._auth.ensure_authorized()
 
     async def search_vacancies(
@@ -122,7 +141,7 @@ class HHClient(Client, HhTestCapable):
         if entry_result.is_err:
             return Err(entry_result.unwrap_err())
         query, filters = entry_result.unwrap()
-        authorized = await self._auth.ensure_authorized()
+        authorized = await self._ensure_authorized()
         if authorized.is_err:
             return Err(authorized.unwrap_err())
         return await self._search.search(
@@ -157,7 +176,7 @@ class HHClient(Client, HhTestCapable):
         if entry_result.is_err:
             return Err(entry_result.unwrap_err())
         query, filters = entry_result.unwrap()
-        authorized = await self._auth.ensure_authorized()
+        authorized = await self._ensure_authorized()
         if authorized.is_err:
             return Err(authorized.unwrap_err())
         return await self._search.list_vacancies(
@@ -184,7 +203,7 @@ class HHClient(Client, HhTestCapable):
 
     async def get_resumes(self) -> Result[list[ResumeInfo], ClientError]:
         """Healthcheck authorization, then list the account's owned resumes."""
-        authorized = await self._auth.ensure_authorized()
+        authorized = await self._ensure_authorized()
         if authorized.is_err:
             return Err(authorized.unwrap_err())
         listed = await self._resumes.list_resumes(self._auth.authorized_access_token)
@@ -207,7 +226,7 @@ class HHClient(Client, HhTestCapable):
         is a :class:`ConfigurationError` the core treats as a pipeline stop —
         it is memoized per client so a batch validates once, not per vacancy.
         """
-        authorized = await self._auth.ensure_authorized()
+        authorized = await self._ensure_authorized()
         if authorized.is_err:
             return Err(authorized.unwrap_err())
         if resume_id not in self._validated_resume_ids:
@@ -237,7 +256,7 @@ class HHClient(Client, HhTestCapable):
         vacancy stays open, ``HhTestService`` signals it by returning ``None``
         and this method falls back ONCE to the standard application flow.
         """
-        authorized = await self._auth.ensure_authorized()
+        authorized = await self._ensure_authorized()
         if authorized.is_err:
             return Err(authorized.unwrap_err())
         if resume_id not in self._validated_resume_ids:
@@ -262,7 +281,7 @@ class HHClient(Client, HhTestCapable):
 
     async def get_vacancy_test(self, vacancy_id: ServiceVacancyId) -> Result[HhTestProblem | None, ClientError]:
         """Healthcheck authorization, then fetch the vacancy's web screening test."""
-        authorized = await self._auth.ensure_authorized()
+        authorized = await self._ensure_authorized()
         if authorized.is_err:
             return Err(authorized.unwrap_err())
         return await self._tests.get_vacancy_test(vacancy_id)

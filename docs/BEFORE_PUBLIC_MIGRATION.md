@@ -43,10 +43,6 @@ Works only for clone-and-run usage; any wheel-based install hits the
 collision. Conflicts with the public-repo goal unless the documented install
 method is "clone and run".
 
-## Auto install browser
-
-See `pyproject.toml` - now requires manual script call. Should auto check/install from browser engine controller.
-
 ## Ensure cross-os compatibility
 
 Was tested only on linux. Theoretically code should work on macos/win too (applied a set of fixes).

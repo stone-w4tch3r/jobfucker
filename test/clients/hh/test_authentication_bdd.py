@@ -20,7 +20,7 @@ from urllib.parse import parse_qs
 import httpx
 import pytest
 from pytest_bdd import given, scenarios, then, when
-from rusty_results.prelude import Ok, Result
+from rusty_results.prelude import Err, Ok, Result
 
 from jobfucker.clients.base import (
     AuthError,
@@ -28,15 +28,18 @@ from jobfucker.clients.base import (
     ClientCredentials,
     ClientDeps,
     ClientError,
+    ConfigurationError,
     ProtocolError,
     ServiceVacancyId,
     TransportError,
 )
 from jobfucker.clients.hh.auth import TokenStore
+from jobfucker.clients.hh.browser import BrowserDriver
 from jobfucker.clients.hh.client import HHClient
 from jobfucker.clients.hh.config import HHSearchEntry, HHServiceConfig
 from jobfucker.clients.hh.models import PersistedAuthState
 from jobfucker.testing.step_runner import async_run
+from test.clients.hh.browser_fake import FakeBrowserDriver
 from test.clients.hh.helpers import (
     DEFAULT_EXPIRES_AT,
     PNG_IMAGE,
@@ -336,6 +339,7 @@ def _scenario(
     login_post: LoginPostResponder | None = None,
     authorize: AuthorizeScript | None = None,
     token: TokenResponder | None = None,
+    browser_driver: BrowserDriver | None = None,
 ) -> AuthScenario:
     transport = AuthTransport(
         healthchecks=healthchecks if healthchecks is not None else ScriptedResponses(applicant_healthcheck()),
@@ -360,6 +364,7 @@ def _scenario(
             config=HHServiceConfig(resume_id="resume-1", searches=(HHSearchEntry(query="python"),)),
             solver=solver,
             apply_delay=_no_delay,
+            browser_driver=browser_driver,
             login=_LOGIN,
             password=_PASSWORD,
         )
@@ -373,6 +378,21 @@ def _scenario(
 @given("a valid persisted HH token", target_fixture="auth_scenario")
 def valid_state_step(tmp_path: Path) -> AuthScenario:
     return _scenario(tmp_path, seeded=True)
+
+
+class FailingEngineDriver(FakeBrowserDriver):
+    """Scripted driver whose startup preflight always fails."""
+
+    def __init__(self) -> None:
+        super().__init__([])
+
+    async def ensure_engine(self) -> Result[None, str]:
+        return Err("install timed out after 10s (downloaded 55%)")
+
+
+@given("a browser engine whose startup preflight fails", target_fixture="auth_scenario")
+def failing_engine_step(tmp_path: Path) -> AuthScenario:
+    return _scenario(tmp_path, seeded=True, browser_driver=FailingEngineDriver())
 
 
 @given("no persisted HH authentication state", target_fixture="auth_scenario")
@@ -565,6 +585,20 @@ def protocol_error_step(auth_outcome: AuthOutcome) -> None:
 def captcha_error_step(auth_outcome: AuthOutcome) -> None:
     assert len(auth_outcome.errors) == 1
     assert isinstance(auth_outcome.errors[0], CaptchaSolvingError)
+
+
+@then("authorization fails with a browser engine error")
+def browser_engine_error_step(auth_outcome: AuthOutcome) -> None:
+    assert len(auth_outcome.errors) == 1
+    error = auth_outcome.errors[0]
+    assert isinstance(error, ConfigurationError)
+    assert "patchright install chromium" in error.message
+    assert "install timed out" in error.message
+
+
+@then("HH received no requests at all")
+def no_requests_step(auth_outcome: AuthOutcome) -> None:
+    assert _paths(auth_outcome) == []
 
 
 @then("authorization fails with an authentication error")
