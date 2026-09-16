@@ -421,7 +421,14 @@ def test_edit_pipeline_id_edits_only_that_pipeline(
 ) -> None:
     _install_services(monkeypatch, storage)
     pipeline_a_id, vacancy_a_id, vacancy_b_id = _seed_two_pipeline_vacancies(storage)
-    monkeypatch.setenv("EDITOR", "sed -i 's/notes: null/notes: reviewed/'")
+    monkeypatch.setenv(
+        "EDITOR",
+        _python_editor(
+            "import sys,pathlib; p=pathlib.Path(sys.argv[1]); "
+            "p.write_text(p.read_text(encoding='utf-8')"
+            ".replace('notes: null', 'notes: reviewed'), encoding='utf-8')"
+        ),
+    )
 
     result = runner.invoke(app, ["vacancies", "edit", "--pipeline-id", str(pipeline_a_id)], input="y\n")
 

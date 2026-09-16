@@ -326,12 +326,14 @@ def mock_pipeline_yaml(runtime_dir: Path) -> Path:
         keep_trailing_newline=True,
     )
     rendered = env.get_template("pipeline.mock.yaml.j2").render(
-        login_file=str(login),
-        password_file=str(password),
-        api_key_file=str(api_key),
-        resume_path=str(resume),
-        scoring_prompt_file=str(scoring_prompt),
-        apply_prompt_file=str(resume),
+        # as_posix: Windows backslashes are invalid escapes inside YAML
+        # double-quoted scalars; forward slashes resolve fine everywhere.
+        login_file=login.as_posix(),
+        password_file=password.as_posix(),
+        api_key_file=api_key.as_posix(),
+        resume_path=resume.as_posix(),
+        scoring_prompt_file=scoring_prompt.as_posix(),
+        apply_prompt_file=resume.as_posix(),
     )
 
     yaml_path = config_dir / "pipeline.mock.yaml"

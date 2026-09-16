@@ -686,7 +686,10 @@ def one_oauth_flow_step(auth_outcome: AuthOutcome) -> None:
 @then("verified authentication state was persisted securely")
 def persisted_securely_step(auth_scenario: AuthScenario) -> None:
     assert auth_scenario.state_path.is_file()
-    assert stat.S_IMODE(auth_scenario.state_path.stat().st_mode) == 0o600
+    if os.name == "posix":
+        # POSIX-only semantics: Windows chmod carries no owner-rw bits, so the
+        # product's best-effort mode hardening is unobservable there.
+        assert stat.S_IMODE(auth_scenario.state_path.stat().st_mode) == 0o600
     persisted = PersistedAuthState.model_validate_json(auth_scenario.state_path.read_text(encoding="utf-8"))
     assert persisted.access_token == "USER-new"
 

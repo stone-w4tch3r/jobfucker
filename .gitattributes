@@ -1,0 +1,4 @@
+# Normalize line endings: LF in the working tree everywhere, so byte-comparing
+# tests (schema drift, fixtures) behave identically on Windows checkouts.
+* text=auto eol=lf
+*.png binary

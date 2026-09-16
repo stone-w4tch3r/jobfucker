@@ -450,6 +450,8 @@ def test_referenced_file_contents_are_trimmed(runtime_dir: Path) -> None:
     apply_prompt.write_text("apply template \n", encoding="utf-8")
 
     path = config_dir / "pipeline.yaml"
+    # as_posix: Windows backslashes are invalid escapes inside YAML
+    # double-quoted scalars; forward slashes resolve fine everywhere.
     yaml_text = (
         "name: trim\n"
         "description: d\n"
@@ -458,12 +460,12 @@ def test_referenced_file_contents_are_trimmed(runtime_dir: Path) -> None:
         "        filter:\n"
         "          area: [1]\n          schedule: []\n          experience: null\n"
         "          only_with_salary: false\n"
-        f'auth:\n  login_file: "{login}"\n  password_file: "{password}"\n'
-        f'resume:\n  path: "{resume}"\n'
-        f'openai:\n  model: m\n\n  base_url: u\n  api_key_file: "{api_key}"\n'
+        f'auth:\n  login_file: "{login.as_posix()}"\n  password_file: "{password.as_posix()}"\n'
+        f'resume:\n  path: "{resume.as_posix()}"\n'
+        f'openai:\n  model: m\n\n  base_url: u\n  api_key_file: "{api_key.as_posix()}"\n'
         "scoring:\n  min_required_score: 1\n"
-        f'  scoring_prompt_file: "{score_prompt}"\n'
-        f'apply:\n  apply_prompt_file: "{apply_prompt}"\n'
+        f'  scoring_prompt_file: "{score_prompt.as_posix()}"\n'
+        f'apply:\n  apply_prompt_file: "{apply_prompt.as_posix()}"\n'
         "limits:\n  daily_apply_limit: 5\n"
     )
     path.write_text(yaml_text, encoding="utf-8")

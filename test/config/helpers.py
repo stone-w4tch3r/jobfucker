@@ -55,6 +55,8 @@ def build_valid_pipeline_yaml(
     behavior_block = "" if not behavior_yaml else "\n" + behavior_yaml
     vacancies_block = "" if not vacancies_yaml else "\n" + vacancies_yaml
 
+    # as_posix: Windows backslashes are invalid escapes inside YAML
+    # double-quoted scalars; forward slashes resolve fine everywhere.
     yaml_text = f"""\
 name: "mock-demo"
 description: "A config test pipeline"
@@ -69,19 +71,19 @@ service:
           experience: "between1And3"
           only_with_salary: true
 {vacancies_block}{behavior_block}auth:
-  login_file: "{login_file}"
-  password_file: "{password_file}"
+  login_file: "{login_file.as_posix()}"
+  password_file: "{password_file.as_posix()}"
 resume:
-  path: "{resume_file}"
+  path: "{resume_file.as_posix()}"
 openai:
   model: "gpt-5-mini"
   base_url: "https://api.openai.com/v1"
-  api_key_file: "{api_key_file}"
+  api_key_file: "{api_key_file.as_posix()}"
 scoring:
   min_required_score: 3
-  scoring_prompt_file: "{score_prompt}"
+  scoring_prompt_file: "{score_prompt.as_posix()}"
 apply:
-  apply_prompt_file: "{apply_prompt}"
+  apply_prompt_file: "{apply_prompt.as_posix()}"
 limits:
   daily_apply_limit: {daily_apply_limit}
 """
