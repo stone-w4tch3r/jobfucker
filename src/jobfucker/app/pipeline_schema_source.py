@@ -42,7 +42,7 @@ from jobfucker.clients.mock.params import MockServiceConfig
 from jobfucker.schema_source import SchemaSource
 
 PIPELINE_SCHEMA_ID: Final = (
-    "https://raw.githubusercontent.com/stone-w4tch3r/jobfucker/main/docs/schemas/pipeline.schema.json"
+    "https://raw.githubusercontent.com/stone-w4tch3r/jobfucker/master/docs/schemas/pipeline.schema.json"
 )
 
 

@@ -58,7 +58,7 @@ _CHALLENGE_POST_PATH: Final = "/account/captcha"
 _WEBDRIVER_SPOOF: Final = "Object.defineProperty(Navigator.prototype, 'webdriver', { get: () => undefined });"
 
 _BROWSER_UNAVAILABLE_PREFIX: Final = (
-    "Не удалось запустить браузер для решения капчи. Установите движок командой: uv run poe browser-install"
+    "Не удалось запустить браузер для решения капчи. Установите движок командой: patchright install chromium"
 )
 
 

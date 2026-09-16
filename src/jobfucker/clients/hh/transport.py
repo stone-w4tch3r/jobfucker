@@ -5,7 +5,8 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import logging
-from collections.abc import Sequence
+import sys
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from time import monotonic
 from typing import Final, Literal
@@ -19,9 +20,13 @@ from jobfucker.clients.hh.models import PersistedCookie
 
 _HH_ORIGIN: Final = "https://hh.ru"
 _API_ORIGIN: Final = "https://api.hh.ru"
-_USER_AGENT: Final = (
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
-)
+# OS fragment mirrors the captcha browser engine's real per-OS Chromium so the
+# API client and the browser don't look like different devices to HH.
+_UA_OS_FRAGMENTS: Final[Mapping[str, str]] = {
+    "win32": "Windows NT 10.0; Win64; x64",
+    "darwin": "Macintosh; Intel Mac OS X 10_15_7",
+}
+_DEFAULT_UA_OS_FRAGMENT: Final = "X11; Linux x86_64"
 _ORDINARY_PACING_SECONDS: Final = 0.345
 _SAFE_GET_ATTEMPTS: Final = 3
 _CONNECT_ATTEMPTS: Final = 3
@@ -33,6 +38,12 @@ _RETRYABLE_STATUSES: Final = frozenset({502, 503, 504})
 FormFields = tuple[tuple[str, str], ...]
 
 logger = logging.getLogger(__name__)
+
+
+def _user_agent() -> str:
+    """Build the HH user-agent with the OS fragment matching the running platform."""
+    os_fragment = _UA_OS_FRAGMENTS.get(sys.platform, _DEFAULT_UA_OS_FRAGMENT)
+    return f"Mozilla/5.0 ({os_fragment}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
 
 
 def fingerprint(value: str) -> str:
@@ -103,7 +114,7 @@ class HHTransport:
             follow_redirects=False,
             timeout=httpx.Timeout(30.0),
             verify=True,
-            headers={"user-agent": _USER_AGENT},
+            headers={"user-agent": _user_agent()},
         )
         self._closed = False
         self._pace_lock = asyncio.Lock()

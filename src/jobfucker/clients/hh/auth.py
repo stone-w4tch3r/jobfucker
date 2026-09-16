@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import os
 import secrets
+import sys
 import tempfile
 import time
 from dataclasses import dataclass
@@ -104,7 +105,11 @@ class TokenStore:
         descriptor, temporary_name = tempfile.mkstemp(prefix=".auth-state-", dir=self._directory, text=True)
         temporary_path = Path(temporary_name)
         try:
-            os.fchmod(descriptor, 0o600)
+            # os.fchmod is POSIX-only and missing on Windows. The mode-bit calls
+            # are no-ops there and auth-state.json is protected by the default
+            # per-user profile ACLs; accepted deliberately.
+            if sys.platform != "win32":
+                os.fchmod(descriptor, 0o600)
             with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
                 descriptor = -1
                 stream.write(state.model_dump_json())

@@ -201,7 +201,18 @@ def write_document(path: Path, content: bytes, overwrite_mode: OverwriteMode) ->
                 os.link(temporary_path, path)
             except FileExistsError:
                 return Err(f"output file already exists: {path} (use --force to replace it)")
-            temporary_path.unlink()
+            except OSError:
+                # os.link is unavailable on some filesystems (FAT/exFAT/network
+                # shares on Windows): it raises a non-FileExistsError OSError
+                # even when the target is absent. Fall back to an exists check
+                # plus an atomic replace so REFUSE semantics survive there.
+                if os.path.lexists(path):
+                    # lexists, not exists: a dangling symlink is an existing
+                    # output and must still be refused, not silently replaced.
+                    return Err(f"output file already exists: {path} (use --force to replace it)")
+                os.replace(temporary_path, path)
+            else:
+                temporary_path.unlink()
             temporary_path = None
         else:
             os.replace(temporary_path, path)

@@ -23,6 +23,7 @@ from jobfucker.captcha.terminal import (
     detect_terminal_protocol,
     encode_kitty,
     encode_sixel,
+    known_unsupported_terminal,
     wrap_sixel,
 )
 from jobfucker.captcha.terminal_handlers import TerminalCaptchaHandler
@@ -100,6 +101,39 @@ def test_detect_term_program_entries_outrank_generic_term_entries() -> None:
 def test_detect_unknown_environment() -> None:
     assert detect_terminal_protocol(env={}) is None
     assert detect_terminal_protocol(env={"TERM": "something-else", "TERM_PROGRAM": "unknown"}) is None
+
+
+def test_detect_known_unsupported_windows_terminal() -> None:
+    # Windows Terminal is only identifiable via WT_SESSION presence (it sets no
+    # reliable TERM_PROGRAM) and supports neither sixel nor kitty.
+    env = {"WT_SESSION": "some-guid"}
+    assert detect_terminal_protocol(env=env) is None
+    assert known_unsupported_terminal(env=env) == "Windows Terminal"
+
+
+def test_detect_known_unsupported_apple_terminal() -> None:
+    env = {"TERM_PROGRAM": "Apple_Terminal"}
+    assert detect_terminal_protocol(env=env) is None
+    assert known_unsupported_terminal(env=env) == "Apple Terminal"
+
+
+def test_known_unsupported_entries_outrank_generic_term_entries() -> None:
+    # Both TERM and WT_SESSION leak into child shells (WSL/ssh): without the
+    # specific entries first, the generic TERM=xterm-256color entry would
+    # wrongly claim sixel support for Windows Terminal / Terminal.app.
+    windows = {"WT_SESSION": "some-guid", "TERM": "xterm-256color"}
+    assert detect_terminal_protocol(env=windows) is None
+    assert known_unsupported_terminal(env=windows) == "Windows Terminal"
+    apple = {"TERM_PROGRAM": "Apple_Terminal", "TERM": "xterm-256color"}
+    assert detect_terminal_protocol(env=apple) is None
+    assert known_unsupported_terminal(env=apple) == "Apple Terminal"
+
+
+def test_known_unsupported_terminal_is_none_without_a_known_terminal() -> None:
+    # The name function must stay None both for protocol-capable terminals and
+    # for unknown environments — it only names recognised-but-unsupported ones.
+    assert known_unsupported_terminal(env={"TERM_PROGRAM": "WezTerm"}) is None
+    assert known_unsupported_terminal(env={}) is None
 
 
 def test_detect_ignores_multiplexer_for_protocol_choice(tmp_path: Path) -> None:

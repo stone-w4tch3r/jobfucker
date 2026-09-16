@@ -44,6 +44,16 @@
     "sixel": true,
     "kitty": false
   },
+  "Apple Terminal": {
+    "detect": { "TERM_PROGRAM": "Apple_Terminal" },
+    "sixel": false,
+    "kitty": false
+  },
+  "Windows Terminal": {
+    "detect": { "env_set": "WT_SESSION" },
+    "sixel": false,
+    "kitty": false
+  },
   "foot": { "detect": { "TERM": "foot" }, "sixel": true, "kitty": false },
   "xterm": { "detect": { "TERM": "xterm" }, "sixel": true, "kitty": false },
   "xterm-256color": {

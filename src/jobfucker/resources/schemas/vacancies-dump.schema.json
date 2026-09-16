@@ -309,13 +309,13 @@
       "type": "object"
     }
   },
-  "$id": "https://raw.githubusercontent.com/example-org/jobfucker/main/docs/schemas/vacancies-dump.schema.json",
+  "$id": "https://raw.githubusercontent.com/example-org/jobfucker/master/docs/schemas/vacancies-dump.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "Versioned vacancy review document shared by YAML and JSON encodings.",
   "properties": {
     "$schema": {
-      "const": "https://raw.githubusercontent.com/example-org/jobfucker/main/docs/schemas/vacancies-dump.schema.json",
+      "const": "https://raw.githubusercontent.com/example-org/jobfucker/master/docs/schemas/vacancies-dump.schema.json",
       "title": "$Schema",
       "type": "string"
     },

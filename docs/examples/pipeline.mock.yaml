@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/stone-w4tch3r/jobfucker/main/docs/schemas/pipeline.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/stone-w4tch3r/jobfucker/master/docs/schemas/pipeline.schema.json
 #
 # Mock pipeline example — exercise the CLI/GUI end-to-end with NO live board.
 # Service `mock` is the first-party offline client (per_auth_daily_cap = 200).
@@ -46,7 +46,8 @@ service:
               - English at reading level.
 
               We offer remote work, a modern tech stack and a friendly team.
-            key_skills: ["Python", "FastAPI", "PostgreSQL", "Docker", "SQLAlchemy"]
+            key_skills:
+              ["Python", "FastAPI", "PostgreSQL", "Docker", "SQLAlchemy"]
             salary:
               from: 250000
               to: 350000
@@ -72,7 +73,8 @@ service:
               - Scripting in Python or Go.
 
               We value automation, reliability and blameless culture.
-            key_skills: ["Kubernetes", "Terraform", "GitLab CI", "Prometheus", "Linux"]
+            key_skills:
+              ["Kubernetes", "Terraform", "GitLab CI", "Prometheus", "Linux"]
             salary:
               from: 300000
               to: 400000
@@ -110,16 +112,16 @@ service:
     # be exercised with no live board (run e.g. `apply --use-sixel`).
     #
     behavior:
-      authorize_error: null            # a string makes authorize fail
+      authorize_error: null # a string makes authorize fail
       default_apply:
-        outcome: "applied"             # applied | skipped | error | limit_exceeded
+        outcome: "applied" # applied | skipped | error | limit_exceeded
         message: null
       per_vacancy:
         "mock-1":
           outcome: "error"
           message: "mock apply rejected"
       captcha:
-        operation: "apply"   # apply | search | authorize
+        operation: "apply" # apply | search | authorize
         attempts: 1
 
 auth:

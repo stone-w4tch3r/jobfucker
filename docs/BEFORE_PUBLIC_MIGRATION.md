@@ -49,6 +49,4 @@ See `pyproject.toml` - now requires manual script call. Should auto check/instal
 
 ## Ensure cross-os compatibility
 
-Was tested only on linux.
-
-Eg dev scripts are heavy POSIX
+Was tested only on linux. Theoretically code should work on macos/win too (applied a set of fixes).

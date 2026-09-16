@@ -115,6 +115,14 @@ Vacancy application automation engine for Russian job boards (initially hh.ru). 
 - CLI: each command wraps core work in `asyncio.run(...)` (one-shot loop).
 - BDD steps stay synchronous, drive async domain via `jobfucker.testing.step_runner` (pytest-bdd cannot await `async def` — async steps silently no-op → false green).
 
+### Cross-platform (Windows / POSIX)
+
+- Windows, macOS, and Linux are equal runtime targets; code works on all of them.
+- Default to OS-agnostic implementations, eg `pathlib`, no POSIX-only imports/syscalls, per-OS directories and so on.
+- Small platform differences (a chmod call, an editor default) may be compact `sys.platform` / `os.name` branches inline — kept narrowable so the type checker validates each side.
+- A complex OS-specific subsystem is a distinct service behind a protocol with one implementation per OS — never scattered conditionals.
+- Enforcement: basedpyright infers the platform per machine; CI runs lint + tests on Linux and Windows.
+
 ---
 
 ## Architecture

@@ -39,12 +39,18 @@ Scenario: dump and edit accept an optional pipeline scope
   Given vacancies in two pipelines
   When ``--pipeline-id`` selects one pipeline or an unknown id
   Then the document holds only scoped rows and unknown ids fail with the standard message
+
+Scenario: EDITOR resolution is OS-aware
+  Given EDITOR values holding a Windows spaced path, a bare command, or nothing at all
+  When the editor argv is resolved
+  Then Windows keeps quoted paths as one token (defaulting to notepad) and POSIX splits args or fails explicitly
 """
 
 from __future__ import annotations
 
 import os
 import re
+import shutil
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 
@@ -55,6 +61,7 @@ from typer.testing import CliRunner
 
 from jobfucker.app.services import AppServices
 from jobfucker.cli import app
+from jobfucker.cli_commands.vacancies import _resolve_editor_argv  # pyright: ignore[reportPrivateUsage]
 from jobfucker.storage.db import Storage
 from jobfucker.testing.step_runner import async_run
 from test.storage.builders import make_pipeline, make_vacancy
@@ -75,6 +82,71 @@ def _install_services(monkeypatch: pytest.MonkeyPatch, storage: Storage) -> None
 
     opener: Callable[..., Awaitable[Result[AppServices, str]]] = fake_open
     monkeypatch.setattr("jobfucker.cli.AppServices.open", opener)
+
+
+def _fake_which(resolved: str | None) -> Callable[[str], str | None]:
+    def which(_command: str) -> str | None:
+        return resolved
+
+    return which
+
+
+def test_editor_resolution_keeps_windows_spaced_path_as_one_token(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(os, "name", "nt")
+    editor = '"C:\\Program Files\\Foo\\bar.exe"'
+
+    result = _resolve_editor_argv(editor)
+
+    assert result.is_ok and result.unwrap() == ["C:\\Program Files\\Foo\\bar.exe"]
+
+
+def test_editor_resolution_resolves_windows_bare_command_via_path(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(os, "name", "nt")
+    monkeypatch.setattr(shutil, "which", _fake_which("C:\\Users\\dev\\AppData\\code.cmd"))
+
+    result = _resolve_editor_argv("code")
+
+    assert result.is_ok and result.unwrap() == ["C:\\Users\\dev\\AppData\\code.cmd"]
+
+
+def test_editor_resolution_defaults_to_notepad_on_windows_without_editor(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(os, "name", "nt")
+
+    result = _resolve_editor_argv(None)
+
+    assert result.is_ok and result.unwrap() == ["notepad"]
+
+
+def test_editor_resolution_splits_posix_editor_arguments(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(os, "name", "posix")
+    monkeypatch.setattr(shutil, "which", _fake_which("/usr/bin/code"))
+
+    result = _resolve_editor_argv("code -w")
+
+    assert result.is_ok and result.unwrap() == ["/usr/bin/code", "-w"]
+
+
+def test_editor_resolution_requires_editor_on_posix(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(os, "name", "posix")
+
+    result = _resolve_editor_argv(None)
+
+    assert result.is_err and result.unwrap_err() == "EDITOR is not set; set it to the editor command to use"
+
+
+def test_editor_resolution_fails_when_posix_command_is_missing(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(os, "name", "posix")
+    monkeypatch.setattr(shutil, "which", _fake_which(None))
+
+    result = _resolve_editor_argv("missing-editor-binary")
+
+    assert result.is_err and "missing-editor-binary" in result.unwrap_err()
 
 
 def _seed_vacancy(storage: Storage) -> int:

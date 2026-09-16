@@ -106,6 +106,28 @@ def _column_names(engine: Engine, table: str) -> set[str]:
 
 
 @pytest.mark.integration
+async def test_apply_migrations_survives_percent_in_db_path(tmp_path: Path) -> None:
+    """Regression: a literal ``%`` in the DB path must not break migrations.
+
+    ``apply_migrations`` feeds the URL through alembic's configparser, which
+    interpolates ``%(...)s`` on read; a raw ``%`` (e.g. DATA_DIR ``50%off``)
+    used to raise ``InterpolationSyntaxError`` on the first migration run.
+    """
+    db_dir = tmp_path / "50%dir"
+    db_dir.mkdir()
+    db = db_dir / "jobfucker.db"
+
+    apply_migrations(db)
+
+    assert db.exists()
+    engine = create_engine(f"sqlite:///{db}")
+    try:
+        assert _table_names(engine) == set(EXPECTED_TABLES)
+    finally:
+        engine.dispose()
+
+
+@pytest.mark.integration
 async def test_alembic_upgrade_creates_the_five_tables(tmp_path: Path) -> None:
     db = tmp_path / "jobfucker.db"
     apply_migrations(db)

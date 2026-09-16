@@ -7,6 +7,8 @@ are on the wire; anything post-send must surface as
 
 from __future__ import annotations
 
+import asyncio
+import sys
 from typing import Literal
 
 import httpx
@@ -17,6 +19,29 @@ from jobfucker.clients.hh.transport import HHTransport
 
 AccessToken = "USER-transport"
 FailureKind = Literal["connect", "connect_timeout", "pool_timeout", "read"]
+
+
+@pytest.mark.parametrize(
+    ("platform", "expected_fragment"),
+    [
+        ("win32", "Windows NT 10.0; Win64; x64"),
+        ("darwin", "Macintosh; Intel Mac OS X 10_15_7"),
+        ("linux", "X11; Linux x86_64"),
+        ("freebsd", "X11; Linux x86_64"),
+    ],
+)
+def test_user_agent_os_fragment_follows_platform(
+    platform: str, expected_fragment: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The UA OS fragment mirrors the captcha browser engine's real per-OS Chromium."""
+    monkeypatch.setattr(sys, "platform", platform)
+    transport = HHTransport()
+    try:
+        assert expected_fragment in transport.client.headers["user-agent"]
+        assert "Chrome/140.0.0.0" in transport.client.headers["user-agent"]
+    finally:
+        # No event loop in this sync test; dispose the pooled client directly.
+        asyncio.run(transport.aclose())
 
 
 class _FlakyTransport:

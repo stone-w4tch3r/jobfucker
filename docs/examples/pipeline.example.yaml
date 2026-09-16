@@ -1,7 +1,7 @@
 # =============================================================================
 # jobfucker — pipeline.yaml reference example
 # =============================================================================
-# yaml-language-server: $schema=https://raw.githubusercontent.com/stone-w4tch3r/jobfucker/main/docs/schemas/pipeline.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/stone-w4tch3r/jobfucker/master/docs/schemas/pipeline.schema.json
 
 # --- Identity ----------------------------------------------------------------
 name: "fullstack-ai-search"

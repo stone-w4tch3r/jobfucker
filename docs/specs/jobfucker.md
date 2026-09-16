@@ -167,6 +167,8 @@ Session cookies, tokens, and the DB live under platform data dirs, overridable v
 
 ## Boundaries
 
+- Cross-platform: the CLI runs on Windows, macOS, and Linux — both POSIX and Windows are
+  equal targets.
 - All board I/O goes through the `Client` contract; the engine never calls board APIs directly.
 - All AI calls (scoring, letters, captcha vision) go through `ai.py`'s typed wrapper.
 - No daemon; every command is one-shot. No web crawling; batch stages only.

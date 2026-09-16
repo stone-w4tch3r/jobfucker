@@ -943,5 +943,8 @@ def apply_migrations(db_path: Path) -> None:
 
     ini_path = Path(__file__).parent / "migrations" / "alembic.ini"
     config = Config(str(ini_path))
-    config.set_main_option("sqlalchemy.url", f"sqlite:///{db_path}")
+    # Alembic's configparser interpolates %(...)s on read (env.py get_main_option /
+    # get_section), so a literal % in the DB path (e.g. DATA_DIR "50%off") would
+    # raise InterpolationSyntaxError; %% unescapes back to % when expanded.
+    config.set_main_option("sqlalchemy.url", f"sqlite:///{db_path}".replace("%", "%%"))
     command.upgrade(config, "head")

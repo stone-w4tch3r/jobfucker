@@ -18,8 +18,10 @@ Scenario: multiline text is readable and lossless in YAML
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
+import pytest
 from pydantic import JsonValue
 
 from jobfucker.table_documents.codec import (
@@ -149,4 +151,42 @@ def test_atomic_write_refuses_dangling_symlink_without_force(tmp_path: Path) -> 
     assert refused.is_err and "already exists" in refused.unwrap_err()
     assert output_path.is_symlink()
     assert not missing_target.exists()
+    assert not tuple(tmp_path.glob(".vacancies.json.*"))
+
+
+def _hardlink_unavailable(source: Path, destination: Path, **_kwargs: object) -> None:
+    """Mimic Windows without Developer Mode: os.link fails even when the target is absent."""
+    raise PermissionError(f"hardlinks are not supported for {destination}")
+
+
+def _with_unsupported_hardlinks(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(os, "link", _hardlink_unavailable)
+
+
+def test_atomic_write_refuse_falls_back_when_hardlinks_unsupported(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _with_unsupported_hardlinks(monkeypatch)
+    output_path = tmp_path / "vacancies.json"
+
+    result = write_document(output_path, b"new", OverwriteMode.REFUSE)
+
+    assert result.is_ok
+    assert output_path.read_bytes() == b"new"
+    assert not tuple(tmp_path.glob(".vacancies.json.*"))
+
+
+def test_atomic_write_refuse_errors_when_hardlinks_unsupported_and_target_exists(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _with_unsupported_hardlinks(monkeypatch)
+    output_path = tmp_path / "vacancies.json"
+    output_path.write_bytes(b"old")
+
+    refused = write_document(output_path, b"new", OverwriteMode.REFUSE)
+
+    assert refused.is_err and "already exists" in refused.unwrap_err()
+    assert output_path.read_bytes() == b"old"
     assert not tuple(tmp_path.glob(".vacancies.json.*"))

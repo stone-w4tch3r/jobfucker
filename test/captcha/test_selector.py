@@ -60,9 +60,10 @@ def test_no_captcha_ai_forces_terminal_path(monkeypatch: pytest.MonkeyPatch) -> 
     # With AI configured but disabled, and no terminal detected, we fail fast
     # (proving the AI branch is skipped, not silently used). Pin a terminal that
     # matches no capability so detection is deterministic (independent of the
-    # ambient TERM/TERM_PROGRAM of whoever runs the suite).
+    # ambient TERM/TERM_PROGRAM/WT_SESSION of whoever runs the suite).
     monkeypatch.setenv("TERM", "dumb")
     monkeypatch.delenv("TERM_PROGRAM", raising=False)
+    monkeypatch.delenv("WT_SESSION", raising=False)
     result = select_captcha_handler(_config_with_captcha_ai(), no_captcha_ai=True)
     assert result.is_err
     assert "протокол" in result.unwrap_err()
@@ -70,6 +71,9 @@ def test_no_captcha_ai_forces_terminal_path(monkeypatch: pytest.MonkeyPatch) -> 
 
 def test_no_captcha_ai_with_detect_uses_terminal(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("TERM", "foot")
+    # WT_SESSION (if leaked from a host terminal) must not shadow the generic
+    # TERM match in the packaged capability map's ordering.
+    monkeypatch.delenv("WT_SESSION", raising=False)
     handler = select_captcha_handler(_config_with_captcha_ai(), no_captcha_ai=True).unwrap()
     assert isinstance(handler, TerminalCaptchaHandler)
 
@@ -85,9 +89,57 @@ def test_fail_fast_when_nothing_available(monkeypatch: pytest.MonkeyPatch) -> No
     # fail-fast path is deterministic regardless of the ambient environment.
     monkeypatch.setenv("TERM", "dumb")
     monkeypatch.delenv("TERM_PROGRAM", raising=False)
+    monkeypatch.delenv("WT_SESSION", raising=False)
     result = select_captcha_handler(build_pipeline_config())
     assert result.is_err
     assert result.unwrap_err() == (
-        "Не удалось определить протокол вывода капчи. Используйте --use-sixel или "
-        "--use-kitty, либо настройте openai_captcha в pipeline.yaml."
+        "Не удалось определить протокол вывода капчи. Настройте openai_captcha в pipeline.yaml, "
+        "либо запустите в терминале с поддержкой sixel/kitty (kitty, WezTerm, iTerm2, mintty)."
     )
+
+
+# --- known-unsupported vs unknown terminal fail-fast -------------------------
+def test_fail_fast_names_windows_terminal(monkeypatch: pytest.MonkeyPatch) -> None:
+    # WT_SESSION presence → recognised terminal without sixel/kitty: the message
+    # must name it and point at openai_captcha.
+    monkeypatch.delenv("TERM_PROGRAM", raising=False)
+    monkeypatch.delenv("WT_SESSION", raising=False)
+    monkeypatch.setenv("WT_SESSION", "some-guid")
+    result = select_captcha_handler(build_pipeline_config())
+    assert result.is_err
+    message = result.unwrap_err()
+    assert message == (
+        "Терминал Windows Terminal не поддерживает sixel/kitty. Настройте openai_captcha в pipeline.yaml, "
+        "либо запустите в терминале с поддержкой sixel/kitty (kitty, WezTerm, iTerm2, mintty)."
+    )
+
+
+def test_fail_fast_names_apple_terminal(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("TERM_PROGRAM", raising=False)
+    monkeypatch.delenv("WT_SESSION", raising=False)
+    monkeypatch.setenv("TERM_PROGRAM", "Apple_Terminal")
+    result = select_captcha_handler(build_pipeline_config())
+    assert result.is_err
+    message = result.unwrap_err()
+    assert message.startswith("Терминал Apple Terminal не поддерживает sixel/kitty.")
+    assert "Настройте openai_captcha в pipeline.yaml" in message
+
+
+def test_fail_fast_unknown_terminal_has_no_name(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Unknown terminal: same advice, without any terminal name.
+    monkeypatch.setenv("TERM", "dumb")
+    monkeypatch.delenv("TERM_PROGRAM", raising=False)
+    monkeypatch.delenv("WT_SESSION", raising=False)
+    result = select_captcha_handler(build_pipeline_config())
+    assert result.is_err
+    message = result.unwrap_err()
+    assert "Терминал " not in message
+    assert "Настройте openai_captcha в pipeline.yaml" in message
+
+
+def test_fail_fast_captcha_ai_configured_still_wins(monkeypatch: pytest.MonkeyPatch) -> None:
+    # A known-unsupported terminal must not block the AI branch: openai_captcha
+    # is selected before detection (step 2 before step 3/4).
+    monkeypatch.setenv("WT_SESSION", "some-guid")
+    handler = select_captcha_handler(_config_with_captcha_ai()).unwrap()
+    assert isinstance(handler, AiCaptchaHandler)

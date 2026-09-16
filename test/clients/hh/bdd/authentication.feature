@@ -141,3 +141,8 @@ Feature: HH authentication preflight
     When every non-auth HH action is invoked
     Then each action performed an applicant healthcheck
     And every non-auth action succeeds
+
+  Scenario: Saving authentication state on Windows skips the POSIX-only chmod
+    Given Windows simulated for the HH token store
+    When a token state snapshot is saved
+    Then the save succeeds and the snapshot roundtrips without fchmod

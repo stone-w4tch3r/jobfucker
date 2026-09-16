@@ -4,10 +4,14 @@ This module is **generic and board-agnostic** (no board names anywhere). It
 implements two image-to-escape-sequence encoders used by
 :class:`jobfucker.captcha.terminal_handlers.TerminalCaptchaHandler`, plus
   :func:`detect_terminal_protocol` which decides which of sixel/kitty the user's
-  terminal supports by reading ``TERM_PROGRAM``/``TERM`` against the packaged
+  terminal supports by reading ``TERM_PROGRAM``/``TERM`` (plus presence-only
+  rules such as ``WT_SESSION``) against the packaged
   ``resources/terminal_capabilities.json``. **Entry order in the JSON matters**:
   detection is first-match, so specific ``TERM_PROGRAM`` entries must precede
-  generic ``TERM`` entries (e.g. WezTerm also sets ``TERM=xterm-256color``).
+  generic ``TERM`` entries (e.g. WezTerm also sets ``TERM=xterm-256color``), and
+  presence-detected terminals must precede generic ``TERM`` entries too (both
+  ``WT_SESSION`` and ``TERM`` leak into child shells — WSL/ssh — where the
+  generic ``TERM=xterm-256color`` entry would wrongly claim sixel support).
 
 - :func:`encode_sixel` — pure-Python SIXEL encoder (no ``libsixel``): opens the
   PNG via Pillow, quantizes to 256 colours, builds the raster header, a 256-entry
@@ -15,7 +19,10 @@ implements two image-to-escape-sequence encoders used by
 - :func:`encode_kitty` — base64 of the raw PNG wrapped in the kitty graphics
   escape protocol.
 - :func:`detect_terminal_protocol` — returns ``"kitty"`` (preferred) or
-  ``"sixel"`` when the terminal is recognised, else ``None``. When running under
+  ``"sixel"`` when the terminal is recognised and supports one, else ``None``.
+  ``None`` is ambiguous (unknown terminal *or* known terminal without either
+  protocol); :func:`known_unsupported_terminal` disambiguates by returning the
+  display name of a recognised-but-protocol-less terminal. When running under
   ``TMUX``/``ZELLIJ`` the *protocol* is still decided by the underlying
   terminal's capabilities; :func:`wrap_sixel` adds the passthrough wrapping at
   render time.
@@ -47,6 +54,7 @@ __all__ = [
     "detect_terminal_protocol",
     "encode_kitty",
     "encode_sixel",
+    "known_unsupported_terminal",
     "wrap_sixel",
 ]
 
@@ -61,10 +69,17 @@ _CAPABILITIES_PATH: Final[Path] = Path(__file__).parents[1] / "resources" / "ter
 
 # --- Capability map (typed at the JSON boundary) ----------------------------
 class _DetectRule(BaseModel):
-    """The env-var rule that identifies one terminal (``TERM_PROGRAM`` or ``TERM``)."""
+    """The env-var rule that identifies one terminal.
+
+    ``TERM_PROGRAM``/``TERM`` match by exact value; ``env_set`` is a
+    presence-only rule (the named variable must exist with any value) for
+    terminals without a reliable identity variable — Windows Terminal is only
+    identifiable via ``WT_SESSION`` and sets no ``TERM_PROGRAM``.
+    """
 
     TERM_PROGRAM: str | None = None
     TERM: str | None = None
+    env_set: str | None = None
 
 
 class _Capability(BaseModel):
@@ -74,12 +89,14 @@ class _Capability(BaseModel):
     sixel: bool
     kitty: bool
 
-    def matches(self, term_program: str | None, term: str | None) -> bool:
+    def matches(self, environment: Mapping[str, str]) -> bool:
         """Whether this terminal matches the current environment."""
+        if self.detect.env_set is not None:
+            return environment.get(self.detect.env_set) is not None
         if self.detect.TERM_PROGRAM is not None:
-            return term_program == self.detect.TERM_PROGRAM
+            return environment.get("TERM_PROGRAM") == self.detect.TERM_PROGRAM
         if self.detect.TERM is not None:
-            return term == self.detect.TERM
+            return environment.get("TERM") == self.detect.TERM
         return False
 
 
@@ -99,6 +116,30 @@ def _load_capabilities(
     return caps
 
 
+def _detect(
+    env: Mapping[str, str] | None,
+    capabilities_path: Path | None,
+) -> tuple[Protocol | None, str | None]:
+    """First-match detection over the capability map (JSON insertion order).
+
+    Returns ``(protocol, matched_terminal_name)``: ``protocol`` is ``None`` for
+    both unknown terminals and known-but-protocol-less ones — the matched name
+    disambiguates.
+    """
+    environment = os.environ if env is None else env
+    caps = _load_capabilities(capabilities_path)
+    for name, capability in caps.items():
+        if not capability.matches(environment):
+            continue
+        # Prefer kitty over sixel when a terminal supports both (wezterm/contour).
+        if capability.kitty:
+            return "kitty", name
+        if capability.sixel:
+            return "sixel", name
+        return None, name
+    return None, None
+
+
 def detect_terminal_protocol(
     *,
     env: Mapping[str, str] | None = None,
@@ -108,32 +149,42 @@ def detect_terminal_protocol(
 
     Args:
         env: optional environment mapping (defaults to ``os.environ``). Injected
-            so tests can control ``TERM_PROGRAM``/``TERM``/``TMUX``/``ZELLIJ``.
+            so tests can control ``TERM_PROGRAM``/``TERM``/``WT_SESSION``/``TMUX``.
         capabilities_path: optional path to the capability JSON (defaults to the
             packaged ``resources/terminal_capabilities.json``).
 
     Returns:
         ``"kitty"`` (preferred when both are supported), ``"sixel"``, or
-        ``None`` when the terminal is not recognised / supports neither.
+        ``None`` when the terminal is not recognised **or** is recognised but
+        supports neither protocol. Use :func:`known_unsupported_terminal` to
+        tell those two cases apart.
 
     Ordering contract: capabilities are checked in JSON insertion order and the
     first match wins — keep specific ``TERM_PROGRAM``-detected entries before
-    generic ``TERM``-detected ones (many terminals ship ``TERM=xterm-256color``).
+    presence-only (``env_set``) entries, and those before generic ``TERM``-detected
+    ones (many terminals ship ``TERM=xterm-256color``, and both ``TERM`` and
+    ``WT_SESSION`` leak into child shells).
     """
-    environment = os.environ if env is None else env
-    term_program = environment.get("TERM_PROGRAM")
-    term = environment.get("TERM")
-    caps = _load_capabilities(capabilities_path)
-    for capability in caps.values():
-        if not capability.matches(term_program, term):
-            continue
-        # Prefer kitty over sixel when a terminal supports both (wezterm/contour).
-        if capability.kitty:
-            return "kitty"
-        if capability.sixel:
-            return "sixel"
-        return None
-    return None
+    protocol, _name = _detect(env, capabilities_path)
+    return protocol
+
+
+def known_unsupported_terminal(
+    *,
+    env: Mapping[str, str] | None = None,
+    capabilities_path: Path | None = None,
+) -> str | None:
+    """Name of the recognised terminal that supports neither sixel nor kitty.
+
+    Companion to :func:`detect_terminal_protocol`: where that returns ``None``,
+    this returns the terminal's display name when it *was* recognised (e.g.
+    ``"Windows Terminal"``, ``"Apple Terminal"``) so callers can explain why,
+    and ``None`` for a fully unknown environment.
+
+    Args mirror :func:`detect_terminal_protocol` (``env``, ``capabilities_path``).
+    """
+    protocol, name = _detect(env, capabilities_path)
+    return None if protocol is not None else name
 
 
 def wrap_sixel(sixel: str, *, env: Mapping[str, str] | None = None) -> str:

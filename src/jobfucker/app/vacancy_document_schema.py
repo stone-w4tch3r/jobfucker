@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 from jobfucker.schema_source import SchemaSource
 
 VACANCY_SCHEMA_ID: Final = (
-    "https://raw.githubusercontent.com/example-org/jobfucker/main/docs/schemas/vacancies-dump.schema.json"
+    "https://raw.githubusercontent.com/example-org/jobfucker/master/docs/schemas/vacancies-dump.schema.json"
 )
 EDITING_INSTRUCTIONS: Final = """Edit values only inside `editable` blocks.
 

@@ -11,9 +11,10 @@ from __future__ import annotations
 import asyncio
 import os
 import shlex
+import shutil
 import tempfile
 from collections.abc import Awaitable, Callable
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Concatenate, NoReturn
 
 import typer
@@ -124,13 +125,37 @@ def _print_vacancy_summary(summary: VacancyPlanSummary) -> None:
     )
 
 
-async def _run_editor(editor: str, document_path: Path) -> Result[None, str]:
+def _resolve_editor_argv(editor: str | None) -> Result[list[str], str]:
+    """Resolve the ``EDITOR`` value into a subprocess argv.
+
+    Windows EDITOR values are cmd.exe words, not POSIX shell words: a spaced
+    path survives splitting only with ``posix=False``, and cmd.exe keeps the
+    user's literal double quotes in the value, so each token sheds one pair of
+    surrounding quotes. A bare command name is resolved through ``PATH`` so a
+    Windows ``.cmd`` launcher is picked up like the shell would.
+    """
+    if editor is None or not editor.strip():
+        return Ok(["notepad"]) if os.name == "nt" else Err("EDITOR is not set; set it to the editor command to use")
     try:
-        arguments = shlex.split(editor)
+        arguments = shlex.split(editor, posix=(os.name != "nt"))
     except ValueError as exc:
         return Err(f"Invalid EDITOR command: {exc}")
     if not arguments:
         return Err("EDITOR is empty; set it to an editor command")
+    if os.name == "nt":
+        # posix=False keeps the literal quotes around quoted tokens; strip one pair.
+        arguments = [token.removeprefix('"').removesuffix('"') for token in arguments]
+    command = arguments[0]
+    path_kind = PureWindowsPath if os.name == "nt" else PurePosixPath
+    if path_kind(command).is_absolute():
+        return Ok(arguments)
+    resolved = shutil.which(command)
+    if resolved is None:
+        return Err(f"EDITOR command not found: {command}")
+    return Ok([resolved, *arguments[1:]])
+
+
+async def _run_editor(arguments: list[str], document_path: Path) -> Result[None, str]:
     try:
         process = await asyncio.create_subprocess_exec(*arguments, str(document_path))
         return_code = await process.wait()
@@ -230,9 +255,10 @@ def edit(*, pipeline_id: int | None = None) -> None:
 
 
 async def _edit(services: AppServices) -> None:
-    editor = os.environ.get("EDITOR", "").strip()
-    if not editor:
-        _fail("EDITOR is not set; set it to the editor command to use")
+    argv_result = _resolve_editor_argv(os.environ.get("EDITOR"))
+    if argv_result.is_err:
+        _fail(argv_result.unwrap_err())
+    editor_argv = argv_result.unwrap()
 
     dump_result = await services.vacancies.dump_encoded(DocumentFormat.YAML)
     if dump_result.is_err:
@@ -242,7 +268,7 @@ async def _edit(services: AppServices) -> None:
         _fail(temporary_result.unwrap_err())
     temporary_path = temporary_result.unwrap()
 
-    editor_result = await _run_editor(editor, temporary_path)
+    editor_result = await _run_editor(editor_argv, temporary_path)
     if editor_result.is_err:
         _remove_document(temporary_path)
         _fail(editor_result.unwrap_err())

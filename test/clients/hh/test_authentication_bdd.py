@@ -7,25 +7,32 @@ a frozen ``AuthScenario`` (data-configured transport + client factory), the
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
+import os
 import stat
+import sys
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import parse_qs
 
 import httpx
+import pytest
 from pytest_bdd import given, scenarios, then, when
-from rusty_results.prelude import Ok
+from rusty_results.prelude import Ok, Result
 
 from jobfucker.clients.base import (
     AuthError,
     CaptchaSolvingError,
+    ClientCredentials,
+    ClientDeps,
     ClientError,
     ProtocolError,
     ServiceVacancyId,
     TransportError,
 )
+from jobfucker.clients.hh.auth import TokenStore
 from jobfucker.clients.hh.client import HHClient
 from jobfucker.clients.hh.config import HHSearchEntry, HHServiceConfig
 from jobfucker.clients.hh.models import PersistedAuthState
@@ -35,6 +42,7 @@ from test.clients.hh.helpers import (
     PNG_IMAGE,
     RecordingSolver,
     ScriptedResponses,
+    StubAuthInteraction,
     applicant_healthcheck,
     hh_client,
     json_response,
@@ -759,3 +767,84 @@ def every_action_healthchecked_step(auth_outcome: AuthOutcome) -> None:
 @then("every non-auth action succeeds")
 def actions_all_succeed_step(auth_outcome: AuthOutcome) -> None:
     assert auth_outcome.errors == (None, None, None)
+
+
+# --- Windows platform guard (token persistence W1) --------------------------
+
+_WIN_SIM_PROFILE_ID = "win-sim-profile"
+
+
+@dataclass(frozen=True, slots=True)
+class WinTokenStoreSetup:
+    """Frozen setup carrier: the store under a simulated win32 + its state path."""
+
+    store: TokenStore
+    state_path: Path
+
+
+@dataclass(frozen=True, slots=True)
+class WinSaveOutcome:
+    """Frozen outcome carrier: the save result plus the reloaded snapshot."""
+
+    save_ok: bool
+    reloaded: PersistedAuthState | None
+
+
+async def _forbidden_captcha(image: bytes) -> Result[str, str]:
+    """The token store never solves captchas; fail loudly if it tries."""
+    del image
+    raise AssertionError("TokenStore must not invoke the captcha handler")
+
+
+@given("Windows simulated for the HH token store", target_fixture="win_token_store")
+def win_token_store_step(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> WinTokenStoreSetup:
+    """Simulate win32: os.fchmod does not exist there and must never be called.
+
+    The fchmod double is registered with ``raising=False`` so the same scenario
+    runs as a tripwire on POSIX (where os.fchmod exists) and on real Windows
+    (where the attribute is absent by design — the branch must skip it).
+    """
+
+    def _forbidden_fchmod(descriptor: int, mode: int) -> None:
+        raise AssertionError("os.fchmod must not be called on win32")
+
+    monkeypatch.setattr(sys, "platform", "win32")
+    monkeypatch.setattr(os, "fchmod", _forbidden_fchmod, raising=False)
+    data_dir = tmp_path / "data"
+    store = TokenStore(
+        ClientDeps(
+            service="hh",
+            profile_id=_WIN_SIM_PROFILE_ID,
+            data_dir=data_dir,
+            credentials=ClientCredentials(login=_LOGIN, password=_PASSWORD),
+            auth_interaction=StubAuthInteraction(),
+            captcha_handler=_forbidden_captcha,
+        )
+    )
+    state_path = data_dir / "hh" / _WIN_SIM_PROFILE_ID / "auth-state.json"
+    return WinTokenStoreSetup(store=store, state_path=state_path)
+
+
+@when("a token state snapshot is saved", target_fixture="win_save_outcome")
+def win_save_outcome_step(win_token_store: WinTokenStoreSetup) -> WinSaveOutcome:
+    """Save under the simulated platform, then reload the persisted snapshot."""
+    state = PersistedAuthState(
+        access_token="USER-new",
+        refresh_token="refresh-new",
+        expires_at=DEFAULT_EXPIRES_AT,
+        cookies=(),
+    )
+    # Deliberate asyncio.run, not async_run_result (§6): Err here is data
+    # (carried in the outcome carrier), not a step failure.
+    result = asyncio.run(win_token_store.store.save(state))
+    reloaded = asyncio.run(win_token_store.store.load()) if result.is_ok else None
+    return WinSaveOutcome(save_ok=result.is_ok, reloaded=reloaded)
+
+
+@then("the save succeeds and the snapshot roundtrips without fchmod")
+def win_save_roundtrip_step(win_token_store: WinTokenStoreSetup, win_save_outcome: WinSaveOutcome) -> None:
+    assert win_save_outcome.save_ok
+    persisted = PersistedAuthState.model_validate_json(win_token_store.state_path.read_text(encoding="utf-8"))
+    assert persisted.access_token == "USER-new"
+    assert win_save_outcome.reloaded is not None
+    assert win_save_outcome.reloaded.refresh_token == "refresh-new"

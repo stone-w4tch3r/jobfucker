@@ -1928,7 +1928,7 @@
       "type": "string"
     }
   },
-  "$id": "https://raw.githubusercontent.com/stone-w4tch3r/jobfucker/main/docs/schemas/pipeline.schema.json",
+  "$id": "https://raw.githubusercontent.com/stone-w4tch3r/jobfucker/master/docs/schemas/pipeline.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "Authored pipeline.yaml (one board per file). Generated from the typed contract \u2014 change the models, then run `uv run poe schemas`.",
