@@ -51,12 +51,13 @@ from __future__ import annotations
 import os
 import re
 import shutil
+import sys
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 
 import pytest
 from pydantic import JsonValue, TypeAdapter
-from rusty_results.prelude import Result
+from rusty_results.prelude import Ok, Result
 from typer.testing import CliRunner
 
 from jobfucker.app.services import AppServices
@@ -292,13 +293,31 @@ def test_apply_reads_explicit_json_format_from_stdin(
     assert async_run(storage.vacancies.get(vacancy_id)).notes == "reviewed"  # type: ignore[union-attr]  # rationale: seeded row must exist
 
 
+def _python_editor(script: str) -> str:
+    """Cross-platform ``EDITOR`` value that runs real Python, not a shell tool.
+
+    The EDITOR contract splits on words (``shlex``), so both the interpreter
+    path and the ``-c`` script carry double quotes: POSIX ``shlex.split`` sheds
+    them, the Windows path sheds exactly one pair per token. The script itself
+    only uses single quotes.
+    """
+    return f'"{sys.executable}" -c "{script}"'
+
+
 def test_edit_uses_editor_without_shell_and_applies_after_confirmation(
     storage: Storage,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _install_services(monkeypatch, storage)
     vacancy_id = _seed_vacancy(storage)
-    monkeypatch.setenv("EDITOR", "sed -i 's/notes: null/notes: reviewed/'")
+    monkeypatch.setenv(
+        "EDITOR",
+        _python_editor(
+            "import sys,pathlib; p=pathlib.Path(sys.argv[1]); "
+            "p.write_text(p.read_text(encoding='utf-8')"
+            ".replace('notes: null', 'notes: reviewed'), encoding='utf-8')"
+        ),
+    )
 
     result = runner.invoke(app, ["vacancies", "edit"], input="y\n")
 
@@ -313,7 +332,7 @@ def test_edit_skips_confirmation_when_nothing_changed(
 ) -> None:
     _install_services(monkeypatch, storage)
     _seed_vacancy(storage)
-    monkeypatch.setenv("EDITOR", "true")
+    monkeypatch.setenv("EDITOR", _python_editor("import sys"))
 
     result = runner.invoke(app, ["vacancies", "edit"])
 
@@ -330,10 +349,23 @@ def test_edit_requires_editor_and_preserves_invalid_content(
     _install_services(monkeypatch, storage)
     vacancy_id = _seed_vacancy(storage)
     monkeypatch.delenv("EDITOR", raising=False)
-    missing = runner.invoke(app, ["vacancies", "edit"])
-    assert missing.exit_code != 0 and "EDITOR" in missing.output
+    if os.name == "nt":
+        # Windows deliberately falls back to notepad; launching a GUI app from
+        # a test would hang a headless runner forever, so assert the
+        # resolution directly instead of running the command.
+        assert _resolve_editor_argv(None) == Ok(["notepad"])
+    else:
+        missing = runner.invoke(app, ["vacancies", "edit"])
+        assert missing.exit_code != 0 and "EDITOR" in missing.output
 
-    monkeypatch.setenv("EDITOR", "sed -i 's/score: null/score: 99/'")
+    monkeypatch.setenv(
+        "EDITOR",
+        _python_editor(
+            "import sys,pathlib; p=pathlib.Path(sys.argv[1]); "
+            "p.write_text(p.read_text(encoding='utf-8')"
+            ".replace('score: null', 'score: 99'), encoding='utf-8')"
+        ),
+    )
     invalid = runner.invoke(app, ["vacancies", "edit"])
     assert invalid.exit_code != 0
     match = re.search(r"Edited document preserved at (.+)", invalid.output)
@@ -341,7 +373,9 @@ def test_edit_requires_editor_and_preserves_invalid_content(
     recovery_path = Path(match.group(1).strip())
     try:
         assert recovery_path.exists()
-        assert os.stat(recovery_path).st_mode & 0o777 == 0o600
+        if os.name == "posix":
+            # POSIX-only semantics: Windows mode bits do not carry 0o600.
+            assert os.stat(recovery_path).st_mode & 0o777 == 0o600
         assert "score: 99" in recovery_path.read_text(encoding="utf-8")
         assert async_run(storage.vacancies.get(vacancy_id)).score is None  # type: ignore[union-attr]  # rationale: seeded row must exist
     finally:
