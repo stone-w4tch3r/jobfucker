@@ -15,9 +15,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    # Full suite takes ~1 min on Linux; a hang (not slowness) must not burn the
-    # 6-hour default. faulthandler_timeout dumps stacks at 5 min first.
-    timeout-minutes: 20
+    # Whole job ≈ 1 min (Linux) / ~4 min (Windows, warm cache). 10 min bounds
+    # a cold-cache run with headroom; a hang must not burn the 6-hour default.
+    # faulthandler_timeout dumps stacks at 5 min first.
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
