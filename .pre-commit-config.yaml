@@ -18,7 +18,7 @@ repos:
         entry: uv run ruff check --fix
         language: system
         types: [python]
-        exclude: ^shared_tests/fixtures/|^scripts/
+        exclude: ^shared_tests/fixtures/|^scripts/|test/fixtures
 
       - id: ruff-format
         name: ruff-format

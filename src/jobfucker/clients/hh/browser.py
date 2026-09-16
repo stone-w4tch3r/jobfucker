@@ -20,7 +20,6 @@ in one class. All selectors are HH standalone-challenge DOM markers
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import logging
 import re
 import sys
@@ -36,6 +35,7 @@ from jobfucker.clients.base import CaptchaHandler, CaptchaSolvingError, ClientEr
 from jobfucker.clients.hh.captcha import Challenge, log_captcha_image
 from jobfucker.clients.hh.models import PersistedCookie
 from jobfucker.reporting import EventLevel, Reporter, RunEvent
+from jobfucker.subprocess_utils import run_subprocess_with_capture
 
 if TYPE_CHECKING:
     from patchright.async_api import BrowserContext, Page, Response
@@ -142,26 +142,6 @@ def _output_tail(*streams: bytes) -> str:
     return "\n".join(lines[-_INSTALL_TAIL_LINES:])
 
 
-class _StreamCapture:
-    """Drains one installer stream into owned chunks that survive cancellation.
-
-    The drained bytes must not live inside the draining task: on timeout the
-    task is cancelled (the orphaned node driver child keeps the pipe write
-    ends open, so waiting for EOF would block until the whole download
-    finishes), and the chunks captured so far are still worth reporting.
-    """
-
-    def __init__(self) -> None:
-        self._chunks: list[bytes] = []
-
-    async def drain(self, reader: asyncio.StreamReader) -> None:
-        while chunk := await reader.read(1 << 16):
-            self._chunks.append(chunk)
-
-    def snapshot(self) -> bytes:
-        return b"".join(self._chunks)
-
-
 async def ensure_chromium_engine(executable_path: str, reporter: Reporter | None = None) -> Result[None, str]:
     """Install the patchright Chromium engine when ``executable_path`` is absent.
 
@@ -177,66 +157,36 @@ async def ensure_chromium_engine(executable_path: str, reporter: Reporter | None
         executable_path,
     )
     await _announce(reporter, "info", "Browser engine not found — installing patchright Chromium (first run only)...")
-    captured_out, captured_err = _StreamCapture(), _StreamCapture()
-    read_stdout: asyncio.Task[None] | None = None
-    read_stderr: asyncio.Task[None] | None = None
     try:
-        process = await asyncio.create_subprocess_exec(
-            sys.executable,
-            "-m",
-            "patchright",
-            "install",
-            "chromium",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
+        run = await run_subprocess_with_capture(
+            (sys.executable, "-m", "patchright", "install", "chromium"),
+            timeout_s=_INSTALL_TIMEOUT_S,
         )
-        assert process.stdout is not None  # PIPEs passed above
-        assert process.stderr is not None
-        read_stdout = asyncio.create_task(captured_out.drain(process.stdout))
-        read_stderr = asyncio.create_task(captured_err.drain(process.stderr))
-        try:
-            async with asyncio.timeout(_INSTALL_TIMEOUT_S):
-                await process.wait()
-        except TimeoutError:
-            # ponytail: kill() is wrapper-only — the node driver child may
-            # outlive it; upgrade to a process-group kill if orphaned
-            # downloads ever matter (start_new_session + killpg/taskkill).
-            with contextlib.suppress(ProcessLookupError):
-                process.kill()
-            await process.wait()
-            # Snapshot what we hold and stop draining: the orphaned node child
-            # keeps the pipe write ends open, so awaiting the readers would
-            # block until its whole download finishes.
-            for reader in (read_stdout, read_stderr):
-                reader.cancel()
-            tail = _output_tail(captured_out.snapshot(), captured_err.snapshot())
-            logger.warning("browser engine auto-install timed out after %ds", _INSTALL_TIMEOUT_S)
-            if tail:
-                logger.warning("browser engine installer output at timeout:\n%s", tail)
-            reason = tail.splitlines()[-1] if tail else f"no output after {_INSTALL_TIMEOUT_S:.0f}s"
-            await _announce(
-                reporter, "warning", f"Browser engine install timed out — captcha solve will report the fix ({reason})"
-            )
-            return Err(f"install timed out after {_INSTALL_TIMEOUT_S:.0f}s ({reason})")
     except Exception as exc:
-        for reader in (read_stdout, read_stderr):
-            if reader is not None and not reader.done():
-                reader.cancel()
         logger.warning("browser engine auto-install crashed: %s: %s", type(exc).__name__, exc)
         await _announce(reporter, "warning", "Browser engine install failed — captcha solve will report the fix")
         return Err(f"{type(exc).__name__}: {exc}")
-    tail = _output_tail(captured_out.snapshot(), captured_err.snapshot())
-    if process.returncode != 0:
+    tail = _output_tail(run.stdout, run.stderr)
+    if run.timed_out:
+        logger.warning("browser engine auto-install timed out after %ds", _INSTALL_TIMEOUT_S)
+        if tail:
+            logger.warning("browser engine installer output at timeout:\n%s", tail)
+        reason = tail.splitlines()[-1] if tail else f"no output after {_INSTALL_TIMEOUT_S:.0f}s"
+        await _announce(
+            reporter, "warning", f"Browser engine install timed out — captcha solve will report the fix ({reason})"
+        )
+        return Err(f"install timed out after {_INSTALL_TIMEOUT_S:.0f}s ({reason})")
+    if run.returncode != 0:
         logger.warning(
             "browser engine auto-install failed (exit %d):\n%s",
-            process.returncode,
+            run.returncode,
             tail,
         )
-        reason = tail.splitlines()[-1] if tail else f"exit code {process.returncode}"
+        reason = tail.splitlines()[-1] if tail else f"exit code {run.returncode}"
         await _announce(
             reporter, "warning", f"Browser engine install failed — captcha solve will report the fix ({reason})"
         )
-        return Err(f"exit code {process.returncode} ({reason})")
+        return Err(f"exit code {run.returncode} ({reason})")
     logger.debug("browser engine auto-install output:\n%s", tail)
     await _announce(reporter, "success", "Browser engine installed")
     return Ok(None)

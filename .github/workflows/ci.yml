@@ -32,11 +32,5 @@ jobs:
       - name: Custom linters
         run: uv run poe lint_custom_linters
       - name: Tests
-        # --deselect: 3 pre-existing schema-drift failures on clean HEAD
-        # (test_vacancy_schema.py, test_pipeline_schema.py) — tracked
-        # separately from the cross-platform work.
         run: >-
           uv run poe test
-          --deselect test/table_documents/test_vacancy_schema.py::test_generation_writes_identical_versioned_artifacts
-          --deselect test/table_documents/test_vacancy_schema.py::test_committed_and_packaged_schemas_have_no_generation_drift
-          --deselect test/table_documents/test_pipeline_schema.py::test_generated_artifact_has_id_and_version
