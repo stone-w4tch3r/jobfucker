@@ -221,6 +221,10 @@ max-args = 5
 [tool.pytest.ini_options]
 # `test/` is the app's test dir (already has fixtures); add it once tests exist.
 testpaths = ["shared_tests", "test"]
+# A test stuck past this dumps all thread stacks to stderr — turns a silent CI
+# hang (e.g. a Windows-only deadlock) into a readable log right before the job
+# timeout kills it.
+faulthandler_timeout = 300
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
