@@ -39,5 +39,10 @@ jobs:
       - name: Custom linters
         run: uv run poe lint_custom_linters
       - name: Tests
+        # Runners export GITHUB_ACTIONS=true, which makes typer render
+        # help/errors with rich ANSI colors even under CliRunner capture,
+        # breaking plain-text assertions (see typer.rich_utils FORCE_TERMINAL).
+        env:
+          _TYPER_FORCE_DISABLE_TERMINAL: "1"
         run: >-
           uv run poe test
