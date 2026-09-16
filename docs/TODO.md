@@ -23,7 +23,6 @@ ordered by urgency, most urgent at top
   - rename bootstrap.py -> bootstrap_cli.py. or maybe to cli_client? or smth else? bootstrap is too generic and I don't fully understand what it do from it's name. or drop/rewrite with normal DI introduced
   - big layers rewrite. create new first-class python API that is clean, supports all features. this API layer is exposed for all wrapper kinds (need term for this): future web service wrapping, CLI, future UI and so on
   - big statuses rewrite. statuses are calculated and named in very different ways in different parts of apps. explore. understand what kinds of statuses we have. unified naming. ensure all are calculated in similar and reliable way. avoid complex flaky status calculation and prefer simple explicit statuses eg db columns
-- move to separate repo
 
 ### medium
 
