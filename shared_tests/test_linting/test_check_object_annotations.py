@@ -6,10 +6,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-from shared.linting.check_object_annotations import check_file
 from shared_tests.test_linting.conftest import RunLinter
+from tools.linting.check_object_annotations import check_file
 
-MODULE = "shared.linting.check_object_annotations"
+MODULE = "tools.linting.check_object_annotations"
 
 
 class TestObjectAnnotations:
@@ -20,7 +20,7 @@ class TestObjectAnnotations:
                 sys.executable,
                 "-m",
                 MODULE,
-                str(repo_root / "shared" / "shortcuts" / "shortcuts.py"),
+                str(repo_root / "src" / "jobfucker" / "shared" / "shortcuts" / "shortcuts.py"),
                 str(repo_root / "shared_tests" / "test_shortcuts_base.py"),
             ],
             capture_output=True,

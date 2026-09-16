@@ -6,7 +6,7 @@ Reusable keyboard shortcuts configuration system for PySide6 applications with p
 
 ```python
 # 1. Define shortcuts
-from shared.shortcuts import ActionShortcut
+from jobfucker.shared.shortcuts import ActionShortcut
 
 DEFAULT_SHORTCUTS = (
     ActionShortcut("new_file", "New File", "Ctrl+N", "Ctrl+N", "Cmd+N"),
@@ -15,7 +15,7 @@ DEFAULT_SHORTCUTS = (
 )
 
 # 2. Initialize manager
-from shared.shortcuts import ShortcutManager
+from jobfucker.shared.shortcuts import ShortcutManager
 from pathlib import Path
 import platformdirs
 

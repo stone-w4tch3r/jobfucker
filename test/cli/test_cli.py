@@ -964,7 +964,7 @@ async def test_app_services_close_disposes_owned_engine(tmp_path: Path, monkeypa
 
 # --- global logging options (--log-stderr / --log-level) ---------------------
 def _stderr_handlers() -> list[logging.Handler]:
-    return [h for h in logging.getLogger().handlers if h.get_name() == "shared.logging.stderr"]
+    return [h for h in logging.getLogger().handlers if h.get_name() == "jobfucker.shared.logging.stderr"]
 
 
 def test_log_stderr_wires_console_handler_and_keeps_stdout_clean(runtime_dir: Path) -> None:

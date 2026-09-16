@@ -62,7 +62,7 @@ def collect_files(args: list[str]) -> list[Path]:
 
     Directory args expand via ``rglob`` with the exclusion filter applied
     (vendored dirs, ``fixtures``) — this is how poe passes wide roots
-    (``src shared shared_tests test``). Explicit file args are taken verbatim
+    (``src shared_tests test tools``). Explicit file args are taken verbatim
     (no exclusion) — that is how pre-commit and the linter self-tests target
     individual files. With no args, scans the current directory.
     """

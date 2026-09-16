@@ -18,7 +18,8 @@ CLIENT CONTRACT   clients/base.py (protocol + models) · factory · paging
 CLIENTS          clients/hh/ · clients/mock/
                                    ↓
 INFRASTRUCTURE    storage/ (SQLAlchemy + alembic) · captcha/ (board-agnostic)
-                  shared/ (logging; linting; shortcuts — GUI residue)
+                  src/jobfucker/shared/ (logging; shortcuts — GUI residue)
+                  tools/ (linting — dev-only, not in the wheel)
 ```
 
 - Dependencies flow downward only. SQLAlchemy is confined to `storage/` (ruff `TID251` ban).
@@ -26,7 +27,7 @@ INFRASTRUCTURE    storage/ (SQLAlchemy + alembic) · captcha/ (board-agnostic)
 - If a feature is board-specific, it should be hidden behind a capability and special code flow, not behind random if-s. The only case when board specific naming can reach the core is when there is a dedicated capability associated. Example:  `Vacancy.has_hh_test` (`vacancies.has_hh_test` + `apply --has-hh-tests`); board-only
   behavior rises into core through a board-named capability module gated by `isinstance`
   ([client-contract.md § Board-scoped capabilities](client-contract.md#board-scoped-capabilities)).
-- Purple-flagged residue: Qt toolchain deps + `shared/shortcuts` kept for the planned GUI rewrite; `shared/linting` is scaffold tooling.
+- Purple-flagged residue: Qt toolchain deps + `src/jobfucker/shared/shortcuts` kept for the planned GUI rewrite; `tools/linting` is dev-only scaffold tooling (not shipped).
 
 ## Module inventory (what each thing actually does)
 

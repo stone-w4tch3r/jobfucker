@@ -9,7 +9,7 @@ Usage in your app:
 3. Initialize ShortcutManager with your app's config_dir and defaults
 
 Example:
-    from shared.shortcuts import ShortcutManager, ActionShortcut
+    from jobfucker.shared.shortcuts import ShortcutManager, ActionShortcut
     from your_app.config import DEFAULT_SHORTCUTS
 
     manager = ShortcutManager(

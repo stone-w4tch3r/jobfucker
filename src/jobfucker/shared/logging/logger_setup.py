@@ -19,7 +19,7 @@ Typical usage patterns:
     - All modes: configure_logger_level() to suppress noisy third-party loggers
 
 Usage:
-    from shared.logging.logger_setup import (
+    from jobfucker.shared.logging.logger_setup import (
         setup_stdout_logging,
         setup_file_logging,
         configure_logger_level,
@@ -60,9 +60,9 @@ from typing import Final, TextIO
 
 import colorlog
 
-_STDOUT_HANDLER_NAME: Final = "shared.logging.stdout"
-_STDERR_HANDLER_NAME: Final = "shared.logging.stderr"
-_FILE_HANDLER_PREFIX: Final = "shared.logging.file:"
+_STDOUT_HANDLER_NAME: Final = "jobfucker.shared.logging.stdout"
+_STDERR_HANDLER_NAME: Final = "jobfucker.shared.logging.stderr"
+_FILE_HANDLER_PREFIX: Final = "jobfucker.shared.logging.file:"
 
 
 def _existing_stdout_handler(root_logger: logging.Logger) -> logging.Handler | None:

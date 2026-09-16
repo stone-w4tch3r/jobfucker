@@ -15,7 +15,7 @@ from typing import Final
 
 import pytest
 
-from shared.shortcuts.shortcuts import ActionShortcut, ShortcutManager
+from jobfucker.shared.shortcuts.shortcuts import ActionShortcut, ShortcutManager
 
 # Define dummy shortcuts for testing - these are generic and not app-specific
 DUMMY_SHORTCUTS: Final = (

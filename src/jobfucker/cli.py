@@ -213,7 +213,7 @@ def _cli_logging(  # type: ignore[reportUnusedFunction]  # rationale: registered
     asyncio, PIL) are pinned at WARNING so the logs show only the app's own
     output; set NOT_SILENCE_DEPENDENCIES_LOGS=1 to keep them.
     """
-    from shared.logging import setup_file_logging, setup_stdout_logging, silence_noisy_loggers
+    from jobfucker.shared.logging import setup_file_logging, setup_stdout_logging, silence_noisy_loggers
 
     level = _LOG_LEVELS.get(log_level.lower())
     if level is None:

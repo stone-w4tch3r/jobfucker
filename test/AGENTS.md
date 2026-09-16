@@ -321,7 +321,8 @@ conventions documented below (they are the tested recipe):
 
 PySide6/pytest-qt typing passes strict cleanly (no suppressions at that boundary). The Qt
 toolchain (`pyside6`, `qasync`, `pytest-qt`) is still in the dependency tree: the tested
-`shared/shortcuts` building block imports PySide6, and the rewrite reuses the toolchain.
+`src/jobfucker/shared/shortcuts` building block imports PySide6, and the rewrite reuses
+the toolchain.
 
 ---
 
@@ -453,9 +454,10 @@ uv run pytest -m unit         # unit family only
 ### Coverage (wired)
 
 - `addopts` adds `--cov --cov-report=term-missing`.
-- `[tool.coverage.run] source = ["src", "shared"]`; `omit` covers `test/*`,
+- `[tool.coverage.run] source = ["src"]`; `omit` covers `test/*`,
   `test/**/*`, `shared_tests/*`, `shared_tests/**/*`, and `tests/*`. Coverage
-  measures the **app package (`src/`) plus the shared building blocks**.
+  measures the **app package (`src/`), including the folded-in
+  `src/jobfucker/shared/` building blocks**.
 - `[tool.coverage.report] show_missing = true`, `skip_covered = true`,
   `fail_under = 0` (coverage is a **guideline, not a gate** — engineering-
   principles §5). CI can read the `.coverage`/htmlcov artifacts.

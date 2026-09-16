@@ -77,7 +77,7 @@ Vacancy application automation engine for Russian job boards (initially hh.ru). 
 - **Client contract layer** — engine/stages/storage never depend on a board; `Client` protocol + vendor-neutral models in `clients/base.py`. New board = new client under `clients/<board>/` + factory registration.
 - **Own SQLite DB** (`jobfucker.db`) as single source of truth.
 - **Captcha is first-class & generic** (`captcha/`): handler selection, terminal rendering (sixel/kitty), AI vision solving. HH-specific detection stays in the HH client; standalone challenges are cleared by the browser engine (`clients/hh/browser.py`, patchright stealth Chromium — the only working path, see [docs/hh/captcha.md](docs/hh/captcha.md) §5a); the embedded login challenge keeps the browserless multipart replay.
-- **GUI:** PySide6 toolchain kept in deps for the planned rewrite; `shared/shortcuts` needs PySide6 today.
+- **GUI:** PySide6 toolchain kept in deps for the planned rewrite; `src/jobfucker/shared/shortcuts` needs PySide6 today.
 
 ---
 

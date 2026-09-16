@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from shared.logging.logger_setup import setup_file_logging, setup_stdout_logging
+from jobfucker.shared.logging.logger_setup import setup_file_logging, setup_stdout_logging
 
 
 @pytest.fixture
