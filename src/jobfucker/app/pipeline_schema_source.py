@@ -1,6 +1,6 @@
 """Typed source for the generated ``pipeline.yaml`` JSON Schema.
 
-The repo-root ``pipeline.schema.json`` is a generated artifact: ``uv run poe
+The ``docs/schemas/pipeline.schema.json`` artifact is generated: ``uv run poe
 schemas`` renders it from the typed models below, the same way the
 vacancies-dump schema is rendered from
 :class:`~jobfucker.app.vacancy_document_schema.VacancyDumpDocument`.

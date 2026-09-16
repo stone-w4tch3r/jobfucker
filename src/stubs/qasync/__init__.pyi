@@ -14,7 +14,6 @@ import asyncio
 
 __all__ = ["QEventLoop"]
 
-
 class QEventLoop(asyncio.BaseEventLoop):
     """Bridge between a Qt event loop and ``asyncio``.
 
@@ -28,7 +27,6 @@ class QEventLoop(asyncio.BaseEventLoop):
     # Runtime asyncio loops are context managers, but typeshed's event-loop
     # stubs omit the protocol; declare it here so ``with loop:`` type-checks.
     def __enter__(self) -> QEventLoop: ...
-
     def __exit__(
         self,
         exc_type: type[BaseException] | None,

@@ -116,7 +116,7 @@ def test_generation_is_deterministic() -> None:
 def test_generated_artifact_has_id_and_version(tmp_path: Path) -> None:
     generated_paths = generate_all_schemas(tmp_path)
 
-    artifact_path = tmp_path / "pipeline.schema.json"
+    artifact_path = tmp_path / "docs/schemas/pipeline.schema.json"
     assert artifact_path in generated_paths
     schema = _JSON_MAPPING.validate_json(artifact_path.read_bytes())
     assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"

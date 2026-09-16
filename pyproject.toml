@@ -87,8 +87,7 @@ stubPath = "src/stubs"
 # basedpyright's generic unused-call rule is noisy here; Result handling is enforced by lint_ignored_results.
 reportUnusedCallResult = "none"
 reportUnnecessaryIsInstance = "none"
-# Lint the shared building blocks, the app package (`src` — see test/AGENTS.md §8), and the app test dir.
-include = ["src", "shared", "shared_tests", "test"]
+# We include everything by default
 exclude = [
     "**/__pycache__",
     "**/node_modules",
@@ -97,6 +96,7 @@ exclude = [
     "build",
     "dist",
     "wrktrs",
+    ".kilo",
     "test/fixtures",
     "shared_tests/fixtures",
     "secrets",
@@ -112,11 +112,12 @@ exclude = [
 [tool.ruff]
 line-length = 120
 target-version = "py314"
-include = ["src/**/*.py", "shared/**/*.py", "shared_tests/**/*.py", "test/**/*.py"]
+# Everything except generated/foreign trees; ruff's default excludes cover
+# caches and venvs.
 extend-exclude = [
     "venv", ".venv", "*.egg", "*.egg-info", "**/dist", "**/build",
     "**/__pycache__", "*.pyc", "*.pyo", "*.pyd", "*.so", "wrktrs",
-    ".git", ".pytest_cache",
+    ".git", ".kilo", ".pytest_cache",
     "test/fixtures",
     "shared_tests/fixtures",
     # Alembic-generated scaffolding (see basedpyright exclude).
@@ -191,6 +192,9 @@ ignore = [
 "shared_tests/test_linting/test_check_module_mutables.py" = ["S603", "PLR2004"]
 "shared_tests/test_linting/test_check_object_annotations.py" = ["S603", "PLR2004"]
 "shared_tests/test_linting/test_check_raw_dicts.py" = ["S603", "PLR2004"]
+# scripts/ runs `poe` tasks via subprocess (fixed argv, sys.executable — S603);
+# trailing `lint-ignore[…]` markers on the enforced line overflow E501.
+"scripts/check_intersections.py" = ["E501", "S603"]
 "shared_tests/test_linting/test_check_type_ignore.py" = ["S603", "PLR2004"]
 
 [tool.ruff.lint.pylint]

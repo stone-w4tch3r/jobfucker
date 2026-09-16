@@ -36,7 +36,7 @@ def test_generation_writes_identical_versioned_artifacts(tmp_path: Path) -> None
 
     public_path = tmp_path / "docs/schemas/vacancies-dump.schema.json"
     packaged_path = tmp_path / "src/jobfucker/resources/schemas/vacancies-dump.schema.json"
-    pipeline_path = tmp_path / "pipeline.schema.json"
+    pipeline_path = tmp_path / "docs/schemas/pipeline.schema.json"
     assert generated_paths == (public_path, packaged_path, pipeline_path)
     assert public_path.read_bytes() == packaged_path.read_bytes()
 

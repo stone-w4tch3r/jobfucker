@@ -76,21 +76,29 @@ class Conflict:
 # =============================================================================
 
 
-def _as_dict(value: object) -> dict[str, object]:  # lint-ignore[restricted-object,raw-dict]: untrusted YAML boundary; every node re-narrowed before use
+def _as_dict(
+    value: object,
+) -> dict[
+    str, object
+]:  # lint-ignore[restricted-object,raw-dict]: untrusted YAML boundary; every node re-narrowed before use
     """Narrow an untrusted YAML value to a mapping (dump schema is known)."""
     if not isinstance(value, dict):
         sys.exit(f"unexpected dump document shape: {type(value).__name__}")
     return {str(k): v for k, v in value.items()}  # type: ignore[reportUnknownVariableType]  # rationale: third-party yaml boundary; keys coerced, values re-narrowed by callers
 
 
-def _as_int(value: object) -> int:  # lint-ignore[restricted-object]: untrusted YAML value narrowed by isinstance before use
+def _as_int(
+    value: object,
+) -> int:  # lint-ignore[restricted-object]: untrusted YAML value narrowed by isinstance before use
     """Narrow an untrusted YAML value to an int score."""
     if not isinstance(value, int) or isinstance(value, bool):
         sys.exit(f"unexpected score value: {value!r}")
     return value
 
 
-def dump_candidates(pipeline_id: str) -> dict[str, Candidate]:  # lint-ignore[raw-dict]: keyed-by-external_id candidate table
+def dump_candidates(
+    pipeline_id: str,
+) -> dict[str, Candidate]:  # lint-ignore[raw-dict]: keyed-by-external_id candidate table
     """Dump one pipeline and return its apply candidates keyed by external_id."""
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / "dump.yaml"
@@ -142,7 +150,9 @@ def dump_candidates(pipeline_id: str) -> dict[str, Candidate]:  # lint-ignore[ra
 # =============================================================================
 
 
-def find_conflicts(candidates_by_pipeline: dict[str, dict[str, Candidate]]) -> list[Conflict]:  # lint-ignore[raw-dict]: pipeline-id-keyed candidate tables
+def find_conflicts(
+    candidates_by_pipeline: dict[str, dict[str, Candidate]],
+) -> list[Conflict]:  # lint-ignore[raw-dict]: pipeline-id-keyed candidate tables
     """Vacancies where the EXCLUDED pipeline overlaps any other pipeline."""
     by_external_id: dict[str, dict[str, Candidate]] = {}
     for pipeline_id, candidates in candidates_by_pipeline.items():
