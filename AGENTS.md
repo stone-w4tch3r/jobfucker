@@ -118,9 +118,10 @@ Vacancy application automation engine for Russian job boards (initially hh.ru). 
 ### Cross-platform (Windows / POSIX)
 
 - Windows, macOS, and Linux are equal runtime targets; code works on all of them.
-- Default to OS-agnostic implementations, eg `pathlib`, no POSIX-only imports/syscalls, per-OS directories and so on.
+- Default to OS-agnostic implementations, eg `pathlib`, no POSIX-only imports/syscalls, use per-OS directories and so on.
 - Small platform differences (a chmod call, an editor default) may be compact `sys.platform` / `os.name` branches inline — kept narrowable so the type checker validates each side.
-- A complex OS-specific subsystem is a distinct service behind a protocol with one implementation per OS — never scattered conditionals.
+- A complex OS-specific subsystem is a distinct service behind a protocol with one implementation per OS — never scattered conditionals. See `building-multi-ui-apps` for the pattern.
+- Dev helpers: `poe` tasks and `pyproject.toml` scripts never shells out to POSIX tools. Use crossplatofrm abstractions or write python helper scripts.
 - Enforcement: basedpyright infers the platform per machine; CI runs lint + tests on Linux and Windows.
 
 ---
