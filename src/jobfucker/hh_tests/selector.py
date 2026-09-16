@@ -21,18 +21,6 @@ from jobfucker.hh_tests.file import HhTestFileSolver
 __all__ = ["select_hh_test_solver"]
 
 
-def _prompt_parses(text: str) -> bool:
-    """Whether the configured template text parses (frontmatter + Jinja2 body).
-
-    Lazily imported: ``stages/__init__`` pulls the whole domain (ai → config),
-    which would close a load-time cycle via ``config``; the same lazy pattern
-    ``config.validate_search_windows`` uses.
-    """
-    from jobfucker.stages.prompts import parse_prompt_template
-
-    return parse_prompt_template(text).is_ok
-
-
 def select_hh_test_solver(
     config: PipelineConfig,
     *,
@@ -61,11 +49,6 @@ def select_hh_test_solver(
     if section is None or not section.enabled:
         return None
     if not section.test_prompt.strip():
-        return None
-    if not _prompt_parses(section.test_prompt):
-        # An invalid prompt template fails the AI branch quietly: the stage
-        # surfaces the per-vacancy "no solver" failure instead of boot-crashing
-        # a run that may only need answers from a file.
         return None
     return HhTestAiSolver(
         config.openai,

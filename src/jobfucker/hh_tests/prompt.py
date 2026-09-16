@@ -1,13 +1,12 @@
 """HH test prompt rendering: the user-authored prompt IS the solver context.
 
-Follows the existing ``stages.prompts`` pattern exactly: a Jinja2 template with
-YAML frontmatter (captured in the ``hh_test_solving.test_prompt`` config
-content slot). The template body receives ``resume_formatted`` and
-``vacancy_formatted`` (the same surfaces scoring/cover-letter prompts use) plus
-the new ``test_formatted`` — the whole test, not one question at a time, so the
-model keeps all task context in one prompt. ``StrictUndefined`` fails fast when
-a template references a variable the code does not provide, exactly like the
-scoring/apply templates.
+Follows the existing ``stages.prompts`` pattern exactly: a Jinja2 template
+(captured in the ``hh_test_solving.test_prompt`` config content slot). The
+template body receives ``resume_formatted`` and ``vacancy_formatted`` (the same
+surfaces scoring/cover-letter prompts use) plus the new ``test_formatted`` —
+the whole test, not one question at a time, so the model keeps all task context
+in one prompt. ``StrictUndefined`` fails fast when a template references a
+variable the code does not provide, exactly like the scoring/apply templates.
 """
 
 from __future__ import annotations
@@ -19,7 +18,7 @@ from rusty_results.prelude import Result
 from jobfucker.hh_tests.contract import HhTestProblem, HhTestTaskKind
 
 if TYPE_CHECKING:
-    from jobfucker.stages.prompts import PromptTemplate, VacancyPromptData
+    from jobfucker.stages.prompts import VacancyPromptData
 
 __all__ = ["format_hh_test", "render_hh_test_prompt"]
 
@@ -55,7 +54,7 @@ def format_hh_test(problem: HhTestProblem) -> str:
 
 
 def render_hh_test_prompt(
-    template: PromptTemplate,
+    prompt: str,
     *,
     resume: str,
     vacancy: VacancyPromptData,
@@ -69,7 +68,7 @@ def render_hh_test_prompt(
 
     ``stages.prompts`` is imported lazily: importing it at module load would
     close the cycle ``hh_tests.prompt`` → ``stages`` package init → ``apply`` →
-    ``hh_tests.prompt`` (the same lazy pattern ``selector`` uses).
+    ``hh_tests.prompt``.
     """
     from jobfucker.stages.prompts import TemplateContext, format_vacancy_formatted, render_prompt
 
@@ -78,4 +77,4 @@ def render_hh_test_prompt(
         "vacancy_formatted": format_vacancy_formatted(vacancy),
         "test_formatted": format_hh_test(test),
     }
-    return render_prompt(template, context=context)
+    return render_prompt(prompt, context=context)

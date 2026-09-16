@@ -38,7 +38,7 @@ from jobfucker.hh_tests.dump import HhTestDumpDocument, HhTestDumpRecord, dump_p
 from jobfucker.hh_tests.file import HhTestFileSolver
 from jobfucker.hh_tests.prompt import render_hh_test_prompt
 from jobfucker.hh_tests.selector import select_hh_test_solver
-from jobfucker.stages.prompts import PromptTemplate, VacancyPromptData
+from jobfucker.stages.prompts import VacancyPromptData
 from jobfucker.testing.step_runner import async_run
 
 scenarios("bdd/hh_tests.feature")
@@ -298,12 +298,6 @@ def selector_disabled_step() -> SelectorCase:
     return SelectorCase(config=_config(hh_test_solving=section), answers_file=None)
 
 
-@given("an hh test-solving config with an invalid prompt template", target_fixture="selector_case")
-def selector_invalid_prompt_step() -> SelectorCase:
-    section = HhTestSolvingConfig(enabled=True, test_prompt="---\nbad: [unclosed\n---\nSolve")
-    return SelectorCase(config=_config(hh_test_solving=section), answers_file=None)
-
-
 @given("a screening test whose free-text task carries an option", target_fixture="problem_case")
 def problem_free_text_option_step() -> ProblemCase:
     document = HhTestSolutionDocument.model_validate({"1": {"option_id": "20"}, "2": {"option_id": "20"}})
@@ -318,11 +312,8 @@ def problem_extra_task_step() -> ProblemCase:
 
 
 @given("an hh test prompt template injecting resume, vacancy and test", target_fixture="prompt_template")
-def prompt_template_step() -> PromptTemplate:
-    return PromptTemplate(
-        params={},
-        body="Resume {{ resume_formatted }} | Vacancy {{ vacancy_formatted }} | Test {{ test_formatted }}",
-    )
+def prompt_template_step() -> str:
+    return "Resume {{ resume_formatted }} | Vacancy {{ vacancy_formatted }} | Test {{ test_formatted }}"
 
 
 # --- When --------------------------------------------------------------------
@@ -363,7 +354,7 @@ def selected_solver_solves_step(
 @when("the hh test prompt is rendered", target_fixture="rendered_prompt")
 def render_prompt_step(
     problem_case: ProblemCase,
-    prompt_template: PromptTemplate,
+    prompt_template: str,
 ) -> Result[str, str]:
     return render_hh_test_prompt(
         prompt_template,

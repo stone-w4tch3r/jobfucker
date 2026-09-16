@@ -518,7 +518,7 @@ audit(action=<span class="s">'fetch'</span>, details={window, slice, pages, fetc
 </div></details>
 
 <details><summary>Prompt rendering (stages/prompts.py)</summary><div class="body">
-<p>Templates = optional YAML frontmatter + Jinja2 body. Context is EXACTLY two variables: <span class="mono">resume_formatted</span>, <span class="mono">vacancy_formatted</span> (code formats the vacancy: Title/Company/Salary/Description). <span class="mono">StrictUndefined</span> → unknown variable = clear Err. Real prompts live at <span class="mono">pipelines/prompts/*.xml.j2</span> (346-line Russian scoring rubric incl. the AI-engineering focus rules; apply template is a near-verbatim letter with Telegram/portfolio links).</p>
+<p>Templates = Jinja2 body. Context is EXACTLY two variables: <span class="mono">resume_formatted</span>, <span class="mono">vacancy_formatted</span> (code formats the vacancy: Title/Company/Salary/Description). <span class="mono">StrictUndefined</span> → unknown variable = clear Err. Real prompts live at <span class="mono">pipelines/prompts/*.xml.j2</span> (346-line Russian scoring rubric incl. the AI-engineering focus rules; apply template is a near-verbatim letter with Telegram/portfolio links).</p>
 </div></details>
 </section>
 

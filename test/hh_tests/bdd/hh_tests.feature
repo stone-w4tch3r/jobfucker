@@ -121,11 +121,6 @@ Feature: HH screening-test solving
         When the hh test solver is selected
         Then no solver is selected
 
-    Scenario: An invalid prompt template selects no solver
-        Given an hh test-solving config with an invalid prompt template
-        When the hh test solver is selected
-        Then no solver is selected
-
     Scenario: A problem that gained a task is rejected
         Given a screening test with an extra unanswered task
         When the solution is validated

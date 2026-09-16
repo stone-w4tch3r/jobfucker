@@ -55,7 +55,7 @@ from jobfucker.reporting import NullReporter, Reporter
 from jobfucker.stages.apply import ApplyFilters, ApplyReport, ApplyTargets, run_apply, select_candidates
 from jobfucker.stages.fetch import FetchInputs, FetchReport, run_fetch
 from jobfucker.stages.generate_cv import GenerateCvReport, run_generate_cv
-from jobfucker.stages.prompts import PromptInputs, PromptTemplate, parse_prompt_template
+from jobfucker.stages.prompts import PromptInputs
 from jobfucker.stages.score import ScoreReport, run_score
 from jobfucker.storage.db import Storage
 from jobfucker.storage.dto import Pipeline
@@ -453,10 +453,8 @@ class Engine:
 
         The solver chain mirrors captcha selection: the explicit answers file
         wins, then the configured AI path (``hh_test_solving`` section + main
-        ``openai``), unless ``--no-test-ai``. The prompt inputs (parsed template
-        + resume) are only built for the AI solver; the selector has already
-        vetted the template, so a file-only run never parses it and a broken
-        template cannot abort a run that supplied ``--test-answers``.
+        ``openai``), unless ``--no-test-ai``. The prompt inputs (prompt text +
+        resume) are only built for the AI solver.
         """
         solver = select_hh_test_solver(
             self._config,
@@ -466,9 +464,7 @@ class Engine:
         prompt_inputs: PromptInputs | None = None
         section = self._config.hh_test_solving
         if isinstance(solver, HhTestAiSolver) and section is not None:
-            parsed = parse_prompt_template(section.test_prompt)
-            if parsed.is_ok:
-                prompt_inputs = PromptInputs(prompt=parsed.unwrap(), resume=self._config.resume.contents)
+            prompt_inputs = PromptInputs(prompt=section.test_prompt, resume=self._config.resume.contents)
         return Ok((solver, prompt_inputs))
 
     async def _run_score(self, pipeline: Pipeline, positions: set[int]) -> Result[ScoreReport, str]:
@@ -476,13 +472,11 @@ class Engine:
             self._config.scoring.scoring_prompt,
             self._config.resume.contents,
         )
-        if inputs.is_err:
-            return Err(inputs.unwrap_err())
         return await run_score(
             self._storage,
             pipeline,
             self._ai,
-            inputs.unwrap(),
+            inputs,
             positions=positions,
             snapshot_id=self._snapshot_id,
             min_required_score=self._config.scoring.min_required_score,
@@ -494,13 +488,11 @@ class Engine:
             self._config.apply.apply_prompt,
             self._config.resume.contents,
         )
-        if inputs.is_err:
-            return Err(inputs.unwrap_err())
         return await run_generate_cv(
             self._storage,
             pipeline,
             self._ai,
-            inputs.unwrap(),
+            inputs,
             positions=positions,
             snapshot_id=self._snapshot_id,
             min_required_score=self._config.scoring.min_required_score,
@@ -534,12 +526,8 @@ class Engine:
             return Err(resolved.unwrap_err())
         return Ok(await self._positions(pipeline, resolved.unwrap(), stage=stage))
 
-    def _inputs(self, prompt_text: str, resume: str) -> Result[PromptInputs, str]:
-        template_result = parse_prompt_template(prompt_text)
-        if template_result.is_err:
-            return Err(template_result.unwrap_err())
-        template: PromptTemplate = template_result.unwrap()
-        return Ok(PromptInputs(resume=resume, prompt=template))
+    def _inputs(self, prompt_text: str, resume: str) -> PromptInputs:
+        return PromptInputs(resume=resume, prompt=prompt_text)
 
     async def _positions(self, pipeline: Pipeline, selector: BatchSelector, *, stage: ProcessingStage) -> set[int]:
         """The list offsets to act on, after applying ``skip_already_processed``.

@@ -34,8 +34,8 @@ Design notes / decisions:
   enforces "exactly one source per slot" at YAML-load time; in-memory and
   reconstructed configs may legitimately hold both the path and its content.
 - **Prompt templates are captured, not rendered.** ``scoring_prompt`` /
-  ``apply_prompt`` hold the raw template text (including any YAML frontmatter);
-  full prompt rendering (frontmatter + resume + vacancy injection) is Phase 5.
+  ``apply_prompt`` hold the raw template text; rendering (resume + vacancy
+  injection) is Phase 5.
 - **No ORM dependency.** ``config.py`` never imports the storage models.
 
 Expected failures (malformed YAML, missing files, bad values, unknown board)
@@ -147,7 +147,7 @@ class ScoringConfig(BaseModel):
 
     min_required_score: int
     scoring_prompt_file: Path | None = None
-    scoring_prompt: str = ""  # raw template text (frontmatter + body)
+    scoring_prompt: str = ""  # raw template text
 
 
 class ApplyConfig(BaseModel):
@@ -182,7 +182,7 @@ class HhTestSolvingConfig(BaseModel):
     enabled: bool = True
     allow_ai_to_skip_test_when_not_enough_context: bool = False
     test_prompt_file: Path | None = None
-    test_prompt: str = ""  # raw template text (frontmatter + body)
+    test_prompt: str = ""  # raw template text
 
 
 class LimitsConfig(BaseModel):

@@ -21,7 +21,7 @@ from rusty_results.prelude import Err, Ok, Result
 
 from jobfucker.ai import ScoreError, ScoreResult
 from jobfucker.clients.base import ServiceVacancyId
-from jobfucker.stages.prompts import PromptInputs, PromptTemplate
+from jobfucker.stages.prompts import PromptInputs
 from jobfucker.stages.score import ScoreReport, run_score
 from jobfucker.storage.db import Storage
 from jobfucker.storage.dto import Pipeline, VacancyRecord
@@ -57,8 +57,10 @@ class ScoreOutcome:
 
 
 def _score_inputs() -> PromptInputs:
-    template = PromptTemplate(params={}, body="Score {{ resume_formatted }} for {{ vacancy_formatted }}")
-    return PromptInputs(resume="resume contents", prompt=template)
+    return PromptInputs(
+        resume="resume contents",
+        prompt="Score {{ resume_formatted }} for {{ vacancy_formatted }}",
+    )
 
 
 @given("a pipeline with min_required_score 3", target_fixture="pipeline")

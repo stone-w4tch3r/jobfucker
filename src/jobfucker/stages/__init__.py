@@ -3,8 +3,7 @@
 Each stage is a callable, typer-free function the engine controller composes:
 fetch → score → generate_cv → apply. Phase 5A ships the AI-heavy stages:
 
-- :mod:`jobfucker.stages.prompts` — prompt loading + Jinja2 rendering with YAML
-  frontmatter;
+- :mod:`jobfucker.stages.prompts` — prompt loading + Jinja2 rendering;
 - :mod:`jobfucker.stages.score` — AI scoring (1..5); sub-threshold is derived
   from ``score`` vs the snapshot threshold;
 - :mod:`jobfucker.stages.generate_cv` — cover-letter generation for eligible
@@ -19,10 +18,7 @@ from jobfucker.stages.apply import AppliedVacancy, ApplyReport, ApplyTargets, ru
 from jobfucker.stages.fetch import FetchedVacancy, FetchInputs, FetchReport, run_fetch
 from jobfucker.stages.generate_cv import GenerateCvReport, GeneratedCv, run_generate_cv
 from jobfucker.stages.prompts import (
-    PromptTemplate,
     VacancyPromptData,
-    load_prompt_template,
-    parse_prompt_template,
     render_apply_prompt,
     render_prompt,
     render_scoring_prompt,
@@ -38,12 +34,9 @@ __all__ = [
     "FetchedVacancy",
     "GenerateCvReport",
     "GeneratedCv",
-    "PromptTemplate",
     "ScoreReport",
     "ScoredVacancy",
     "VacancyPromptData",
-    "load_prompt_template",
-    "parse_prompt_template",
     "render_apply_prompt",
     "render_prompt",
     "render_scoring_prompt",

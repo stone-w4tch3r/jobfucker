@@ -19,7 +19,7 @@ from rusty_results.prelude import Err, Ok, Result
 from jobfucker.ai import ScoreError, ScoreResult
 from jobfucker.clients.base import ServiceVacancyId
 from jobfucker.stages.generate_cv import GenerateCvReport, run_generate_cv
-from jobfucker.stages.prompts import PromptInputs, PromptTemplate
+from jobfucker.stages.prompts import PromptInputs
 from jobfucker.storage.db import Storage
 from jobfucker.storage.dto import Pipeline, VacancyRecord
 from jobfucker.storage.models import AuditLog
@@ -54,8 +54,10 @@ class GenerateOutcome:
 
 
 def _apply_inputs() -> PromptInputs:
-    template = PromptTemplate(params={}, body="Letter for {{ vacancy_formatted }}: {{ resume_formatted }}")
-    return PromptInputs(resume="resume contents", prompt=template)
+    return PromptInputs(
+        resume="resume contents",
+        prompt="Letter for {{ vacancy_formatted }}: {{ resume_formatted }}",
+    )
 
 
 def _by_external_id(outcome: GenerateOutcome, external_id: str) -> VacancyRecord:

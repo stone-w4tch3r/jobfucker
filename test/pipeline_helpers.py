@@ -141,7 +141,7 @@ def build_pipeline_config(
 ) -> PipelineConfig:
     """A validated :class:`PipelineConfig` targeting the mock client.
 
-    The scoring/apply prompts are trivial Jinja bodies (no frontmatter); the
+    The scoring/apply prompts are trivial Jinja bodies; the
     stub AI ignores content, so only their presence matters. ``behavior`` is
     forwarded to the mock service section to program exercise outcomes.
     ``login``/``name`` override the auth account / user label (defaults leave

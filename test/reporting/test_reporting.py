@@ -35,7 +35,7 @@ from jobfucker.clients.mock.params import MockSearchEntry, MockSearchParams, Moc
 from jobfucker.reporting import EventLevel, NullReporter, RunEvent, verbosity_of
 from jobfucker.stages.apply import ApplyTargets, run_apply
 from jobfucker.stages.fetch import FetchInputs, run_fetch
-from jobfucker.stages.prompts import PromptInputs, PromptTemplate
+from jobfucker.stages.prompts import PromptInputs
 from jobfucker.stages.score import run_score
 from jobfucker.storage.db import Storage
 from test.pipeline_helpers import (
@@ -62,8 +62,10 @@ class RecordingReporter:
 
 def _score_inputs() -> PromptInputs:
     """Minimal prompt inputs the stub AI accepts (it ignores content)."""
-    template = PromptTemplate(params={}, body="Score {{ resume_formatted }} for {{ vacancy_formatted }}")
-    return PromptInputs(resume="resume contents", prompt=template)
+    return PromptInputs(
+        resume="resume contents",
+        prompt="Score {{ resume_formatted }} for {{ vacancy_formatted }}",
+    )
 
 
 async def _seed_scored(storage: Storage, pipeline_id: int, *, count: int = 2) -> None:

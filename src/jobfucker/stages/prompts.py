@@ -1,11 +1,9 @@
-"""Prompt loading + Jinja2 rendering with YAML frontmatter (Phase 5A, task 5.3).
+"""Prompt loading + Jinja2 rendering (Phase 5A, task 5.3).
 
-Per the architecture §3.2 / §4, prompt templates are **Jinja2 files with YAML
-frontmatter**: a leading ``---``-delimited YAML block holds params (metadata),
-and the Jinja2 body is what gets rendered with the injected content (resume,
-vacancy). ``config.py`` already captures the *raw* template text
-(``scoring_prompt`` / ``apply_prompt``); this module parses that text and
-renders it.
+Prompt templates are **Jinja2 files**: the whole file text is the render body.
+``config.py`` captures the *raw* template text (``scoring_prompt`` /
+``apply_prompt``); this module renders it with the injected content (resume,
+vacancy).
 
 The templates are the source of truth for the variable list. Both scoring and
 apply templates expect exactly two variables: ``resume_formatted`` and
@@ -13,54 +11,32 @@ apply templates expect exactly two variables: ``resume_formatted`` and
 missing variable fail fast — if the user edits a template to reference a
 variable the code does not provide, rendering returns a clear ``Err``.
 
-This module is **pure** — it only parses and renders strings. It performs no
-I/O beyond :func:`load_prompt_template` (which reads a file) and never calls the
-network. It is unit-tested for frontmatter parsing + injection.
+This module is **pure** — it only renders strings. It performs no I/O and never
+calls the network. It is unit-tested for injection.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
-from pathlib import Path
 
-import yaml
 from jinja2 import Environment, StrictUndefined, select_autoescape
 from jinja2.exceptions import TemplateError
 from rusty_results.prelude import Err, Ok, Result
 
 __all__ = [
     "PromptInputs",
-    "PromptParams",
-    "PromptTemplate",
     "TemplateContext",
     "VacancyPromptData",
     "format_vacancy_formatted",
-    "load_prompt_template",
-    "parse_prompt_template",
     "render_apply_prompt",
     "render_prompt",
     "render_scoring_prompt",
 ]
 
-# Parsed YAML frontmatter params. This is the dynamic YAML/JSON boundary —
-# ``object`` values are the untyped template metadata, narrowed by callers that
-# need specific params (none do today; params are authored metadata only).
-# Alias *values* are not flagged by the annotation-only object linter; the
-# alias itself names the single, documented boundary type.
-type PromptParams = Mapping[str, object]
-
 # The values a prompt body takes from the engine (resume, vacancy fields, score,
 # reasoning). ``object`` is the templating boundary — Jinja2 renders any value.
 type TemplateContext = Mapping[str, object]
-
-
-@dataclass(frozen=True, slots=True)
-class PromptTemplate:
-    """A parsed prompt: YAML frontmatter params + a Jinja2 body."""
-
-    params: PromptParams
-    body: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,98 +51,21 @@ class VacancyPromptData:
 
 @dataclass(frozen=True, slots=True)
 class PromptInputs:
-    """The render inputs a stage needs: resume contents + parsed prompt template.
+    """The render inputs a stage needs: resume contents + the prompt text.
 
     Bundled so stage entry points stay within the ``max-args`` limit and so the
     engine controller builds one object per stage (score vs apply prompt).
     """
 
     resume: str
-    prompt: PromptTemplate
+    prompt: str
 
 
-# --- Frontmatter parsing -----------------------------------------------------
-def _split_frontmatter(text: str) -> Result[tuple[PromptParams, str], str]:
-    """Split ``--- ... ---`` frontmatter from the Jinja2 body.
-
-    The template may omit frontmatter entirely (then params are empty). A
-    malformed YAML block is an ``Err``.
-    """
-    stripped = text.lstrip("\ufeff")
-    if not stripped.startswith("---"):
-        return Ok(({}, stripped))
-    # The first line is the opening ``---``; the closing ``---`` is a line that
-    # is exactly ``---`` (allow trailing whitespace) before the body.
-    lines = stripped.splitlines(keepends=True)
-    first = lines[0].strip()
-    if first != "---":
-        return Ok(({}, stripped))
-    end: int | None = None
-    for i, line in enumerate(lines[1:], start=1):
-        if line.strip() == "---":
-            end = i
-            break
-    if end is None:
-        return Err("Prompt template has an opening '---' but no closing '---' frontmatter delimiter")
-    frontmatter_lines = lines[1:end]
-    body_lines = lines[end + 1 :]
-
-    params = _parse_yaml_frontmatter("".join(frontmatter_lines))
-    if params.is_err:
-        return Err(params.unwrap_err())
-    body_text = "".join(body_lines)
-    return Ok((params.unwrap(), body_text))
-
-
-def _safe_load_yaml(text: str) -> object:  # lint-ignore[restricted-object]: YAML boundary
-    """Parse a YAML document into an untyped ``object`` (dynamic boundary)."""
-    return yaml.safe_load(text)  # type: ignore[reportAny]  # rationale: PyYAML returns Any; object is the dynamic boundary
-
-
-def _parse_yaml_frontmatter(text: str) -> Result[PromptParams, str]:
-    """Parse the frontmatter YAML into params, or a clear ``Err``."""
-    try:
-        parsed = _safe_load_yaml(text)
-    except yaml.YAMLError as exc:
-        return Err(f"Malformed prompt frontmatter YAML: {exc}")
-    if parsed is None:
-        return Ok({})
-    if not isinstance(parsed, dict):
-        return Err("Prompt frontmatter must be a YAML mapping")
-    narrowed: TemplateContext = {}  # lint-ignore[raw-dict]: frontmatter mapping
-    for key in parsed:  # type: ignore[reportUnknownVariableType]  # rationale: dict from dynamic YAML; keys narrowed to str
-        if isinstance(key, str):
-            narrowed[key] = parsed[key]
-    return Ok(narrowed)
-
-
-# --- Public API --------------------------------------------------------------
-def parse_prompt_template(text: str) -> Result[PromptTemplate, str]:
-    """Parse raw template text (frontmatter + body) into a :class:`PromptTemplate`."""
-    split = _split_frontmatter(text)
-    if split.is_err:
-        return Err(split.unwrap_err())
-    params, body = split.unwrap()
-    return Ok(PromptTemplate(params=params, body=body))
-
-
-def load_prompt_template(path: Path) -> Result[PromptTemplate, str]:
-    """Read and parse a prompt template file at ``path``."""
-    try:
-        raw = path.read_text(encoding="utf-8")
-    except OSError as exc:
-        return Err(f"Could not read prompt template {path}: {exc}")
-    parsed = parse_prompt_template(raw)
-    if parsed.is_err:
-        return Err(parsed.unwrap_err())
-    return Ok(parsed.unwrap())
-
-
-def render_prompt(template: PromptTemplate, *, context: TemplateContext) -> Result[str, str]:
-    """Render a template body with the given context into text.
+def render_prompt(prompt: str, *, context: TemplateContext) -> Result[str, str]:
+    """Render a prompt body with the given context into text.
 
     Args:
-        template: the parsed prompt template.
+        prompt: the raw Jinja2 prompt text.
         context: values injected into the Jinja2 body (resume, vacancy fields,
             score, reasoning, ...).
 
@@ -186,7 +85,7 @@ def render_prompt(template: PromptTemplate, *, context: TemplateContext) -> Resu
         undefined=StrictUndefined,
     )
     try:
-        compiled = env.from_string(template.body)
+        compiled = env.from_string(prompt)
         rendered = compiled.render(**dict(context))  # type: ignore[reportArgumentType]  # rationale: Jinja2 renders object values; boundary to templating
     except TemplateError as exc:
         return Err(f"Prompt render failed: {exc}")
@@ -219,7 +118,7 @@ def format_vacancy_formatted(vacancy: VacancyPromptData) -> str:
 
 
 def render_scoring_prompt(
-    template: PromptTemplate,
+    prompt: str,
     *,
     resume: str,
     vacancy: VacancyPromptData,
@@ -235,11 +134,11 @@ def render_scoring_prompt(
         "resume_formatted": resume,
         "vacancy_formatted": _format_vacancy(vacancy),
     }
-    return render_prompt(template, context=context)
+    return render_prompt(prompt, context=context)
 
 
 def render_apply_prompt(
-    template: PromptTemplate,
+    prompt: str,
     *,
     resume: str,
     vacancy: VacancyPromptData,
@@ -255,4 +154,4 @@ def render_apply_prompt(
         "resume_formatted": resume,
         "vacancy_formatted": _format_vacancy(vacancy),
     }
-    return render_prompt(template, context=context)
+    return render_prompt(prompt, context=context)
