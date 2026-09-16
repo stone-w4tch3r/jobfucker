@@ -83,6 +83,37 @@ def test_resume_id_captured(runtime_dir: Path) -> None:
     assert config.service_section.resume_id == "mock-resume-1"
 
 
+# --- ``~`` expansion in user-passed paths ------------------------------------
+def _fake_home(monkeypatch: pytest.MonkeyPatch, home: Path) -> None:
+    """Point ``~`` at ``home`` on every platform (HOME + USERPROFILE)."""
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("USERPROFILE", str(home))
+
+
+def test_pipeline_path_tilde_expands(monkeypatch: pytest.MonkeyPatch, runtime_dir: Path) -> None:
+    """``load_pipeline_config`` accepts a ``~/``-style pipeline path."""
+    home = runtime_dir / "home"
+    build_valid_pipeline_yaml(home / "cfg")
+    _fake_home(monkeypatch, home)
+    result = load_pipeline_config(Path("~/cfg/pipeline.yaml"))
+    assert result.is_ok, result
+    assert result.unwrap().name == "mock-demo"
+
+
+def test_referenced_file_tilde_expands(monkeypatch: pytest.MonkeyPatch, runtime_dir: Path) -> None:
+    """A ``*_file:`` reference containing ``~`` resolves against the home dir."""
+    home = runtime_dir / "home"
+    path = build_valid_pipeline_yaml(home / "cfg")
+    absolute_api_key = (home / "cfg" / "secrets" / "api_key.txt").as_posix()
+    path.write_text(
+        path.read_text(encoding="utf-8").replace(absolute_api_key, "~/cfg/secrets/api_key.txt"), encoding="utf-8"
+    )
+    _fake_home(monkeypatch, home)
+    result = load_pipeline_config(path)
+    assert result.is_ok, result
+    assert result.unwrap().openai.api_key == "mock-api-key"
+
+
 # --- service.mock behavior block (new client contract) ----------------------
 def _behavior_yaml_block() -> str:
     """An already-indented ``behavior:`` block injected into the mock section."""

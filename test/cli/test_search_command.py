@@ -250,6 +250,21 @@ def test_search_params_file_override(tmp_path: Path, initialized_pipeline: int) 
     assert f"params:   {params_file}" in result.output
 
 
+def test_search_params_file_override_with_tilde(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, initialized_pipeline: int
+) -> None:
+    """A ``~/``-style ``--params`` path expands against the home dir; the header echo keeps the raw value."""
+    home = tmp_path / "home"
+    params_file = home / "try.yaml"
+    params_file.parent.mkdir(parents=True)
+    params_file.write_text("area: [40]\nschedule: []\nexperience: null\nonly_with_salary: false\n", encoding="utf-8")
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("USERPROFILE", str(home))
+    result = _invoke_search("--pipeline-id", str(initialized_pipeline), "--params", "~/try.yaml")
+    assert result.exit_code == 0, result.output
+    assert "params:   ~/try.yaml" in result.output
+
+
 def test_search_params_stdin_override(initialized_pipeline: int) -> None:
     result = _invoke_search(
         "--pipeline-id",

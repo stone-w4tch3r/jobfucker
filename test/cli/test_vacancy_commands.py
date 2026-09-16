@@ -236,6 +236,27 @@ def test_dump_output_refuses_overwrite_and_short_force_replaces(
     assert force_without_output.exit_code != 0 and "--output" in force_without_output.output
 
 
+def test_dump_and_apply_accept_tilde_paths(
+    storage: Storage,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """``--output``/``--source`` accept ``~/``-style paths (expanded against the home dir)."""
+    _install_services(monkeypatch, storage)
+    _seed_vacancy(storage)
+    home = tmp_path / "home"
+    home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("USERPROFILE", str(home))
+
+    dumped = runner.invoke(app, ["vacancies", "dump", "--output", "~/vacancies.yaml"])
+    applied = runner.invoke(app, ["vacancies", "apply", "--source", "~/vacancies.yaml"])
+
+    assert dumped.exit_code == 0, dumped.output
+    assert (home / "vacancies.yaml").is_file()
+    assert applied.exit_code == 0, applied.output
+
+
 def test_dry_run_writes_nothing_and_apply_persists_same_edit(
     storage: Storage,
     monkeypatch: pytest.MonkeyPatch,

@@ -363,8 +363,10 @@ def load_pipeline_config(path: Path) -> Result[PipelineConfig, str]:
         file, an unknown board, or invalid values.
 
     Relative file references resolve against the pipeline file's own directory
-    (``../`` climbs out; absolute references are used as-is).
+    (``../`` climbs out; absolute references are used as-is). ``~`` in the
+    pipeline path and in file references expands to the user's home.
     """
+    path = path.expanduser()
     base_dir = path.resolve().parent
     read = _read_text(path)
     if read.is_err:
@@ -446,8 +448,8 @@ def _resolve_content(
     When ``ref`` is ``None`` the slot was configured inline (or left empty) and
     the inline value is returned unchanged — authored YAML text is never altered.
     When ``ref`` is set, a relative reference resolves against ``base_dir`` (the
-    pipeline file's directory) and the file is read; a missing/unreadable file
-    is a clear ``Err``.
+    pipeline file's directory) and the file is read; ``~`` expands to the user's
+    home; a missing/unreadable file is a clear ``Err``.
 
     File contents are ``strip()``ed before being returned: a referenced file
     conventionally ends with a trailing newline (editors, ``echo``), and a raw
@@ -457,7 +459,8 @@ def _resolve_content(
     """
     if ref is None:
         return Ok(inline)
-    resolved = ref if ref.is_absolute() else base_dir / ref
+    expanded = ref.expanduser()
+    resolved = expanded if expanded.is_absolute() else base_dir / expanded
     result = _read_text(resolved)
     if result.is_err:
         return Err(result.unwrap_err())

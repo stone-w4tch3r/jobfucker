@@ -57,7 +57,7 @@ def config_dir() -> Path:
     """Resolve the config directory (``CONFIG_DIR`` override, then XDG/platform default)."""
     override = os.environ.get("CONFIG_DIR")
     if override:
-        return Path(override)
+        return Path(override).expanduser()
     xdg = os.environ.get("XDG_CONFIG_HOME")
     if xdg:
         return Path(xdg) / _CONFIG_DIR_NAME
@@ -68,7 +68,7 @@ def data_dir() -> Path:
     """Resolve the data directory (``DATA_DIR`` override, then XDG/platform default)."""
     override = os.environ.get("DATA_DIR")
     if override:
-        return Path(override)
+        return Path(override).expanduser()
     xdg = os.environ.get("XDG_DATA_HOME")
     if xdg:
         return Path(xdg) / _DATA_DIR_NAME

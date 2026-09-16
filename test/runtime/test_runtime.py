@@ -34,6 +34,17 @@ def test_env_overrides_win(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> N
     assert runtime.database_path() == data / "jobfucker.db"
 
 
+def test_env_overrides_expand_tilde(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """``CONFIG_DIR``/``DATA_DIR`` values starting with ``~`` expand to the home dir."""
+    _clear_env(monkeypatch)
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+    monkeypatch.setenv("CONFIG_DIR", "~/myconfig")
+    monkeypatch.setenv("DATA_DIR", "~/mydata")
+    assert runtime.config_dir() == tmp_path / "myconfig"
+    assert runtime.data_dir() == tmp_path / "mydata"
+
+
 def test_xdg_fallbacks(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """XDG_CONFIG_HOME/XDG_DATA_HOME are used when no direct override is set."""
     _clear_env(monkeypatch)

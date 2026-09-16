@@ -182,6 +182,20 @@ def file_without_answers_step(tmp_path: Path) -> HhTestFileSolver:
     return HhTestFileSolver(path)
 
 
+@given(
+    "an answers file containing a valid document for that vacancy referenced through ~",
+    target_fixture="file_solver",
+)
+def file_with_answers_via_tilde_step(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> HhTestFileSolver:
+    path = tmp_path / "answers.json"
+    path.write_text(
+        json.dumps({_VACANCY_ID: {"1": {"text": "Потому что"}, "2": {"option_id": "20"}}}), encoding="utf-8"
+    )
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+    return HhTestFileSolver(Path("~/answers.json"))
+
+
 # --- Given: AI solver --------------------------------------------------------
 def _ai_case(payload: str, *, allow_unsolved: bool) -> AiCase:
     """Build the solver + its recording completion for a scripted payload."""

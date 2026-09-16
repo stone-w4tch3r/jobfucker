@@ -196,6 +196,8 @@ def dump(
     """Run the vacancy dump terminal workflow."""
     if force and output is None:
         _fail("--force requires --output")
+    if output is not None:
+        output = output.expanduser()
     resolved_format = _resolve_document_format(output, document_format)
     asyncio.run(_with_services(_dump, pipeline_id, output, resolved_format, force=force))
 
@@ -223,6 +225,8 @@ async def _dump(
 
 def apply(*, source: Path | None, document_format: DocumentFormat | None, dry_run: bool) -> None:
     """Run the vacancy document apply terminal workflow."""
+    if source is not None:
+        source = source.expanduser()
     resolved_format = _resolve_document_format(source, document_format)
     input_result = _read_input(source)
     if input_result.is_err:

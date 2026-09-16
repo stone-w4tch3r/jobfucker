@@ -35,6 +35,12 @@ Feature: HH screening-test solving
         When the file solver solves the test
         Then the solve fails mentioning the vacancy
 
+    Scenario: The file solver reads an answers file referenced through ~
+        Given a screening test with a free-text and a choice task
+        And an answers file containing a valid document for that vacancy referenced through ~
+        When the file solver solves the test
+        Then the solve returns both task answers
+
     Scenario: The AI solver answers the whole test in one completion
         Given a screening test with a free-text and a choice task
         And an AI completion returning a complete answer document

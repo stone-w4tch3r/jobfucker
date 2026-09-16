@@ -175,7 +175,7 @@ def _load_params_override(
         source = "inline"
     else:
         try:
-            raw = Path(value).read_text(encoding="utf-8")
+            raw = Path(value).expanduser().read_text(encoding="utf-8")
         except OSError as exc:
             return Err(f"Cannot read --params file {value!r}: {exc}")
         source = value
@@ -1032,6 +1032,7 @@ def hh_tests_dump(
     The file is then solved by a human, an offline AI pass, or the answers-file
     flow, and ``apply --test-answers FILE`` consumes it. No application is made.
     """
+    output = output.expanduser()
     _run(
         _hh_tests_dump(
             pipeline_id,

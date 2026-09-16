@@ -60,10 +60,11 @@ class HhTestFileSolver:
 
     Args:
         path: the answers file path (external boundary, pydantic-validated).
+          ``~`` expands to the user's home.
     """
 
     def __init__(self, path: Path) -> None:
-        self._path: Path = path
+        self._path: Path = path.expanduser()
 
     async def __call__(self, problem: HhTestProblem, prompt: str) -> Result[HhTestSolveOutcome, str]:
         """Resolve the problem's answers from the file entry for its vacancy.
