@@ -114,8 +114,8 @@ class SearchPreview:
 
     pipeline_label: str  # "name (#id)"
     query: str  # the effective (possibly overridden) query
-    query_source: str  # "search N" | "--query"
-    params_source: str  # "pipeline filters (no override)" | file path | "stdin" | "inline"
+    query_source: str  # "--query"
+    params_source: str  # file path | "stdin" | "inline"
     found: int | None
     board_cap: int | None  # the service's searchable-items cap (for the found note)
     pages_scanned: int
@@ -130,8 +130,8 @@ class PreviewContext:
 
     pipeline: Pipeline
     query: str  # the effective (possibly overridden) query
-    query_source: str  # "search N" | "--query"
-    params_source: str  # "pipeline filters (no override)" | file path | "stdin" | "inline"
+    query_source: str  # "--query"
+    params_source: str  # file path | "stdin" | "inline"
     board_cap: int | None  # the service's searchable-items cap (for the found note)
 
 

@@ -62,7 +62,6 @@ from jobfucker.storage.dto import Pipeline, PipelineSnapshot
 __all__ = [
     "TerminalAuthInteraction",
     "build_client_from_pipeline",
-    "build_config_from_pipeline",
     "build_engine_from_pipeline",
 ]
 
@@ -228,24 +227,6 @@ def _rebuild_config_and_factory(
         reporter=reporter,
     )
     return Ok((config, factory))
-
-
-def build_config_from_pipeline(
-    pipeline: Pipeline,
-    snapshot: PipelineSnapshot,
-) -> Result[PipelineConfig, str]:
-    """Reconstruct the validated :class:`PipelineConfig` for a stored pipeline.
-
-    Zero file I/O ("we trust the db"); no factory, no captcha selection. Used
-    by commands that need to *read* the reconstructed config (e.g. ``search``
-    resolves the search pool before building a client).
-    """
-    refs = replace(
-        to_persisted_refs(snapshot),
-        name=pipeline.name,
-        description=pipeline.description,
-    )
-    return build_config_from_refs(refs)
 
 
 def build_client_from_pipeline(

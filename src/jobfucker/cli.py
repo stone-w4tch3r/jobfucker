@@ -68,10 +68,10 @@ from rusty_results.prelude import Err, Ok, Result
 
 from jobfucker.app.search_view import PreviewContext, build_preview, preview_document, render_text_preview
 from jobfucker.app.services import AppServices
-from jobfucker.bootstrap import build_client_from_pipeline, build_config_from_pipeline, build_engine_from_pipeline
+from jobfucker.bootstrap import build_client_from_pipeline, build_engine_from_pipeline
 from jobfucker.cli_commands import vacancies as vacancy_commands
 from jobfucker.clients.base import SearchWindow
-from jobfucker.config import PipelineConfig, load_pipeline_config, search_index_range_error
+from jobfucker.config import PipelineConfig, load_pipeline_config
 from jobfucker.engine import BatchSelector
 from jobfucker.hh_tests.dump import dump_problems_to_json
 from jobfucker.reporting import EventLevel, RunEvent, verbosity_of
@@ -121,10 +121,9 @@ _LOG_LEVELS: Final = {
 }
 
 
-# PEP 695 aliases for the YAML payload boundaries (the restricted-object linter checks
-# annotations, not type aliases; payloads are handed to with_overrides untouched).
+# PEP 695 alias for the YAML payload boundary (the restricted-object linter checks
+# annotations, not type aliases; the payload is handed to with_overrides untouched).
 type _StrKeyedMapping = Mapping[str, object] | None
-type _FilterOverride = Mapping[str, object] | None
 
 
 class SearchFormat(StrEnum):
@@ -642,17 +641,25 @@ async def _fetch(
 
 @app.command()
 def search(
-    pipeline_id: int = typer.Option(..., "--pipeline-id", help="Stored pipeline id to search for"),
-    use_search_config: int | None = typer.Option(
-        None,
-        "--use-search-config",
-        help="Search pool entry to preview (0-based); required when the pipeline has more than one search",
+    pipeline_id: int = typer.Option(
+        ...,
+        "--pipeline-id",
+        help="Stored pipeline id; supplies auth, service, resume and captcha config only",
     ),
-    query: str | None = typer.Option(None, "--query", help="Override the selected search's query for this preview"),
-    params: str | None = typer.Option(
-        None,
+    query: str = typer.Option(
+        ...,
+        "--query",
+        help="Board query-language search text (required)",
+    ),
+    params: str = typer.Option(
+        ...,
         "--params",
-        help="Filter override: file path, '-' (stdin), or inline {...} JSON/YAML of the board's filter block",
+        help=(
+            "Board filter block (required; same schema as the pipeline's searches[].filter): file path, '-' (stdin), or"
+            " inline '{...}'. YAML or JSON — eg a file with 'published: {within_days: 14}',"
+            " 'location: {regions: \\[1, 2]}', 'salary: {only_with_salary: true}',"
+            ' or inline \'{"salary": {"only_with_salary": true}}\''
+        ),
     ),
     document_format: SearchFormat = typer.Option(
         SearchFormat.TEXT,
@@ -670,16 +677,15 @@ def search(
         0, "--verbose", "-v", count=True, help="Show run events (-v info lines, -vv client detail)"
     ),
 ) -> None:
-    """Preview one search of a stored pipeline — listing only, nothing stored.
+    """Preview one explicit search — listing only, nothing stored.
 
-    Runs the pipeline's selected search entry (or the ``--query``/``--params``
-    override) at the listing level: one request per page of short results, no
-    vacancy bodies, no DB writes. Shows the board-reported total, each
+    Runs the request at the listing level: one call per page of short results,
+    no vacancy bodies, no DB writes. Shows the board-reported total, each
     vacancy's title/company/salary/area plus its DB status (new work vs already
     fetched/scored/applied), and the board's own web search URL for the query.
 
-    The preview window comes from the CLI flags only — the pipeline's
-    per-search fetch window config is never used here.
+    The preview window comes from the CLI flags only — no pipeline window config
+    is used here.
 
     For deep research yaml/json output format is recommended.
     Text output has significantly less fields and is suitable mostly for quick preview.
@@ -687,7 +693,6 @@ def search(
     _run(
         _search(
             pipeline_id,
-            use_search_config,
             query,
             params,
             document_format,
@@ -701,12 +706,11 @@ def search(
 
 
 @_with_services
-async def _search(  # noqa: PLR0912, PLR0915 - per-entry pool walk + override ladder, kept linear on purpose
+async def _search(
     svc: AppServices,
     pipeline_id: int,
-    use_search_config: int | None,
-    query: str | None,
-    params: str | None,
+    query: str,
+    params: str,
     document_format: SearchFormat,
     fetch_params: SearchWindow,
     use_sixel: bool,
@@ -719,40 +723,21 @@ async def _search(  # noqa: PLR0912, PLR0915 - per-entry pool walk + override la
         _fail(resolved.unwrap_err())
     identity, snapshot = resolved.unwrap()
 
-    # Resolve the search pool first: the preview is single-run and must know
-    # which entry's query/filter forms the base before anything is built.
-    config_result = build_config_from_pipeline(identity, snapshot)
-    if config_result.is_err:
-        _fail(config_result.unwrap_err())
-    config = config_result.unwrap()
-    pool = config.service_section.searches
-    if use_search_config is None:
-        if len(pool) > 1:
-            _fail(search_index_range_error(len(pool)))
-        search_index = 0
-    else:
-        search_index = use_search_config
-        if not 0 <= search_index < len(pool):
-            _fail(search_index_range_error(len(pool)))
-
-    effective_query = query if query is not None else pool[search_index].query
-    query_source = "--query" if query is not None else f"search {search_index}"
-    params_source = "pipeline filters (no override)"
-    filter_data: _FilterOverride = None
-    if params is not None:
-        loaded = _load_params_override(params)
-        if loaded.is_err:
-            _fail(loaded.unwrap_err())
-        filter_data, params_source = loaded.unwrap()
+    loaded = _load_params_override(params)
+    if loaded.is_err:
+        _fail(loaded.unwrap_err())
+    filter_data, params_source = loaded.unwrap()
 
     reporter = CliReporter(verbosity=verbose)
+    # Both query and filter are explicit, so the override fully replaces pool
+    # entry 0: the pipeline's searches[] content never reaches the request.
     client_result = build_client_from_pipeline(
         identity,
         snapshot,
         use_sixel=use_sixel,
         use_kitty=use_kitty,
         no_captcha_ai=no_captcha_ai,
-        search_index=search_index,
+        search_index=0,
         query_override=query,
         filter_override=filter_data,
         reporter=reporter,
@@ -766,7 +751,7 @@ async def _search(  # noqa: PLR0912, PLR0915 - per-entry pool walk + override la
     plan_result = plan_fetch(
         fetch_params,
         max_search_items=client.service_info.max_search_items,
-        origin=f"search {search_index}: ",
+        origin="search: ",
     )
     if plan_result.is_err:
         await client.aclose()
@@ -775,7 +760,7 @@ async def _search(  # noqa: PLR0912, PLR0915 - per-entry pool walk + override la
 
     try:
         listing_result = await client.list_vacancies(
-            search_index,
+            0,
             offset=plan.slice_start,
             limit=plan.slice_end - plan.slice_start,
             page_size=plan.page_size,
@@ -794,8 +779,8 @@ async def _search(  # noqa: PLR0912, PLR0915 - per-entry pool walk + override la
         listing,
         PreviewContext(
             pipeline=identity,
-            query=effective_query,
-            query_source=query_source,
+            query=query,
+            query_source="--query",
             params_source=params_source,
             board_cap=client.service_info.max_search_items,
         ),

@@ -76,7 +76,7 @@ Relevant for AI related job search
 - Each entry is self-contained: its `query` + its own `filter` block (+ optional `window`).
 - New pipeline: `uv run poe app init --config <file>`. Existing pipeline: edit pool, then `uv run poe app update --config <file>`.
 - Keep measured counts, dates, traps, rationale as YAML comments next to entries.
-- Validate YAML parses after edit; re-preview any entry with `jobfucker search --pipeline-id <id> --use-search-config N`.
+- Validate YAML parses after edit; re-preview a set by pasting its query/filter into `jobfucker search --pipeline-id <id> --query '<q>' --params <file> --format json`.
 
 ## Quality gates — done only when
 

@@ -34,7 +34,7 @@ from jobfucker.clients.mock.params import MockSearchEntry, MockSearchParams, Moc
 from jobfucker.storage.db import Storage
 from jobfucker.storage.vacancy_documents import SqlAlchemyVacancyDocumentStore
 from jobfucker.testing.step_runner import async_run
-from test.pipeline_helpers import mock_vacancies
+from test.pipeline_helpers import build_pipeline_config, mock_search_entry, mock_vacancies, store_pipeline
 from test.storage.builders import build_vacancy
 
 runner = CliRunner()
@@ -69,9 +69,24 @@ def _status_by_external_id(
 _CAPTCHA_FLAGS = ("--no-captcha-ai", "--use-sixel")
 
 
+# The command requires an explicit query + filter; tests that do not exercise
+# their own values get these defaults injected by ``_invoke_search``.
+_DEFAULT_QUERY = "python"
+_DEFAULT_PARAMS = '{"area": [1], "schedule": ["fullDay"], "experience": "between1And3", "only_with_salary": true}'
+
+
 def _invoke_search(*args: str, stdin_text: str | None = None) -> CliResult:
-    """Invoke ``search`` with the offline captcha flags (optional stdin payload)."""
-    return runner.invoke(app, ["search", *_CAPTCHA_FLAGS, *args], input=stdin_text)
+    """Invoke ``search`` with the offline captcha flags and default query/params.
+
+    ``--query``/``--params`` are required by the command; a caller that passes
+    its own value is left untouched (the default is skipped).
+    """
+    defaults: list[str] = []
+    if "--query" not in args:
+        defaults += ["--query", _DEFAULT_QUERY]
+    if "--params" not in args:
+        defaults += ["--params", _DEFAULT_PARAMS]
+    return runner.invoke(app, ["search", *_CAPTCHA_FLAGS, *defaults, *args], input=stdin_text)
 
 
 @pytest.fixture(autouse=True)
@@ -156,8 +171,8 @@ def test_search_text_output_shows_header_rows_and_new_status(initialized_pipelin
     result = _invoke_search("--pipeline-id", str(initialized_pipeline))
     assert result.exit_code == 0, result.output
     assert "pipeline: mock-demo (#1)" in result.output
-    assert "query:    python  (search 0)" in result.output
-    assert "params:   pipeline filters (no override)" in result.output
+    assert "query:    python  (--query)" in result.output
+    assert "params:   inline" in result.output
     assert "web:" not in result.output  # the mock has no web search URL
     assert "db" in result.output and "published" in result.output
     assert "  new  " in result.output  # nothing stored yet: every row is new
@@ -201,7 +216,7 @@ def test_search_json_output_parses_with_db_status(initialized_pipeline: int) -> 
     assert result.exit_code == 0, result.output
     document = _json_document(result.output)
     assert document["query"] == "python"
-    assert document["query_source"] == "search 0"
+    assert document["query_source"] == "--query"
     assert document["found"] == 3
     assert document["ui_url"] is None
     statuses = _status_by_external_id(document)
@@ -290,6 +305,46 @@ def test_search_is_read_only(initialized_pipeline: int, storage: Storage) -> Non
     result = _invoke_search("--pipeline-id", str(initialized_pipeline))
     assert result.exit_code == 0, result.output
     assert _count(storage, initialized_pipeline) == before  # no upserts, no audit rows
+
+
+def test_search_requires_query_flag(initialized_pipeline: int) -> None:
+    """``--query`` is mandatory: the pipeline's search pool is no longer a fallback."""
+    result = runner.invoke(
+        app,
+        ["search", *_CAPTCHA_FLAGS, "--pipeline-id", str(initialized_pipeline), "--params", _DEFAULT_PARAMS],
+    )
+    assert result.exit_code != 0
+    assert "--query" in result.output
+
+
+def test_search_requires_params_flag(initialized_pipeline: int) -> None:
+    """``--params`` is mandatory too."""
+    result = runner.invoke(
+        app, ["search", *_CAPTCHA_FLAGS, "--pipeline-id", str(initialized_pipeline), "--query", "python"]
+    )
+    assert result.exit_code != 0
+    assert "--params" in result.output
+
+
+def test_search_needs_no_index_with_multi_entry_pool(monkeypatch: pytest.MonkeyPatch, storage: Storage) -> None:
+    """A multi-entry pool no longer forces ``--use-search-config``; --query/--params define the run."""
+    monkeypatch.setattr("jobfucker.cli.AppServices.open", _stub_open(storage))
+    config = build_pipeline_config()
+    config.set_service_section(
+        MockServiceConfig(
+            resume_id="mock-resume-1",
+            searches=(
+                mock_search_entry(mock_vacancies(), query="golang"),
+                mock_search_entry(mock_vacancies(), query="rust"),
+            ),
+        )
+    )
+    identity, _snapshot = async_run(store_pipeline(storage, config))
+    result = _invoke_search("--pipeline-id", str(identity.id), "--query", "rust", "--format", "json")
+    assert result.exit_code == 0, result.output
+    document = _json_document(result.output)
+    assert document["query"] == "rust"
+    assert document["query_source"] == "--query"
 
 
 def test_search_missing_params_file_fails_readably(initialized_pipeline: int) -> None:

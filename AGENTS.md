@@ -154,8 +154,8 @@ jobfucker run       (--pipeline-id | --new-from-config)  # fetch → score → g
                     [--first-page/--page-size/--take-pages]             # fetch window; ANY given flag = run-wide override of every pool entry's window
 jobfucker fetch     --pipeline-id [--use-search-config N] [--refresh]   # walk the pool of service.<board>.searches[] (insert-only), one mirror sync per entry
                     [window/slice flags]                                # run-wide override: any given flag replaces every entry's configured window
-jobfucker search    --pipeline-id --use-search-config N [--query] [--params FILE|-|'{...}']   # listing-only preview: nothing stored
-                    [--format text|json|yaml] [window flags]            # entry query+filter as base; --use-search-config required when pool > 1
+jobfucker search    --pipeline-id --query TEXT --params FILE|-|'{...}'    # listing-only preview: nothing stored
+                    [--format text|json|yaml] [window flags]
 jobfucker score     --pipeline-id [batch flags]
 jobfucker generate  --pipeline-id [batch flags]
 jobfucker apply     --pipeline-id [batch flags] [--use-sixel|--use-kitty|--no-captcha-ai]

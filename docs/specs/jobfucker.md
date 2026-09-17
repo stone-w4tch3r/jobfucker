@@ -44,12 +44,10 @@ jobfucker vacancies dump | yq/jq | $EDITOR | jobfucker vacancies apply   # human
 [AGENTS.md](../../AGENTS.md#cli-commands-verified-against--h). Config file reference:
 [pipeline.example.yaml](../examples/pipeline.example.yaml).
 
-**Query-iteration flow (`search`):** preview what the board returns for the pipeline's search —
-listing only, **nothing stored** (no vacancy bodies, no DB writes, no audit). The pool entry is
-selected with `--use-search-config N` (mandatory when the pipeline has more than one search —
-fails fast with the count otherwise); `--query` overrides that entry's query and
-`--params FILE|-|'{...}'` overrides its board's whole filter block (same schema as the entry's
-`filter`; validated locally — unknown keys/bad values fail before any board call). The pipeline's
+**Query-iteration flow (`search`):** preview what the board returns for an explicit query —
+listing only, **nothing stored** (no vacancy bodies, no DB writes, no audit). `--query` and
+`--params FILE|-|'{...}'` are both **required** and fully define the request. `--params` overrides the board's whole filter block (same schema as the entry's `filter`;
+YAML or JSON, validated locally — unknown keys/bad values fail before any board call). The pipeline's
 per-entry `window` is **not** read by `search` — its window flags keep their own defaults. Output
 shows the board-reported `found`
 total, a title-first table (title, company, salary, area, published) with a per-vacancy **DB
