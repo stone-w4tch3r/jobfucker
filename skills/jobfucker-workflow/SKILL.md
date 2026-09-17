@@ -5,7 +5,7 @@ description: >-
   Используй при прогоне pipeline, повседневной работе с jobfucker, вопросах «что дальше», разборе проскоренных вакансий, обработке requires_attention, повторном скоринге после правки промпта, выборе между ручным шагом и агентом.
 ---
 
-Для первичной настройки — jobfucker-setup; для дизайна поисков — jobfucker-collecting-hh-vacancies; для промптов — jobfucker-creating-scoring-prompts.
+Для первичной настройки — jobfucker-setup; для дизайна поисков — jobfucker-collecting-hh-vacancies; для промптов — jobfucker-creating-prompts.
 
 # Операционный цикл jobfucker
 
@@ -17,7 +17,7 @@ description: >-
 | --- | --- |
 | Установка, первый запуск, новый pipeline, капча | `jobfucker-setup` |
 | Дизайн / расширение / бэкфилл поискового пула | `jobfucker-collecting-hh-vacancies` |
-| Создание / калибровка / итерация скоринг-промпта | `jobfucker-creating-scoring-prompts` |
+| Создание / калибровка / итерация скоринг- и apply-промптов | `jobfucker-creating-prompts` |
 
 ## Цикл
 
@@ -44,12 +44,12 @@ description: >-
 
 - `jobfucker vacancies dump [--pipeline-id <id>]` → читай `editable.score` и `editable.score_reasoning`.
 - Промпт отработал плохо → **откат**: в дампе очисти `score` и `score_reasoning` (в `null`), затем `jobfucker vacancies apply --source FILE` (сначала `--dry-run`), затем `score` заново с обновлённым промптом.
-- Методика правки промпта (какой блок менять) — `jobfucker-creating-scoring-prompts`, этапы IV–VI.
+- Методика правки промпта (какой блок менять) — `jobfucker-creating-prompts`, этапы IV–VI.
 - Если правка промпта меняет смысл оценок — перезапусти и `generate` (старые письма могли устареть).
 
 ### 4. Triage requires_attention
 
-- «requires_attention» — **конвенция тега в `comment`** скоринга (см. `jobfucker-creating-scoring-prompts`), не колонка БД.
+- «requires_attention» — **конвенция тега в `comment`** скоринга (см. `jobfucker-creating-prompts`), не колонка БД.
 - Найди такие вакансии в дампе (по тексту комментария).
 - Варианты (решает пользователь):
   - **skip/pause** — `manual_skip: true` + `manual_skip_reason` в дампе → `vacancies apply`; в `status` уйдёт в bucket `paused`;

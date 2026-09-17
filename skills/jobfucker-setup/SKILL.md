@@ -57,11 +57,12 @@ description: >-
 
 ### 6. Скелет pipeline.yaml
 
-- Образец: `docs/examples/pipeline.hh-fullstack.example.yaml`. Схема: `docs/schemas/pipeline.schema.json`.
+- Образец: `pipeline.hh-fullstack.example.yaml` (в комплекте с этим скиллом, или см `docs/examples/`). Схема: `docs/schemas/pipeline.schema.json`.
 - Секции: `service.<board>` (ровно один board), `auth`, `resume`, `openai`, `openai_captcha`, `scoring`, `apply`, опц. `hh_test_solving`, `limits`.
 - Каждый контентный слот — XOR: file-reference **или** inline.
 - **Поисковый пул не выдумывай** — скилл `jobfucker-collecting-hh-vacancies`.
-- **Промпты не пиши с нуля** — скилл `jobfucker-creating-scoring-prompts`.
+- **Скоринг-промпт не пиши с нуля** — скилл `jobfucker-creating-prompts`.
+- **Apply-промпт (сопроводительное) — личный.** Не копируй чужой, не выдумывай имя/контакты/подпись. Спроси у пользователя имя, контакты, тон, длину, язык; базовый каркас — `docs/examples/apply-java-fullstack.xml.j2` (приложен к скиллу). Методика — тот же скилл.
 - Личные `pipelines/`, `secrets/` — в `.gitignore`, никогда не коммитить.
 
 ### 7. Капча
