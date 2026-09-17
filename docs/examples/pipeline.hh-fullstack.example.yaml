@@ -1,0 +1,107 @@
+# =============================================================================
+# jobfucker — реальный HH.ru pipeline (обобщённый пример)
+# =============================================================================
+# Обобщённая копия рабочего пайплайна. Профиль: Java Fullstack Engineer.
+# Показывает форму пула поисков, AI-секции, капчу, промпты и лимиты.
+#
+# Поисковый пул проектируется скиллом `jobfucker-collecting-hh-vacancies`;
+# промпты — скиллом `jobfucker-creating-scoring-prompts`.
+# yaml-language-server: $schema=https://raw.githubusercontent.com/stone-w4tch3r/jobfucker/master/docs/schemas/pipeline.schema.json
+
+name: "hh-java-fullstack"
+description: "Java Fullstack developer bank on HH.ru (example)"
+
+service:
+  hh:
+    # id резюме HH, которым откликаемся (из URL резюме на сайте).
+    resume_id: "0000000000000000000000000000000000000000"
+    search_mode: "catalog"
+    captcha_max_attempts: 4
+    # ВАЖНО: это просто пример! Не копируй "как есть"
+    searches:
+      # 1. Java fullstack: Java-стек × фронтенд/фулстек, remote/hybrid
+      - query: '(java OR джава OR spring OR "spring boot") (fullstack OR фулстек OR react OR frontend OR фронтенд)'
+        filter:
+          query:
+            fields_to_search_in: [name]
+            exclude_words: "стажер,junior,intern,интерн"
+          work_arrangement:
+            work_formats: [remote, hybrid]
+          published:
+            within_days: 30
+
+      # 2. Java / Spring ядро (широкий), remote/hybrid
+      - query: '(java OR джава OR "Java-разработчик" OR "Java Developer" OR spring OR "spring boot" OR hibernate OR jpa)'
+        filter:
+          query:
+            fields_to_search_in: [name]
+            exclude_words: "стажер,junior,intern,интерн"
+          work_arrangement:
+            work_formats: [remote, hybrid]
+          published:
+            within_days: 30
+
+      # 3. Java / Spring ядро, крупные города + страны релокации
+      - query: '(java OR джава OR "Java-разработчик" OR "Java Developer" OR spring OR "spring boot" OR hibernate OR jpa)'
+        filter:
+          query:
+            fields_to_search_in: [name]
+            exclude_words: "стажер,junior,intern,интерн"
+          location:
+            regions: [1, 2, 88, 3, 40, 28, 146, 5046, 13, 16]
+          published:
+            within_days: 30
+
+# --- Credentials --------------------------------------------------------------
+# Один из стилей на слот (никогда оба). Файлы — относительно этого yaml.
+auth:
+  login_file: "secrets/login.txt"
+  password_file: "secrets/password.txt"
+  # login: "me@example.com"
+  # password: "hunter2"
+
+# --- Resume -------------------------------------------------------------------
+resume:
+  path: "../resumes/resume.md"
+  # contents: |-
+  #   # Иван Петров
+  #   Java Fullstack Engineer, 3+ года...
+
+# --- OpenAI: скоринг и сопроводительные ---------------------------------------
+openai:
+  model: "gpt-5.6-luna"
+  base_url: "https://api.openai.com/v1"
+  api_key_file: "secrets/api_key.txt"
+  reasoning_effort: "low"
+
+# --- OpenAI: vision для капчи (независимая секция) ----------------------------
+openai_captcha:
+  model: "gpt-5-mini"              # нужна модель, принимающая изображения
+  base_url: "https://api.openai.com/v1"
+  api_key_file: "secrets/api_key.txt"
+  reasoning_effort: "none"
+  consensus_requests: 4            # Количество vision-голосов на попытку; побеждает большинство
+
+# --- AI scoring ---------------------------------------------------------------
+scoring:
+  min_required_score: 3            # ниже порога — не генерим и не откликаемся
+  scoring_prompt_file: "scoring-java-fullstack.xml.j2"
+  # scoring_prompt: |
+  #   ...
+
+# --- Cover letter -------------------------------------------------------------
+apply:
+  apply_prompt_file: "apply-java-fullstack.xml.j2"
+  # apply_prompt: |
+  #   ...
+
+# --- HH screening-тесты (опционально, hh-only) --------------------------------
+# AI-решатель переиспользует секцию `openai` выше.
+# hh_test_solving:
+#   enabled: true
+#   allow_ai_to_skip_test_when_not_enough_context: false
+#   test_prompt_file: "prompts/hh-test-java-fullstack.xml.j2"
+
+# --- Limits -------------------------------------------------------------------
+limits:
+  daily_apply_limit: 50            # консервативный предохранитель на pipeline
