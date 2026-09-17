@@ -30,6 +30,7 @@ from jobfucker.clients.base import (
     ClientError,
     ConfigurationError,
     ProtocolError,
+    ServiceIdentity,
     ServiceVacancyId,
     TransportError,
 )
@@ -325,6 +326,14 @@ class AuthOutcome:
     requests: tuple[httpx.Request, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class IdentityOutcome:
+    """Frozen outcome: the fetched ``ServiceIdentity`` result + the request history."""
+
+    result: Result[ServiceIdentity, ClientError]
+    requests: tuple[httpx.Request, ...]
+
+
 async def _no_delay() -> None:
     return None
 
@@ -529,6 +538,32 @@ async def _invoke_actions(client: HHClient) -> tuple[ClientError | None, ClientE
 def authorize_step(auth_scenario: AuthScenario) -> AuthOutcome:
     error = async_run(_authorize_and_close(auth_scenario.make_client()))
     return AuthOutcome(errors=(error,), requests=tuple(auth_scenario.transport.requests))
+
+
+@when("the HH client fetches the account identity", target_fixture="identity_outcome")
+def fetch_identity_step(auth_scenario: AuthScenario) -> IdentityOutcome:
+    """``get_identity`` reuses the preflight; capture the decoded identity."""
+    client = auth_scenario.make_client()
+    try:
+        result = async_run(client.get_identity())
+    finally:
+        async_run(client.aclose())
+    return IdentityOutcome(result=result, requests=tuple(auth_scenario.transport.requests))
+
+
+@then("the identity carries the applicant id, name, and email")
+def identity_fields_step(identity_outcome: IdentityOutcome) -> None:
+    assert identity_outcome.result.is_ok
+    identity = identity_outcome.result.unwrap()
+    assert identity.external_id == "applicant-1"
+    assert identity.display_name == "Иван Дмитриев"
+    assert identity.email == "applicant-1@example.test"
+
+
+@then("HH received exactly one applicant healthcheck")
+def identity_single_healthcheck_step(identity_outcome: IdentityOutcome) -> None:
+    """The identity reuses the mandatory preflight — no extra board request."""
+    assert [request.url.path for request in identity_outcome.requests] == ["/me"]
 
 
 @when("the HH client authorizes twice with a restart", target_fixture="auth_outcome")

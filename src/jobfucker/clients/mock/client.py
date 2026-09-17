@@ -42,6 +42,7 @@ from jobfucker.clients.base import (
     SearchListing,
     SearchSlice,
     ServiceConfigSection,
+    ServiceIdentity,
     ServiceInfo,
     ServiceVacancyId,
     Vacancy,
@@ -363,6 +364,10 @@ class MockClient(Client):
     async def get_resumes(self) -> Result[list[ResumeInfo], ClientError]:
         """Return a fixed mock resume list."""
         return Ok([_MOCK_RESUME])
+
+    async def get_identity(self) -> Result[ServiceIdentity, ClientError]:
+        """Return the fixed mock account identity."""
+        return Ok(ServiceIdentity(external_id="mock-user-1", display_name="Mock User", email="mock-user@example.com"))
 
     async def apply_to_vacancy(
         self,

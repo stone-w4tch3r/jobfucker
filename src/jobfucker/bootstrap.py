@@ -63,6 +63,7 @@ __all__ = [
     "TerminalAuthInteraction",
     "build_client_from_pipeline",
     "build_engine_from_pipeline",
+    "rebuild_pipeline_config",
 ]
 
 
@@ -154,6 +155,23 @@ def _build_factory(
     return factory
 
 
+def rebuild_pipeline_config(pipeline: Pipeline, snapshot: PipelineSnapshot) -> Result[PipelineConfig, str]:
+    """Reconstruct the stored pipeline's validated :class:`PipelineConfig` (zero file I/O).
+
+    Public seam for commands that need the run's config without a client or
+    engine (e.g. the ``doctor`` command's captcha-handler/scoring checks):
+    marshals the snapshot's CONTENT columns via
+    :func:`jobfucker.app.mapping.to_persisted_refs` and re-validates them
+    through the registry, merging the identity's ``name``/``description``.
+    """
+    refs = replace(
+        to_persisted_refs(snapshot),
+        name=pipeline.name,
+        description=pipeline.description,
+    )
+    return build_config_from_refs(refs)
+
+
 def _rebuild_config_and_factory(
     pipeline: Pipeline,
     snapshot: PipelineSnapshot,
@@ -170,23 +188,18 @@ def _rebuild_config_and_factory(
     """Rebuild the stored pipeline config and its client factory (shared prefix).
 
     Marshals the snapshot's CONTENT columns into a validated
-    :class:`PipelineConfig` (zero file I/O — "we trust the db"), applies the
-    optional search query/filter overrides to pool entry ``search_index``
-    (:func:`jobfucker.config.with_overrides` — the ``search`` preview path
-    swaps one entry's query/filter block without touching the stored row), then
-    selects the captcha handler and builds the client factory with the same
-    fail-fast semantics as the fresh-config path.
+    :class:`PipelineConfig` via :func:`rebuild_pipeline_config` ("we trust the
+    db"), applies the optional search query/filter overrides to pool entry
+    ``search_index`` (:func:`jobfucker.config.with_overrides` — the ``search``
+    preview path swaps one entry's query/filter block without touching the
+    stored row), then selects the captcha handler and builds the client
+    factory with the same fail-fast semantics as the fresh-config path.
 
     Returns ``Ok((config, factory))``, or ``Err`` when the stored section is
     missing/invalid (re-run ``init``), an override fails validation,
     or no captcha handler can be selected.
     """
-    refs = replace(
-        to_persisted_refs(snapshot),
-        name=pipeline.name,
-        description=pipeline.description,
-    )
-    config_result = build_config_from_refs(refs)
+    config_result = rebuild_pipeline_config(pipeline, snapshot)
     if config_result.is_err:
         return Err(config_result.unwrap_err())
     config = config_result.unwrap()

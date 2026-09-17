@@ -32,7 +32,7 @@ from jobfucker.app.services import AppServices
 from jobfucker.app.vacancy_documents import VacancyDocumentService
 from jobfucker.bootstrap import TerminalAuthInteraction
 from jobfucker.cli import app
-from jobfucker.clients.base import ClientCredentials, ClientDeps
+from jobfucker.clients.base import CaptchaHandler, Client, ClientCredentials, ClientDeps
 from jobfucker.clients.factory import Factory
 from jobfucker.clients.mock.client import MockClient
 from jobfucker.clients.mock.params import (
@@ -42,6 +42,7 @@ from jobfucker.clients.mock.params import (
     MockSearchParams,
     MockServiceConfig,
 )
+from jobfucker.doctor import DoctorVacancy
 from jobfucker.engine import Engine
 from jobfucker.reporting import Reporter
 from jobfucker.storage.db import Storage, create_async_sqlite_engine, storage_from_engine
@@ -259,9 +260,61 @@ def test_help_lists_all_commands() -> None:
         "generate",
         "apply",
         "status",
+        "doctor",
         "pipelines-list",
     ):
         assert name in result.output
+
+
+def test_doctor_help_shows_only_its_options() -> None:
+    doctor_help = runner.invoke(app, ["doctor", "--help"])
+    assert doctor_help.exit_code == 0
+    for token in ("--pipeline-id", "--use-sixel", "--use-kitty", "--no-captcha-ai", "--verbose"):
+        assert token in doctor_help.output
+    for token in ("--config", "--from", "--to", "--take"):
+        assert token not in doctor_help.output
+
+
+def _err_client_build(message: str) -> Callable[..., Result[Client, str]]:
+    """A typed stub failing :func:`build_client_from_pipeline` with ``message``."""
+
+    def fake(*args: object, **kwargs: object) -> Result[Client, str]:
+        del args, kwargs
+        return Err(message)
+
+    return fake
+
+
+def _err_handler_selection(message: str) -> Callable[..., Result[CaptchaHandler, str]]:
+    """A typed stub failing :func:`select_captcha_handler` with ``message``."""
+
+    def fake(*args: object, **kwargs: object) -> Result[CaptchaHandler, str]:
+        del args, kwargs
+        return Err(message)
+
+    return fake
+
+
+def _missing_vacancy() -> Result[DoctorVacancy, str]:
+    return Err("resource missing")
+
+
+def test_doctor_reports_all_failures_and_exits_nonzero(storage: Storage, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Each failed probe prints its FAIL line; the command exits non-zero.
+
+    All three probe boundaries are stubbed to fail, so the real run output,
+    ordering, and exit-code mapping are exercised with no network, TTY, or AI.
+    """
+    _patch_cli(monkeypatch, storage)
+    pipeline = async_run(create_pipeline(storage, name="mock-demo"))
+    monkeypatch.setattr("jobfucker.cli.build_client_from_pipeline", _err_client_build("no captcha handler available"))
+    monkeypatch.setattr("jobfucker.cli.select_captcha_handler", _err_handler_selection("no captcha handler"))
+    monkeypatch.setattr("jobfucker.cli.load_doctor_vacancy", _missing_vacancy)
+    result = runner.invoke(app, ["doctor", "--pipeline-id", str(pipeline.id)])
+    assert result.exit_code == 1
+    assert "identity: FAIL" in result.output
+    assert "captcha: FAIL" in result.output
+    assert "scoring: FAIL" in result.output
 
 
 # --- init / update / status / pipelines-list (real mock, isolated DB) -------

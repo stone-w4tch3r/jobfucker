@@ -28,11 +28,21 @@ class OAuthErrorResponse(HHModel):
 
 
 class CurrentUserResponse(HHModel):
-    """Minimum applicant identity required by the auth healthcheck."""
+    """Applicant identity decoded from HH ``/me``.
+
+    ``id``/``auth_type``/``is_applicant`` are the auth-healthcheck minimum;
+    the name/email fields are additive and optional (HH nulls them; the wire
+    also carries a ``mid_name`` alias of ``middle_name`` — ignored, one
+    spelling is enough). Unknown keys stay ignored.
+    """
 
     id: str = Field(min_length=1)
     auth_type: str = Field(min_length=1)
     is_applicant: bool
+    first_name: str | None = None
+    middle_name: str | None = None
+    last_name: str | None = None
+    email: str | None = None
 
 
 class HHErrorItem(HHModel):

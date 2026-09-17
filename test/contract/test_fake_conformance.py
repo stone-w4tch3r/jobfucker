@@ -27,6 +27,7 @@ _REQUIRED_CLIENT_METHODS = (
     "search_vacancies",
     "list_vacancies",
     "get_resumes",
+    "get_identity",
     "apply_to_vacancy",
     "aclose",
 )
@@ -53,6 +54,14 @@ async def test_fake_exposes_every_required_client_method(client_deps: ClientDeps
     fake = _make_fake(client_deps)
     for name in _REQUIRED_CLIENT_METHODS:
         assert hasattr(fake, name), f"FakeClient is missing Client member {name!r}"
+
+
+async def test_fake_get_identity_returns_the_canned_identity(client_deps: ClientDeps) -> None:
+    """``get_identity`` returns a ``ServiceIdentity`` with a non-empty id."""
+    fake = _make_fake(client_deps)
+    result = await fake.get_identity()
+    assert result.is_ok
+    assert result.unwrap().external_id
 
 
 async def test_fake_search_accepts_query_only(client_deps: ClientDeps) -> None:

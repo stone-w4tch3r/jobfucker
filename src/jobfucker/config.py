@@ -248,8 +248,13 @@ def _read_text(path: Path) -> Result[str, str]:
 
 
 # --- Typed YAML narrowing ---------------------------------------------------
-def _parse_yaml(text: str) -> object:  # lint-ignore[restricted-object]: PyYAML boundary; narrowed below
-    """Parse YAML text into an ``object`` (dynamic boundary)."""
+def parse_yaml_object(text: str) -> object:  # lint-ignore[restricted-object]: PyYAML boundary; narrowed by callers
+    """Parse YAML text into an ``object`` (the one PyYAML dynamic boundary).
+
+    The single shim shared by every YAML entry point (config loading, the CLI
+    ``--params`` override, the doctor resources): callers narrow the returned
+    ``object`` themselves.
+    """
     return yaml.safe_load(text)  # type: ignore[reportAny]  # rationale: PyYAML returns Any; object is the dynamic boundary
 
 
@@ -272,7 +277,7 @@ def _parse_pipeline_config_yaml(
 ) -> Result[dict[str, object], str]:  # lint-ignore[restricted-object]: YAML payload  # lint-ignore[raw-dict]: YAML dict
     """Parse YAML text into a str-keyed dict, or a clear ``Err``."""
     try:
-        parsed = _parse_yaml(text)
+        parsed = parse_yaml_object(text)
     except yaml.YAMLError as exc:
         return Err(f"Malformed YAML in {path}: {exc}")
     data = _as_str_keyed_dict(parsed)
@@ -941,6 +946,7 @@ __all__ = [
     "load_openai_captcha",
     "load_pipeline_config",
     "load_service_section",
+    "parse_yaml_object",
     "reconstruct_pipeline_config",
     "search_index_range_error",
     "validate_cap",

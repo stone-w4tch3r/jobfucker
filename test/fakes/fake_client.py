@@ -50,6 +50,7 @@ from jobfucker.clients.base import (
     SearchSlice,
     SearchWindow,
     ServiceConfigSection,
+    ServiceIdentity,
     ServiceInfo,
     ServiceVacancyId,
     Vacancy,
@@ -269,6 +270,10 @@ class FakeClient(Client):
     async def get_resumes(self) -> Result[list[ResumeInfo], ClientError]:
         """Return the canned resumes."""
         return Ok(list(self._resumes))
+
+    async def get_identity(self) -> Result[ServiceIdentity, ClientError]:
+        """Return the canned fake account identity."""
+        return Ok(ServiceIdentity(external_id="fake-user-1", display_name="Fake User", email="fake-user@example.com"))
 
     async def apply_to_vacancy(
         self,

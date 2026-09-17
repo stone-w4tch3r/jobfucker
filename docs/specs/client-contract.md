@@ -131,6 +131,16 @@ class ResumeInfo:
     updated_at: str | None
 
 @dataclass(frozen=True, slots=True)
+class ServiceIdentity:
+    # The authenticated board-account identity (a board "whoami").
+    # Display fields are optional on purpose: boards report names/emails in
+    # different shapes and may null them. Consumers render their own fallbacks
+    # (name -> email -> id).
+    external_id: str
+    display_name: str | None = None
+    email: str | None = None
+
+@dataclass(frozen=True, slots=True)
 class ApplySucceeded:
     pass
 
@@ -213,6 +223,8 @@ class Client(Protocol):
 
     async def get_resumes(self) -> Result[list[ResumeInfo], ClientError]: ...
 
+    async def get_identity(self) -> Result[ServiceIdentity, ClientError]: ...
+
     async def apply_to_vacancy(
         self,
         *,
@@ -272,6 +284,9 @@ Method semantics:
   when the board does not report it. There is **no** partial-failure member: a listing is never
   persisted, so a failed page is a plain `Err` (pre-scan failures included).
 - `get_resumes()` returns every board-side resume the client can map to `ResumeInfo`.
+- `get_identity()` returns the authenticated account's identity (a board "whoami"). Boards SHOULD
+  reuse their auth healthcheck response instead of issuing an extra request (HH decodes `/me`
+  once per preflight and caches it). `external_id` is the only required member.
 - `apply_to_vacancy()` receives the explicit service resume ID selected by core.
 - `aclose()` releases owned transports/resources, is safe after partial initialization, and is
   idempotent.

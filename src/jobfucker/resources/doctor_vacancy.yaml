@@ -1,0 +1,21 @@
+# Canned vacancy the `doctor` command scores to verify the OpenAI setup.
+# Doctor-only probe data: never fetched, never persisted; shaped like a real
+# enriched board vacancy so the scoring prompt renders realistically.
+title: "Senior Python Developer (Doctor Probe)"
+company: "Probe Systems"
+salary: "250000-350000 RUR"
+description: |
+  We are looking for a senior Python backend developer to own our
+  event-driven platform.
+
+  Responsibilities:
+  - Design and evolve REST/gRPC services (FastAPI, gRPC);
+  - Build reliable async pipelines (asyncio, Kafka);
+  - Keep PostgreSQL and Redis schemas healthy under load;
+  - Mentor mid-level engineers and drive code review culture.
+
+  Requirements:
+  - 5+ years of production Python;
+  - Deep asyncio and distributed-systems experience;
+  - Solid PostgreSQL and Redis knowledge;
+  - English at reading level.

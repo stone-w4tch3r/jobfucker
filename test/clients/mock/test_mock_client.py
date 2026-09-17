@@ -174,6 +174,17 @@ async def test_authorize_succeeds_by_default(client_deps: ClientDeps) -> None:
 
 
 @pytest.mark.unit
+async def test_get_identity_returns_the_fixed_mock_identity(client_deps: ClientDeps) -> None:
+    """``get_identity`` returns the canned mock account identity."""
+    result = await MockClient(client_deps, section=_section()).get_identity()
+    assert result.is_ok
+    identity = result.unwrap()
+    assert identity.external_id == "mock-user-1"
+    assert identity.display_name == "Mock User"
+    assert identity.email == "mock-user@example.com"
+
+
+@pytest.mark.unit
 async def test_authorize_can_fail_with_auth_error(client_deps: ClientDeps) -> None:
     """``authorize`` returns ``Err(AuthError)`` when told to fail via behavior."""
     behavior = MockBehaviorConfig(authorize_error="mock auth failed")

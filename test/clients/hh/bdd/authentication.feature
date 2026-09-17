@@ -7,6 +7,12 @@ Feature: HH authentication preflight
     Then authorization succeeds
     And HH received only an applicant healthcheck
 
+  Scenario: The client exposes the decoded account identity
+    Given a valid persisted HH token
+    When the HH client fetches the account identity
+    Then the identity carries the applicant id, name, and email
+    And HH received exactly one applicant healthcheck
+
   Scenario: Missing state performs browserless login and OAuth
     Given no persisted HH authentication state
     When the HH client authorizes

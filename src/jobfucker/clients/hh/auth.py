@@ -24,6 +24,7 @@ from jobfucker.clients.base import (
     ClientError,
     InternalError,
     ProtocolError,
+    ServiceIdentity,
 )
 from jobfucker.clients.hh.captcha import (
     CaptchaAnswer,
@@ -53,6 +54,8 @@ _LOGIN_FAIL_URL: Final = "/account/login?backurl=/&oauth=true&response_type=code
 @dataclass(frozen=True, slots=True)
 class _HealthcheckAuthorized:
     """The Bearer token belongs to a healthy applicant account."""
+
+    identity: ServiceIdentity  # the /me payload decoded into the contract identity
 
 
 @dataclass(frozen=True, slots=True)
@@ -133,6 +136,7 @@ class AuthCoordinator:
         self._captcha = captcha
         self._store = TokenStore(deps)
         self._access_token: str | None = None
+        self._identity: ServiceIdentity | None = None
 
     @property
     def authorized_access_token(self) -> str:
@@ -140,6 +144,13 @@ class AuthCoordinator:
         if self._access_token is None:
             raise RuntimeError("HH access token requested before successful authorization")
         return self._access_token
+
+    @property
+    def authorized_identity(self) -> ServiceIdentity:
+        """Return the identity decoded by the latest successful healthcheck."""
+        if self._identity is None:
+            raise RuntimeError("HH identity requested before successful authorization")
+        return self._identity
 
     async def ensure_authorized(self) -> Result[None, ClientError]:
         """Healthcheck persisted state and perform one bounded recovery when needed."""
@@ -157,8 +168,9 @@ class AuthCoordinator:
             else:
                 health = await self._healthcheck(state.access_token)
                 match health:
-                    case _HealthcheckAuthorized():
+                    case _HealthcheckAuthorized(identity=identity):
                         self._access_token = state.access_token
+                        self._identity = identity
                         await self._report("authorize: token healthy")
                         return Ok(None)
                     case _HealthcheckFailed(error=error):
@@ -174,11 +186,12 @@ class AuthCoordinator:
     async def _verify_and_persist(self, state: PersistedAuthState) -> Result[None, ClientError]:
         health = await self._healthcheck(state.access_token)
         match health:
-            case _HealthcheckAuthorized():
+            case _HealthcheckAuthorized(identity=identity):
                 saved = await self._store.save(state)
                 if saved.is_err:
                     return saved
                 self._access_token = state.access_token
+                self._identity = identity
                 await self._report("authorize: applicant healthcheck passed")
                 return Ok(None)
             case _HealthcheckRejected():
@@ -410,7 +423,19 @@ def _decode_healthcheck(response: httpx.Response) -> _Healthcheck:
         return _HealthcheckFailed(ProtocolError(message="Malformed HH /me response", status=response.status_code))
     if current_user.auth_type != "applicant" or not current_user.is_applicant:
         return _HealthcheckFailed(AuthError(message="HH account is not an applicant account"))
-    return _HealthcheckAuthorized()
+    return _HealthcheckAuthorized(identity=_identity_from_user(current_user))
+
+
+def _identity_from_user(user: CurrentUserResponse) -> ServiceIdentity:
+    """Map a decoded /me payload onto the board-neutral contract identity.
+
+    Every display field is optional upstream: the name parts are joined only
+    when at least one is present, and the email stands alone (HH nulls both on
+    some accounts).
+    """
+    name_parts = [user.first_name, user.middle_name, user.last_name]
+    display_name = " ".join(part for part in name_parts if part) or None
+    return ServiceIdentity(external_id=user.id, display_name=display_name, email=user.email)
 
 
 def _login_error(response: httpx.Response) -> AuthError | None:

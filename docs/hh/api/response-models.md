@@ -40,6 +40,15 @@ counters:
 
 Do not require a `new_negotiations` counter; it was absent from the observed payload.
 
+Live verification through the client's healthcheck path additionally observed:
+
+- `mid_name` — a nullable alias of `middle_name` (both keys present); decode one spelling;
+- `middle_name` and `phone` were `null` on the observed account; treat all name/email/phone
+  fields as optional;
+- additive ignorable profile fields: `country_id`, `is_anonymous`, `is_application`,
+  `is_hiring_manager`, `is_employer_integration`, `employer`, `linked_socials`,
+  `personal_manager`, `profile_videos`, `underage_confirmed`.
+
 ## Resume list item
 
 `GET /resumes/mine` is paginated. Important fields:

@@ -172,7 +172,18 @@ def json_response(payload: object, status: int = 200) -> httpx.Response:  # lint
 
 
 def applicant_healthcheck() -> httpx.Response:
-    return json_response({"id": "applicant-1", "auth_type": "applicant", "is_applicant": True})
+    return json_response(
+        {
+            "id": "applicant-1",
+            "auth_type": "applicant",
+            "is_applicant": True,
+            "first_name": "Иван",
+            "middle_name": None,
+            "last_name": "Дмитриев",
+            "email": "applicant-1@example.test",
+            "phone": None,
+        }
+    )
 
 
 def resume_item(

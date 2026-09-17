@@ -24,7 +24,7 @@ so an owned file-backed engine is disposed before the loop closes (the
 ``storage.db`` invariant).
 
 Command set (architecture §1.0): ``init``, ``update``, ``run``, ``fetch``,
-``score``, ``generate``, ``apply``, ``status``, ``pipelines-list``.
+``score``, ``generate``, ``apply``, ``status``, ``doctor``, ``pipelines-list``.
 
 - ``init``/``update`` take ``--config <pipeline.yaml>`` **only** (they never
   construct a client, so they carry no captcha flags). ``init`` is get-or-keep
@@ -40,6 +40,9 @@ Command set (architecture §1.0): ``init``, ``update``, ``run``, ``fetch``,
   ``--allow-without-letter``) and forced-ids mode (``--vacancy-id``/``--force``).
 - ``run`` takes **exactly one** of ``--pipeline-id`` or ``--new-from-config`` +
   batch + captcha flags.
+- ``doctor`` takes ``--pipeline-id`` (required) + captcha flags; it runs the
+  identity / captcha / scoring probes (:mod:`jobfucker.doctor`) with zero
+  writes to stored vacancies.
 - Read-only commands (``status``/``pipelines-list``) need no config/id.
 
 **Global logging options** (place before the command, e.g.
@@ -66,12 +69,21 @@ import typer
 import yaml
 from rusty_results.prelude import Err, Ok, Result
 
+from jobfucker.ai import OpenAIWrapper
 from jobfucker.app.search_view import PreviewContext, build_preview, preview_document, render_text_preview
 from jobfucker.app.services import AppServices
-from jobfucker.bootstrap import build_client_from_pipeline, build_engine_from_pipeline
+from jobfucker.bootstrap import build_client_from_pipeline, build_engine_from_pipeline, rebuild_pipeline_config
+from jobfucker.captcha import select_captcha_handler
 from jobfucker.cli_commands import vacancies as vacancy_commands
 from jobfucker.clients.base import SearchWindow
-from jobfucker.config import PipelineConfig, load_pipeline_config
+from jobfucker.config import PipelineConfig, load_pipeline_config, parse_yaml_object
+from jobfucker.doctor import (
+    check_captcha,
+    check_identity,
+    check_scoring,
+    load_captcha_image,
+    load_doctor_vacancy,
+)
 from jobfucker.engine import BatchSelector
 from jobfucker.hh_tests.dump import dump_problems_to_json
 from jobfucker.reporting import EventLevel, RunEvent, verbosity_of
@@ -81,7 +93,7 @@ from jobfucker.stages.fetch import FetchReport
 from jobfucker.stages.fetch_plan import plan_fetch
 from jobfucker.stages.generate_cv import GenerateCvReport
 from jobfucker.stages.score import ScoreReport
-from jobfucker.storage.dto import VacancyRecord
+from jobfucker.storage.dto import Pipeline, PipelineSnapshot, VacancyRecord
 from jobfucker.table_documents.codec import DocumentFormat
 
 app = typer.Typer(
@@ -134,11 +146,6 @@ class SearchFormat(StrEnum):
     YAML = "yaml"
 
 
-def _parse_params_yaml(text: str) -> object:  # lint-ignore[restricted-object]: PyYAML boundary; narrowed below
-    """Parse YAML/JSON text into an ``object`` (dynamic boundary)."""
-    return yaml.safe_load(text)  # type: ignore[reportAny]  # rationale: PyYAML returns Any; object is the dynamic boundary
-
-
 def _as_str_keyed_mapping(
     value: object,  # lint-ignore[restricted-object]: YAML boundary
 ) -> _StrKeyedMapping:
@@ -168,7 +175,7 @@ def _looks_like_inline_document(value: str) -> bool:
     if value.lstrip().startswith(("{", "[")) or "\n" in value:
         return True
     try:
-        return isinstance(_parse_params_yaml(value), dict)
+        return isinstance(parse_yaml_object(value), dict)
     except yaml.YAMLError:
         return False
 
@@ -199,7 +206,7 @@ def _load_params_override(
             return Err(f"Cannot read --params file {value!r}: {exc}")
         source = value
     try:
-        loaded = _parse_params_yaml(raw)
+        loaded = parse_yaml_object(raw)
     except yaml.YAMLError as exc:
         return Err(f"Invalid YAML in --params ({source}): {exc}")
     mapping = _as_str_keyed_mapping(loaded)
@@ -1443,6 +1450,154 @@ async def _resumes(
     for resume in resumes:
         updated = resume.updated_at if resume.updated_at is not None else "-"
         typer.echo(f"{resume.resume_id}  {updated}  {resume.title}")
+
+
+@app.command()
+def doctor(
+    pipeline_id: int = typer.Option(..., "--pipeline-id", help="Stored pipeline id to verify against"),
+    use_sixel: bool = typer.Option(False, "--use-sixel", help="Use sixel terminal captcha output"),
+    use_kitty: bool = typer.Option(False, "--use-kitty", help="Use kitty terminal captcha output"),
+    no_captcha_ai: bool = typer.Option(False, "--no-captcha-ai", help="Disable AI captcha solving"),
+    verbose: int = typer.Option(
+        0, "--verbose", "-v", count=True, help="Show run events (-v info lines, -vv client detail)"
+    ),
+) -> None:
+    """Verify the configured setup end-to-end: board identity, captcha, AI scoring.
+
+    Three independent checks against the real board/AI with **zero writes** to
+    stored vacancies: the authenticated account identity (whoami), one real
+    captcha solve through the selected handler (terminal sixel/kitty or AI
+    vision, fed the packaged mock captcha), and one throwaway AI scoring of a
+    canned resource vacancy using the pipeline's real resume + scoring prompt.
+    Exits non-zero when any check fails.
+    """
+    _run(_doctor(pipeline_id, use_sixel, use_kitty, no_captcha_ai, verbose))
+
+
+@_with_services
+async def _doctor(
+    svc: AppServices,
+    pipeline_id: int,
+    use_sixel: bool,
+    use_kitty: bool,
+    no_captcha_ai: bool,
+    verbose: int,
+) -> None:
+    resolved = await svc.pipelines.resolve(pipeline_id)
+    if resolved.is_err:
+        _fail(resolved.unwrap_err())
+    identity, snapshot = resolved.unwrap()
+    reporter = CliReporter(verbosity=verbose)
+
+    config_result = rebuild_pipeline_config(identity, snapshot)
+    if config_result.is_err:
+        _fail(config_result.unwrap_err())
+    config = config_result.unwrap()
+
+    def _handle_result(result: tuple[str, bool, str]) -> bool:
+        failed = False
+        name, ok, detail = result
+        if ok:
+            typer.echo(f"{name}: ok — {detail}")
+        else:
+            failed = True
+            typer.echo(f"{name}: FAIL — {detail}", err=True)
+        return failed
+
+    identity_result = await _doctor_identity_check(
+        identity,
+        snapshot,
+        use_sixel=use_sixel,
+        use_kitty=use_kitty,
+        no_captcha_ai=no_captcha_ai,
+        reporter=reporter,
+    )
+    identity_failed = _handle_result(identity_result)
+    captcha_result = await _doctor_captcha_check(
+        config, use_sixel=use_sixel, use_kitty=use_kitty, no_captcha_ai=no_captcha_ai
+    )
+    captcha_failed = _handle_result(captcha_result)
+    scoring_result = await _doctor_scoring_check(config)
+    scoring_failed = _handle_result(scoring_result)
+
+    if identity_failed or scoring_failed or captcha_failed:
+        raise typer.Exit(code=1)
+
+
+async def _doctor_identity_check(
+    pipeline: Pipeline,
+    snapshot: PipelineSnapshot,
+    *,
+    use_sixel: bool,
+    use_kitty: bool,
+    no_captcha_ai: bool,
+    reporter: CliReporter,
+) -> tuple[str, bool, str]:
+    """Probe 1 — identity ("whoami"): the auth preflight is the real check.
+
+    A healthy healthcheck proves the configured credentials/tokens work; the
+    client build itself fails when no captcha handler can be selected, which is
+    reported as-is (it is exactly what a run would hit).
+    """
+    client_result = build_client_from_pipeline(
+        pipeline,
+        snapshot,
+        use_sixel=use_sixel,
+        use_kitty=use_kitty,
+        no_captcha_ai=no_captcha_ai,
+        reporter=reporter,
+    )
+    if client_result.is_err:
+        return ("identity", False, client_result.unwrap_err())
+    client = client_result.unwrap()
+    try:
+        who = await check_identity(client)
+    finally:
+        await client.aclose()
+    if who.is_err:
+        return ("identity", False, who.unwrap_err())
+    found = who.unwrap()
+    label = found.display_name or found.email or found.external_id
+    email = f", {found.email}" if found.email else ""
+    return ("identity", True, f"{label} (id={found.external_id}{email})")
+
+
+async def _doctor_captcha_check(
+    config: PipelineConfig,
+    *,
+    use_sixel: bool,
+    use_kitty: bool,
+    no_captcha_ai: bool,
+) -> tuple[str, bool, str]:
+    """Probe 2 — captcha: select the run's real handler, solve the packaged mock captcha."""
+    handler = select_captcha_handler(config, use_sixel=use_sixel, use_kitty=use_kitty, no_captcha_ai=no_captcha_ai)
+    if handler.is_err:
+        return ("captcha", False, handler.unwrap_err())
+    image = load_captcha_image()
+    if image.is_err:
+        return ("captcha", False, image.unwrap_err())
+    solved = await check_captcha(handler.unwrap(), image.unwrap())
+    if solved.is_err:
+        return ("captcha", False, solved.unwrap_err())
+    kind = type(handler.unwrap()).__name__
+    return ("captcha", True, f"solved ({kind})")
+
+
+async def _doctor_scoring_check(config: PipelineConfig) -> tuple[str, bool, str]:
+    """Probe 3 — scoring: one throwaway AI score of the canned resource vacancy."""
+    vacancy = load_doctor_vacancy()
+    if vacancy.is_err:
+        return ("scoring", False, vacancy.unwrap_err())
+    scoring = await check_scoring(
+        OpenAIWrapper(config.openai),
+        resume=config.resume.contents,
+        prompt=config.scoring.scoring_prompt,
+        vacancy=vacancy.unwrap(),
+    )
+    if scoring.is_err:
+        return ("scoring", False, scoring.unwrap_err())
+    score = scoring.unwrap()
+    return ("scoring", True, f"fit_score={score.fit_score}/5 — {score.comment}")
 
 
 def _is_stale(fetched_at: str | None, artifact_at: str | None) -> bool:

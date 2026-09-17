@@ -70,6 +70,7 @@ Vacancy application automation engine for Russian job boards (initially hh.ru). 
 | Screening-test solving (AI + answers file, `hh-tests dump`, `apply --test-answers`) | **real**, BDD-tested |
 | Vacancies review/edit CLI (`jobfucker vacancies dump\|apply\|edit`) | **real** |
 | Search preview (`jobfucker search`, listing-only `Client.list_vacancies`) | **real**, BDD-tested |
+| Doctor command (`jobfucker doctor`, `Client.get_identity` probes) | **real** |
 | Qt GUI | **removed**; planned rewrite per [ui spec](docs/ui/jobfucker.ui.md) |
 
 **Key decisions:**
@@ -164,6 +165,7 @@ jobfucker apply     --pipeline-id [batch flags] [--use-sixel|--use-kitty|--no-ca
                     [--has-hh-tests any|only_with_hh_tests|only_without_hh_tests]  # hh test flag filter
                     [--test-answers FILE] [--no-test-ai]   # hh screening-test solving (AI default)
 jobfucker resumes   --pipeline-id [--use-sixel|--use-kitty|--no-captcha-ai]   # list owned resumes (id, updated, title)
+jobfucker doctor    --pipeline-id [--use-sixel|--use-kitty|--no-captcha-ai]   # verify setup: board identity (whoami) + one real captcha solve + one throwaway AI score (no writes)
 jobfucker hh-tests dump --pipeline-id [batch flags] [--output FILE]           # hh screening tests of eligible
                     [--has-hh-tests ...] [--min-score N] [--include-unscored] [--allow-without-letter]
                     # vacancies -> problems JSON (no application); solve offline, feed apply --test-answers

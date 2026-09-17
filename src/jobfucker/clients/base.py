@@ -160,6 +160,20 @@ class ResumeInfo:
     updated_at: str | None  # ISO-8601 date-time if the board reports it
 
 
+@dataclass(frozen=True, slots=True)
+class ServiceIdentity:
+    """The authenticated board-account identity behind the pipeline's session.
+
+    All display fields are optional on purpose: boards report names/emails in
+    different shapes and may null them; ``external_id`` is the only required
+    member. Consumers render their own fallbacks (name → email → id).
+    """
+
+    external_id: str  # board's account id
+    display_name: str | None = None  # human-readable name when the board reports one
+    email: str | None = None
+
+
 # --- Search slice result (search_vacancies payload) -------------------------
 @dataclass(frozen=True, slots=True)
 class SearchPageFailure:
@@ -367,6 +381,10 @@ class Client(Protocol):
     # included (the caller joins them against its own store).
 
     async def get_resumes(self) -> Result[list[ResumeInfo], ClientError]: ...
+
+    async def get_identity(self) -> Result[ServiceIdentity, ClientError]:
+        """Fetch the authenticated account's identity (a board "whoami")."""
+        ...
 
     async def apply_to_vacancy(
         self,

@@ -15,6 +15,7 @@ from jobfucker.clients.base import (
     SearchListing,
     SearchSlice,
     ServiceConfigSection,
+    ServiceIdentity,
     ServiceInfo,
     ServiceVacancyId,
 )
@@ -212,6 +213,17 @@ class HHClient(Client, HhTestCapable):
         return Ok(
             [ResumeInfo(resume_id=item.id, title=item.title, updated_at=item.updated_at) for item in listed.unwrap()]
         )
+
+    async def get_identity(self) -> Result[ServiceIdentity, ClientError]:
+        """Healthcheck authorization, then return the decoded account identity.
+
+        The identity comes from the mandatory ``/me`` healthcheck (decoded once
+        per preflight and cached on the coordinator) — no extra board request.
+        """
+        authorized = await self._ensure_authorized()
+        if authorized.is_err:
+            return Err(authorized.unwrap_err())
+        return Ok(self._auth.authorized_identity)
 
     async def apply_to_vacancy(
         self,
