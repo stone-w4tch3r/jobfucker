@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="hero-title hero-desc">
+  <title id="hero-title">jobfucker — автоотклик на вакансии hh.ru под управлением ИИ-агента</title>
+  <desc id="hero-desc">Слева: назначение продукта — поиск, AI-скоринг, сопроводительные письма, отклики по лимитам. Справа: цепочка человек → ИИ-агент → движок jobfucker с этапами fetch, score, generate, apply.</desc>
+
+  <rect width="1200" height="360" rx="20" fill="#0a0d10"/>
+  <rect x="0.5" y="0.5" width="1199" height="359" rx="20" fill="none" stroke="#232b33"/>
+
+  <g id="title-block" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif">
+    <text x="64" y="96" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" letter-spacing="1.6" fill="#58a6ff">ИИ-АГЕНТ ВОДИТ CLI &#183; hh.ru</text>
+
+    <text x="64" y="158" font-size="36" font-weight="700" fill="#e6edf3">Отклик на вакансии hh.ru</text>
+    <text x="64" y="204" font-size="36" font-weight="700" fill="#e6edf3">под управлением ИИ-агента</text>
+
+    <text x="64" y="248" font-size="20" fill="#8b98a5">Поиск, AI-скоринг, сопроводительные письма,</text>
+    <text x="64" y="276" font-size="20" fill="#8b98a5">отклики по лимитам, решение скрининг-тестов.</text>
+
+    <text x="64" y="324" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#6e7b89">jobfucker &#183; CLI &#183; Python 3.14 &#183; SQLite</text>
+  </g>
+
+  <g id="mechanism" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif">
+    <rect x="660" y="48" width="476" height="264" rx="14" fill="#11161b" stroke="#232b33"/>
+
+    <line x1="712" y1="112" x2="712" y2="142" stroke="#232b33" stroke-width="2"/>
+    <line x1="712" y1="180" x2="712" y2="210" stroke="#232b33" stroke-width="2"/>
+
+    <circle cx="712" cy="100" r="6" fill="#3fb950"/>
+    <text x="732" y="107" font-size="22" fill="#e6edf3">человек</text>
+    <text x="732" y="131" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#6e7b89">цели, грейд, лимиты</text>
+
+    <circle cx="712" cy="168" r="6" fill="#58a6ff"/>
+    <text x="732" y="175" font-size="22" fill="#e6edf3">ИИ-агент</text>
+    <text x="732" y="199" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#6e7b89">скиллы &#183; CLI &#183; ревью</text>
+
+    <circle cx="712" cy="236" r="6" fill="#d29922"/>
+    <text x="732" y="243" font-size="22" fill="#e6edf3">движок jobfucker</text>
+    <text x="732" y="267" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#6e7b89">fetch &#8594; score &#8594; generate &#8594; apply</text>
+  </g>
+</svg>

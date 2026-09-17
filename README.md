@@ -1,23 +1,40 @@
 # jobfucker
 
-Автоматизация отклика на вакансии hh.ru (и другие сервисы в будущем): веб-скраппинг,
-AI-скоринг вакансий под резюме, генерация сопроводительных писем, отклики с учётом
-лимитов и решение скрининг-тестов.
+**Автоматизация отклика на вакансии hh.ru** (и другие сервисы в будущем): поиск вакансий,
+AI-скоринг под резюме, генерация сопроводительных писем, отклики с учётом лимитов
+и решение скрининг-тестов.
 
-**Проект не рассчитан на прямое использование человеком.** CLI сложный, UX не для ручной
+![status](https://img.shields.io/badge/status-early_alpha-orange)
+![python](https://img.shields.io/badge/python-3.14%2B-blue)
+![uv](https://img.shields.io/badge/uv-managed-261230)
+![board](https://img.shields.io/badge/board-hh.ru-d6001c)
+![interface](https://img.shields.io/badge/interface-CLI_%C2%B7_GUI_planned-lightgrey)
+
+> Ранняя альфа. Пока только CLI; GUI запланирован.
+
+## Демо
+
+![Прогон jobfucker apply: 3 отклика, 4 отказа, 2 ошибки](assets/readme/demo.gif)
+
+Реальный прогон `jobfucker apply`: три отклика, четыре отказа, две ошибки — по одной строке
+на вакансию.
+
+## Что это
+
+Проект **не рассчитан на прямое использование человеком.** CLI сложный, UX не для ручной
 работы. Работать рекомендуется через ИИ-агента: агент читает скиллы, дёргает CLI, читает дампы
 и правит промпты. Человек принимает решения (требования, грейд, лимиты, капча).
 
-Нужны **два ИИ**:
+## Как это работает
 
-1. **Внешний агент** — водит CLI по скиллам из `skills/`. `codex`, `claude code` и тд. 
+Заняты **два ИИ** с разными ролями:
+
+1. **Внешний агент** — водит CLI по скиллам из `skills/`. `codex`, `claude code` и тд.
    Рекомендуемый бесплатный вариант: [opencode](https://opencode.ai/).
 2. **OpenAI-совместимый API** внутри проекта — скоринг, сопроводительные, решение тестов,
-   распознавание капчи. Рекомендуемые бесплатные варианты: free модели с 
+   распознавание капчи. Рекомендуемые бесплатные варианты: free модели с
    [OpenRouter](https://openrouter.ai/collections/free-models) или
-   [Kilo](https://kilo.ai/landing/free-models)
-
-## Как это работает
+   [Kilo](https://kilo.ai/landing/free-models).
 
 ```
 человек → агент → CLI jobfucker → движок
@@ -45,10 +62,17 @@ https://github.com/stone-w4tch3r/jobfucker
 Установи зависимости и помоги настроить pipeline, используя скиллы репозитория в папке skills/.
 ```
 
-Подробнее, если ставите сами:
+Запустите своего агента в этой папке и попросите начать скилл `jobfucker-setup`:
 
 ```bash
-# Установите `uv` (см. https://docs.astral.sh/uv/): 
+opencode # codex, claude или любой другой агент
+```
+
+<details>
+<summary>Установка вручную</summary>
+
+```bash
+# Установите `uv` (см. https://docs.astral.sh/uv/):
 curl -LsSf https://astral.sh/uv/install.sh | sh
 # Windows:
 # powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
@@ -56,15 +80,14 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 git clone https://github.com/stone-w4tch3r/jobfucker.git
 cd jobfucker
 uv sync
-uv tool install --force --editable .   # ставит команду `jobfucker` глобально (иначе — `uv run ощиагслук`)
-
-# Запустите своего агента в этой папке и попросите начать скилл `jobfucker-setup`.
-opencode # codex, claude или любой другой агент
+uv tool install --force --editable .   # ставит команду `jobfucker` глобально (иначе — `uv run jobfucker`)
 ```
 
 Чтобы настроить самому — прочитайте скиллы в `skills/`.
 
 Дальше: `jobfucker init --config <file>` → `fetch` → `score` → `generate` → `apply`.
+
+</details>
 
 ## Скиллы — операционное руководство
 
@@ -77,12 +100,6 @@ opencode # codex, claude или любой другой агент
 | `jobfucker-creating-prompts` | скоринг-промпт и сопроводительное (спрашивает предпочтения) |
 | `jobfucker-collecting-hh-vacancies` | подбор и проверка поисковых запросов HH |
 
-## Документация
-
-- **`AGENTS.md`** — входная точка для агента и разработчика: подсистемы, команды, архитектура,
-  верификация. Все технические подробности — там.
-- `docs/` — спецификации, наблюдаемое поведение hh.ru, примеры пайплайнов и промптов.
-
 ## Требования
 
 - Python 3.14+ и `uv`
@@ -90,6 +107,8 @@ opencode # codex, claude или любой другой агент
 - OpenAI-совместимый AI-провайдер (текстовая модель + vision для капчи)
 - ИИ-агент (Claude Code, Kilo и т. п.)
 
-## Статус
+## Документация
 
-Ранняя альфа. Пока только CLI; GUI запланирован.
+- **`AGENTS.md`** — входная точка для агента и разработчика: подсистемы, команды, архитектура,
+  верификация. Все технические подробности — там.
+- `docs/` — спецификации, наблюдаемое поведение hh.ru, примеры пайплайнов и промптов.
