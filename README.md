@@ -37,10 +37,34 @@ setup → fetch → score → ревью и итерация промпта → 
 
 ## Быстрый старт
 
-1. Клонировать репозиторий и установить зависимости (`uv sync`).
-2. Настроить pipeline: HH-аккаунт, AI-секреты, резюме, поиски, промпты — см. скилл
-   `jobfucker-setup`.
-3. `jobfucker init --config <file>` → `fetch` → `score` → `generate` → `apply`.
+**Рекомендуется: попросите вашего ИИ-агента всё настроить.** Скопируйте промпт:
+
+```
+Помоги мне установить и разобраться с автокликером вакансий jobfucker
+https://github.com/stone-w4tch3r/jobfucker
+Установи зависимости и помоги настроить pipeline, используя скиллы репозитория в папке skills/.
+```
+
+Подробнее, если ставите сами:
+
+```bash
+# Установите `uv` (см. https://docs.astral.sh/uv/): 
+curl -LsSf https://astral.sh/uv/install.sh | sh
+# Windows:
+# powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+git clone https://github.com/stone-w4tch3r/jobfucker.git
+cd jobfucker
+uv sync
+uv tool install --force --editable .   # ставит команду `jobfucker` глобально (иначе — `uv run ощиагслук`)
+
+# Запустите своего агента в этой папке и попросите начать скилл `jobfucker-setup`.
+opencode # codex, claude или любой другой агент
+```
+
+Чтобы настроить самому — прочитайте скиллы в `skills/`.
+
+Дальше: `jobfucker init --config <file>` → `fetch` → `score` → `generate` → `apply`.
 
 ## Скиллы — операционное руководство
 
