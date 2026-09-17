@@ -1,8 +1,8 @@
 ---
 name: jobfucker-setup
 description: >-
-  Первичная настройка jobfucker с нуля: клонирование, зависимости, хранение данных, доступ к HH (логин/пароль, resume_id), резюме, AI-секреты, pipeline.yaml, капча, init и первый smoke-тест.
-  Используй при установке jobfucker, первом запуске, настройке нового pipeline, подключении HH-аккаунта или AI-API, настройке капчи, когда init падает, или когда пользователь спрашивает «с чего начать».
+  Первичная настройка jobfucker с нуля: клонирование, зависимости, хранение данных, доступ к HH (логин/пароль, resume_id), резюме, AI-секреты, pipeline.yaml, капча, init, doctor и первый smoke-тест.
+  Используй при установке jobfucker, первом запуске, настройке нового pipeline, подключении HH-аккаунта или AI-API, настройке капчи, когда init падает, когда нужно проверить что настройка работает (identity/капча/AI), или когда пользователь спрашивает «с чего начать».
 ---
 
 # Первичная настройка jobfucker
@@ -70,24 +70,27 @@ description: >-
 - HH text-captcha. Пути: AI vision (`openai_captcha`), ручной терминал (`--use-sixel` / `--use-kitty`, нужен capable terminal), `--no-captcha-ai` — выключить AI.
 - AI: `consensus_requests` голосов на попытку, свежая картинка на попытку, не более `service.hh.captcha_max_attempts`.
 - Исчерпание попыток → typed error с **recovery URL**: человек решает в браузере, прогон возобновляется позже. Бесконечных ретраев нет.
-- Рекомендация: настроить и проверить AI-путь на mock до реального fetch.
+- Проверка капчи и настроек (AI или терминал) - `doctor`, шаг 9.
 
 ### 8. init
 
 - `jobfucker init --config <file>` — создает и печатает pipeline-id.
 - Правки: `jobfucker update --config <file>` — id стабилен, снапшот добавляется, ничего не удаляется.
 
-### 9. Smoke-тест
+### 9. Doctor и smoke-тест
 
-1. **Реальная сеть** (только по одобрению): `fetch --take 5`, проверить капчу и `jobfucker status --pipeline-id <id>`.
+1. `jobfucker doctor --pipeline-id <id>` — три независимые проверки реальной настройки, ноль записей в БД:
+   - `identity` — авторизация HH (whoami: id/имя/email);
+   - `captcha` — реальный handler (AI vision или терминал sixel/kitty) решает приложенный png мок-капчи;
+   - `scoring` — один throwaway AI score по приложенной вакансии с реальным резюме и промптом.
+2. Только после зелёного doctor: `fetch --take 5` (по одобрению пользователя), затем `jobfucker status --pipeline-id <id>`.
 
 ## Гейты — готово только когда
 
 - `uv run jobfucker -h` работает.
 - YAML валиден по схеме, `init` успешен, pipeline-id получен.
 - Ключи и логины не в git.
-- AI-секции проверены хотя бы одним score на mock.
-- Путь решения капчи выбран и проверен хотя бы на mock.
+- `jobfucker doctor --pipeline-id <id>` зелёный (identity + captcha + scoring).
 - Поисковый пул и промпты пришли из профильных скиллов, не выдуманы.
 
 ## Анти-паттерны
