@@ -12,11 +12,12 @@ dependencies = [
     "rusty-results>=1.1.1",
     # Colored logging
     "colorlog>=6.10.1",
-    # Qt toolchain: kept for the tested src/jobfucker/shared/shortcuts building block and the
-    # planned UI re-implementation from scratch (docs/ui/jobfucker.ui.md)
-    "pyside6>=6.10.1",
-    "qasync>=0.28.0",            # Qt + asyncio bridge for the planned GUI mode
-    "tomli-w>=1.2.0",            # Needed by src/jobfucker/shared/shortcuts (full-copy template code)
+    # Qt toolchain: commented out until the planned UI re-implementation starts
+    # (docs/ui/jobfucker.ui.md). Re-add pyside6/qasync/tomli-w together with
+    # src/jobfucker/shared/shortcuts (refetch from the original template).
+    # "pyside6>=6.10.1",
+    # "qasync>=0.28.0",          # Qt + asyncio bridge for the planned GUI mode
+    # "tomli-w>=1.2.0",          # Needed by src/jobfucker/shared/shortcuts (full-copy template code)
     # CLI engine
     "typer>=0.12.0",             # CLI framework (jobfucker <command>)
     # AI (scoring, cover-letter generation, optional captcha AI solving)
@@ -51,7 +52,7 @@ dev = [
     "pytest-xdist>=3.5.0",
     "pytest-cov>=7.0.0",
     "pytest-asyncio>=1.3.0",
-    "pytest-qt>=4.5.0",           # Qt manager/widget testing
+    # "pytest-qt>=4.5.0",         # Qt manager/widget testing (re-add with PySide6)
     "pytest-bdd>=8.0.0",          # Gherkin .feature + step definitions (Phase 0 spike pinned v8)
     "ruff>=0.14.6,<0.16",
     "basedpyright>=1.34.0",
@@ -82,9 +83,8 @@ typeCheckingMode = "strict"
 reportAny = "error"
 reportImportCycles = "error"
 reportImplicitStringConcatenation = "none"
-# Vendored type stubs for untyped third-party deps with no upstream stubs
-# (currently only `qasync`). See src/stubs/qasync/__init__.pyi.
-stubPath = "src/stubs"
+# Vendored type stubs for untyped third-party deps with no upstream stubs.
+# stubPath = "src/stubs"
 # basedpyright's generic unused-call rule is noisy here; Result handling is enforced by lint_ignored_results.
 reportUnusedCallResult = "none"
 reportUnnecessaryIsInstance = "none"
@@ -162,19 +162,6 @@ ignore = [
 # (B008) and command signatures by nature take many/named option params
 # (PLR0913/PLR0917) including booleans (FBT001/FBT003).
 "src/jobfucker/cli.py" = ["B008", "FBT001", "FBT003", "PLR0913", "PLR0917"]
-# Table models override Qt camelCase methods (N802), construct QModelIndex()
-# as a default arg (B008), and use the Generic[T] base-class form to stay
-# compatible with the QAbstractTableModel superclass (UP046). PEP 695 would
-# need `class X[T](QAbstractTableModel)`, which ruff only permits with reasoning.
-"src/jobfucker/ui/models/*" = ["N802", "B008", "UP046"]
-# Qt slots take boolean params positionally for QML invocation (FBT001); the
-# scored-vacancy bounds in _parse_score are magic numbers (PLR2004).
-"src/jobfucker/ui/managers/vacancy_manager.py" = ["FBT001", "PLR2004"]
-# command_builder.py: build_command_string and the CommandBuilder.build QML slot
-# must take the pipeline/stage/batch set positionally (QML invokes slots by
-# position) and include a bool (skip-already) — the same typer-slot rationale as
-# cli.py (FBT/PLR0913/PLR0917).
-"src/jobfucker/ui/command_builder.py" = ["FBT001", "FBT002", "FBT003", "PLR0913", "PLR0917"]
 # bootstrap.py is the composition root: many optional DI seams (config, captcha
 # flags, storage/AI overrides) naturally exceed the arg cap; that is its purpose.
 "src/jobfucker/bootstrap.py" = ["PLR0913"]

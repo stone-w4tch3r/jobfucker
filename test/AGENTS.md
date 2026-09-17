@@ -321,10 +321,9 @@ conventions documented below (they are the tested recipe):
   no manual pump needed. A `qasync` pump is only needed when a step drives real async manager
   work (see §6); the step-level Qt loop is otherwise driven by pytest-qt.
 
-PySide6/pytest-qt typing passes strict cleanly (no suppressions at that boundary). The Qt
-toolchain (`pyside6`, `qasync`, `pytest-qt`) is still in the dependency tree: the tested
-`src/jobfucker/shared/shortcuts` building block imports PySide6, and the rewrite reuses
-the toolchain.
+PySide6/pytest-qt typing passed strict cleanly (no suppressions at that boundary). The Qt
+toolchain (`pyside6`, `qasync`, `pytest-qt`) is **removed from the dependency tree** until the
+GUI rewrite; `src/jobfucker/shared/shortcuts` was removed with it (refetch from the template).
 
 ---
 
@@ -408,6 +407,7 @@ cross-test DB isolation (write in one test, fresh in the next).
   `close`, and `with loop:` all resolve with **zero** `# type: ignore`s. The
   stub covers only the qasync surface the project uses; it is dev-time typing
   only and is not shipped (package is `src/jobfucker`).
+  NOTE: stub file is commented out until GUI is back.
 - **`Result` comes from `rusty_results.prelude`** (bare `rusty_results` trips
   `reportPrivateImportUsage` under strict) and is unwrapped at the step boundary
   (`Ok` → value, `Err` → `pytest.fail`), never treated as an exception.

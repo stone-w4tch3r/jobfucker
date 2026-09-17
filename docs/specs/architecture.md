@@ -27,7 +27,7 @@ INFRASTRUCTURE    storage/ (SQLAlchemy + alembic) · captcha/ (board-agnostic)
 - If a feature is board-specific, it should be hidden behind a capability and special code flow, not behind random if-s. The only case when board specific naming can reach the core is when there is a dedicated capability associated. Example:  `Vacancy.has_hh_test` (`vacancies.has_hh_test` + `apply --has-hh-tests`); board-only
   behavior rises into core through a board-named capability module gated by `isinstance`
   ([client-contract.md § Board-scoped capabilities](client-contract.md#board-scoped-capabilities)).
-- Purple-flagged residue: Qt toolchain deps + `src/jobfucker/shared/shortcuts` kept for the planned GUI rewrite; `tools/linting` is dev-only scaffold tooling (not shipped).
+- Purple-flagged residue: Qt toolchain deps + `src/jobfucker/shared/shortcuts` were removed and are re-added with the planned GUI rewrite; `tools/linting` is dev-only scaffold tooling (not shipped).
 
 ## Module inventory (what each thing actually does)
 

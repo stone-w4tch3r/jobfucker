@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import subprocess
-import sys
 from pathlib import Path
 
 from shared_tests.test_linting.conftest import RunLinter
@@ -13,23 +11,6 @@ MODULE = "tools.linting.check_raw_dicts"
 
 
 class TestRawDicts:
-    def test_regression_shortcuts_helpers_need_raw_dict_ignore(self) -> None:
-        repo_root = Path(__file__).resolve().parents[2]
-        result = subprocess.run(
-            [
-                sys.executable,
-                "-m",
-                MODULE,
-                str(repo_root / "src" / "jobfucker" / "shared" / "shortcuts" / "shortcuts.py"),
-                str(repo_root / "shared_tests" / "test_shortcuts_base.py"),
-            ],
-            capture_output=True,
-            text=True,
-        )
-
-        assert result.returncode == 0, result.stdout
-        assert result.stdout.strip() == ""
-
     def test_pass_no_raw_dicts(self, run_linter: RunLinter) -> None:
         result = run_linter(MODULE, "raw_dicts_pass.py")
         assert result.returncode == 0
