@@ -1,95 +1,95 @@
 ---
 name: jobfucker-collecting-hh-vacancies
 description: >-
-  Convert resume or work search requirements into verified set of Headhunter search queries to populate local vacancy DB via jobfucker later.
-  Use when building jobfucker vacancy bank, extending existing bank with fresh vacancies, backfilling older ones, or designing HH search pools (query sets, filters, counts, header checks).
-  This skill is about search/preview only — not real fetch.
+  Преобразует резюме или требования к поиску работы в проверенный набор поисковых запросов Headhunter для последующего наполнения локальной БД вакансий через jobfucker.
+  Используй при построении банка вакансий jobfucker, расширении существующего банка свежими вакансиями, бэкфилле старых или проектировании поисковых пулов HH (наборы запросов, фильтры, счётчики, проверки заголовков).
+  Этот скилл только про поиск/превью — не про реальный fetch.
 ---
 
-# Collecting HH Vacancies
+# Сбор вакансий HH
 
-Turn resume/requirements → verified HH search pool. Search-only. Fetch never. Bank lives in local DB.
+Резюме/требования → проверенный поисковый пул HH. Только поиск. Fetch — нет. Банк живёт в локальной БД.
 
-## Input
+## Вход
 
-- Resume file OR free-text requirements.
-- Extract: role profile, core stack, secondary stack, seniority, foreign languages to hard-exclude.
+- Файл резюме ИЛИ требования свободным текстом.
+- Извлечь: профиль роли, ключевой стек, вторичный стек, грейд, посторонние навыки/ключевые слова для жёсткого исключения.
 
-## Ask user FIRST
+## Спроси пользователя СНАЧАЛА
 
-1. **Width** — narrow/precise vs broad coverage. Show tradeoff in numbers (noise vs missed).
-2. **Freshness** — vacancy age window (default 30; 60/90 for backfill) and new-only vs older too.
-3. **Volume** — target bank size. Adjust via width + window.
+1. **Ширина** — узкий/точный против широкого покрытия. Покажи компромисс в цифрах (шум против пропущенного).
+2. **Свежесть** — окно возраста вакансии (по умолчанию 30; 60/90 для бэкфилла) и только новые или старые тоже.
+3. **Объём** — целевой размер банка. Регулируется шириной + окном.
 
-Never skip. User owns these dials.
+Никогда не пропускай. Эти параметры принадлежат пользователю.
 
-## Build query pool
+## Построй пул запросов
 
-- 5-10 searches. Each: query string + filter block + rationale.
-- **Search field = width dial.** `fields_to_search_in: [name]` default (narrow). Wide option: `[name, description]` — title + body. Pick depending on width. Hybrid: name-only precision sets for the core + one description-search set to sweep generic titles. Title-only search: precise, verifiable, but **misses generic-titled vacancies** ("Разработчик", "Программист" — stack only in body). Generic titles are real and common. Wide = also search description bodies: catches them, but junk explodes (any ad mentioning the keyword), dedup grows, verification cost jumps.
-- Keywords: role words, stack words, eng + translit + rus variants.
-- **AND/OR grouping**: `(A OR B) (C OR D)` = stack × scope combos (e.g. `.NET` × `AI`). Group-AND works.
-- Precision sets: core stack set + narrowed fullstack set + rare-niche take-all sets.
-- Location sets, eg remote/hybrid + big-cities + relocation.
+- 5-10 поисков. Каждый: строка запроса + блок фильтров + обоснование.
+- **Поле поиска = ручка ширины.** `fields_to_search_in: [name]` по умолчанию (узко). Широкий вариант: `[name, description]` — заголовок + тело. Выбирай в зависимости от ширины. Гибрид: точные наборы только по имени для ядра + один набор с поиском по описанию, чтобы выметать generic-заголовки. Поиск только по заголовку: точный, проверяемый, но **пропускает вакансии с generic-заголовками** ("Разработчик", "Программист" — стек только в теле). Generic-заголовки реальны и часты. Широкий = поиск также по телам описаний: ловит их, но шум сильно растет (любое объявление, упоминающее ключевик), дупликация растёт, стоимость проверки скачет.
+- Ключевые слова: слова роли, слова стека, варианты eng + транслит + рус.
+- **Группировка AND/OR**: `(A OR B) (C OR D)` = комбо стек × область (например `.NET` × `AI`). Group-AND работает.
+- Точные наборы: набор по ядру стека + суженный набор по комбинациям + наборы «взять всё» по редким нишам.
+- Наборы по локации, например remote/hybrid + крупные города + релокация.
 
-## HH mechanics (verified quirks — trust these)
+## Механика HH (проверенные особенности)
 
-- **Region quirk**: area filter ALWAYS includes REMOTE. Region set ⊇ remote set. Overlap expected, fetch dedups later.
-- **Sorting**: `relevance` ≈ `publication_time` for OR-name queries (identical junk ratio). Use `publication_time`: deterministic, fresh-first.
-- `exclude_words`: block junk unrelated to search profile, eg junior/intern/стажер when searching senior positions.
-- Quoted phrases unreliable — hh splits/loosens them.
+- **Особенность региона**: фильтр area ВСЕГДА включает REMOTE. Набор регионов ⊇ набор remote. Пересечение ожидаемо, fetch уберёт дубли позже.
+- **Сортировка**: `relevance` ≈ `publication_time` для OR-запросов по имени (идентичная доля мусора). Используй `publication_time`: детерминированно, свежее — первым.
+- `exclude_words`: блокируй мусор, не относящийся к профилю поиска, например junior/intern/стажер при поиске сеньорских позиций.
+- Фразы в кавычках ненадёжны — hh их дробит/ослабляет.
 
-## Verification protocol (mandatory, catches junk)
+## Протокол проверки (обязательный, ловит мусор)
 
-1. Run search. **Count**: too high or too low = bad query.
-2. **Header check top 20-40 titles**. hh ranking arbitrary — read real titles, not counts.
-3. Repeat per candidate until clean. Iterate.
+1. Запусти поиск. **Счёт**: слишком много или слишком мало = плохой запрос.
+2. **Проверка заголовков топ 20-40 titles**. Ранжирование hh произвольно — читай реальные заголовки, не только счётчики.
+3. Повторяй для каждого кандидата, пока не ок. Итерируй.
 
-### Junk-traps (measured, all real)
+### Мусорные ловушки (измеренные, все реальные)
 
-Relevant for AI related job search
+ПРИМЕР! для поиска AI-связанных вакансий. По аналогии тебе надо так же отсекать проблемные поиски.
 
-- `Agentic` → stems to `агент` → ~1100 real-estate roles. Dead term.
-- `"AI-агент"`/hyphen terms → split to `AI` + `агент` (OR'd) → same real-estate spam.
-- `нейросет` → 200+ "обучение нейросетей" junk (юрист/SMM/маркетолог). Dead term.
-- bare `агент` → real-estate. Dead term.
-- `copilot OR chatgpt OR gigachat OR yandexgpt` → 5 results, junk. Dead term.
-- `dotnet`/`Blazor`/`".NET Core"` → stem to `.NET`, marginal +1. Skip.
-- Multi-agent titles already caught via `LLM`/`RAG` terms — no separate agent search needed.
+- `Agentic` → стемминг к `агент` → ~1100 вакансий в недвижимости. Мёртвый термин.
+- `"AI-агент"`/термины с дефисом → распадаются на `AI` + `агент` (через OR) → тот же мусор из недвижимости.
+- `нейросет` → 200+ мусора «обучение нейросетей» (юрист/SMM/маркетолог). Мёртвый термин.
+- голый `агент` → недвижимость. Мёртвый термин.
+- `copilot OR chatgpt OR gigachat OR yandexgpt` → 5 результатов, мусор. Мёртвый термин.
+- `dotnet`/`Blazor`/`".NET Core"` → стемминг к `.NET`, маргинально +1. Пропусти.
+- Multi-agent заголовки уже ловятся через термины `LLM`/`RAG` — отдельный поиск по агентам не нужен.
 
-## Volume math (decide, then tell user)
+## Математика объёма (реши, потом скажи пользователю)
 
-- Narrowed combos often **strict subsets** of core sets → add 0 unique. Check before promising volume (e.g. fullstack∧.NET ⊆ .NET core: 27 ⊂ 234).
-- Report real market size honestly. If target unreachable without noise, say so.
-- Growth levers, ranked by noise cost: widen `published.within_days` (60/90) > broaden stack terms > search field name→name+description > drop exclude_words.
-- Raw sum ≠ unique: region sets ⊇ remote sets, subsets collapse. Estimate unique after dedup.
+- Суженные комбо часто **строгие подмножества** ядровых наборов → дают 0 уникальных. Проверь перед обещанием объёма (например fullstack∧.NET ⊆ .NET ядро: 27 ⊂ 234).
+- Докладывай реальный размер рынка честно. Если цель недостижима без шума — так и скажи.
+- Рычаги роста, по возрастанию стоимости шума: расширить `published.within_days` (60/90) > расширить термины стека > поле поиска name→name+description > убрать exclude_words.
+- Сырая сумма ≠ уникальные: наборы регионов ⊇ наборы remote, подмножества схлопываются. Оцени уникальные после дедупликации.
 
-## Incremental mode (extend existing bank)
+## Инкрементальный режим (расширение существующего банка)
 
-- **New refresh**: re-run same searches on rolling window → surfaces fresh vacancies. Fetch idempotent (dedup by external_id). Re-run search = safe preview.
-- **Backfill old**: pool exhausted → widen `within_days` on same queries (or older from/to range).
-- Check search output DB status (new vs fetched/scored/applied) to see real deficit.
+- **Обновление нового**: перезапусти те же поиски на скользящем окне → всплывают свежие вакансии. Fetch идемпотентен (дедуп по external_id). Повторный поиск = безопасное превью.
+- **Бэкфилл старого**: пул исчерпан → расширь `within_days` на тех же запросах (или старый диапазон from/to).
+- Проверь статус БД в выводе поиска (new vs fetched/scored/applied), чтобы увидеть реальный дефицит.
 
-## Output artifact
+## Выходной артефакт
 
-- Save ALL verified sets as entries of `service.<board>.searches[]` in the pipeline YAML (convention: this repo's `pipelines/pipeline.*.yaml`). One profile = one file.
-- Each entry is self-contained: its `query` + its own `filter` block (+ optional `window`).
-- New pipeline: `uv run poe app init --config <file>`. Existing pipeline: edit pool, then `uv run poe app update --config <file>`.
-- Keep measured counts, dates, traps, rationale as YAML comments next to entries.
-- Validate YAML parses after edit; re-preview a set by pasting its query/filter into `jobfucker search --pipeline-id <id> --query '<q>' --params <file> --format json`.
+- Сохрани ВСЕ проверенные наборы как записи `service.<board>.searches[]` в pipeline YAML (конвенция: `pipelines/pipeline.*.yaml` в этом репо). Один профиль = один файл.
+- Каждая запись самодостаточна: её `query` + её собственный блок `filter` (+ опциональный `window`).
+- Новый pipeline: `jobfucker init --config <file>`. Существующий pipeline: отредактируй пул, затем `jobfucker update --config <file>`.
+- Храни измеренные счётчики, даты, ловушки, обоснование как YAML-комментарии рядом с записями.
+- Проверь, что YAML парсится после правки; перепроверь набор, вставив его query/filter в `jobfucker search --pipeline-id <id> --query '<q>' --params <file> --format json`.
 
-## Quality gates — done only when
+## Гейты качества — готово только когда
 
-- Every set header-checked clean.
-- Counts recorded with date.
-- Traps absent.
-- YAML validates and pipeline stored via `init`/`update`.
-- No fetch performed (search/preview only, listing-level).
+- Каждый набор проверен по заголовкам и чист.
+- Счётчики записаны с датой.
+- Ловушки отсутствуют.
+- YAML валиден и pipeline сохранён через `init`/`update`.
+- Fetch не выполнялся (только поиск/превью, на уровне листинга).
 
-## Follow-up
+## Продолжение
 
-- `jobfucker fetch --pipeline-id <id>` walks every `searches[]` entry into the DB. Only on explicit user behalf/approve.
+- `jobfucker fetch --pipeline-id <id>` проходит по каждой записи `searches[]` в БД. Только по явной просьбе/одобрению пользователя.
 
-## Where to find commands
+## Где искать команды
 
-CLI syntax, pipeline-id discovery, `search` flags change over time. Read them in the project's own AGENTS.md / `app search --help`.
+Синтаксис CLI, обнаружение pipeline-id, флаги `search` меняются со временем. Читай их в AGENTS.md проекта / `app search --help`.

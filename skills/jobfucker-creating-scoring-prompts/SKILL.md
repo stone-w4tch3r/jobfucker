@@ -1,135 +1,136 @@
 ---
 name: jobfucker-creating-scoring-prompts
 description: >-
-  Build and iterate jobfucker AI scoring.
-  Use when creating a scoring prompt, calibrating AI scores against real vacancies, fixing
-  over-/under-scoring, growing examples or anti-examples, or tuning apply/test prompts.
+  Создание и итерация AI-скоринг промптов jobfucker.
+  Используй при создании скоринг-промпта, калибровке AI-оценок для реальных вакансий, исправлении
+  завышенных/заниженных оценок, поиске примеров или анти-примеров, или тонкой настройке промптов apply.
 ---
 
-# Creating Jobfucker Prompts
+# Создание промптов jobfucker
 
-Turn a resume + user requirements → a live, calibrated scoring prompt (Jinja2 template file).
+Преврати резюме + требования пользователя → живой, откалиброванный скоринг-промпт (файл Jinja2-шаблона).
 
-## Rules
+## Правила
 
-- **Every stage runs only on explicit user approval.** Stages are heavy (search, fetch) and interactive.
-- **Stages are independent and resumable.** Run in order I→VI, but skip/repeat any stage; each stage's *Precondition* states what must already exist. Different chats may own different stages.
-- **No fetch without approval.** Stages II–III are search-only. Fetch appears only in IV, explicitly approved.
+- **Каждый этап выполняется только по явному одобрению пользователя.** Этапы тяжёлые (поиск, fetch) и интерактивные.
+- **Этапы независимы и возобновляемы.** Идут по порядку I→VI, но любой этап можно пропустить/повторить; *Precondition* каждого этапа говорит, что уже должно существовать. Разные чаты могут содержать разные этапы.
+- **Никакого fetch без одобрения.** Этапы II–III только поисковые. Fetch появляется только в IV, по явному одобрению.
 
-## Engine contract
+## Контракт движка
 
-- Prompt file is plain text, rendered with **exactly two variables**: `{{ resume_formatted }}` and `{{ vacancy_formatted }}`. `StrictUndefined` is on → any other variable is a hard render error.
-- Vacancy is text is prepared by the app and injected already formatted.
-- Output contract is code-owned: strict JSON `{"fit_score": int 1..5, "comment": string}`. Never add schema keys.
-- `comment` is a free string; the `missing / requirements / explanation / requires_attention` layout is a **convention**, configurable per user.
-- Wiring: `scoring_prompt_file` XOR inline `scoring_prompt` in the pipeline YAML (same pattern for `apply_prompt_file`, `test_prompt_file`).
-- Location convention: either within cloned repo `pipelines/prompts/scoring-<profile>.xml.j2` (create `pipelines/` if absent); one profile = one prompt file, pipeline alongside as `pipelines/pipeline.<profile>.yaml`. Or ask user if working with installed package without clone.
+- Файл промпта — plain text, рендерится ровно с **двумя переменными**: `{{ resume_formatted }}` и `{{ vacancy_formatted }}`. Включён `StrictUndefined` → любая другая переменная = жёсткая ошибка рендера.
+- Текст вакансии готовится приложением и инжектится уже отформатированным.
+- Контракт вывода принадлежит коду: строгий JSON `{"fit_score": int 1..5, "comment": string}`. Никогда не добавляй ключи схемы.
+- `comment` — свободная строка; раскладка `missing / requirements / explanation / requires_attention` — это **конвенция**, настраиваемая под пользователя.
+- Файл пайплайна: параметр `scoring_prompt_file` XOR inline `scoring_prompt` в pipeline YAML (тот же паттерн для `apply_prompt_file`, `test_prompt_file`).
+- Конвенция расположения: либо внутри клонированного репо `pipelines/prompts/scoring-<profile>.xml.j2` (создай `pipelines/`, если отсутствует); один профиль = один файл промпта, pipeline рядом как `pipelines/pipeline.<profile>.yaml`. Или спроси пользователя, если работаешь с установленным пакетом без клона.
 
-## Blocks
+## Блоки
 
-Assemble from these; mandatory blocks always present, conditional blocks depend on intake.
+Собирай из них; обязательные блоки всегда присутствуют, условные зависят от входных данных.
 
-| Block | Presence | Source |
+| Блок | Наличие | Источник |
 | --- | --- | --- |
-| `<system_prompt>` + `<instructions>` wrapper + task sentence | always | fixed |
-| Candidate lens: role, tiers of stack, domains, and **what candidate is NOT** | always | resume |
-| Skill tiering + weights (key / secondary / negligible) | ask user — recommended | enables flexible ranking |
-| Adjacency / inference rules for skills not mentioned explicitly (PG→SQL, React→React Router, Java→Gradle) | mandatory; **ask user for the actual rules** | real resumes omit skills due to size limits → prevents false under-scores |
-| Alternative related skills ("Vue, но рассмотрим опыт с React") | ask user | market scan |
-| Seniority / years-of-experience = secondary | ask user | intake |
-| Leadership: yes / no / partially | ask user; map each answer to score guidance | intake |
-| Custom rules | user-defined slot | e.g. "infra does not lower the score; DevOps-primary role = 2" is an example of one |
-| Archetype → score table (real vacancy categories) | always | Stage II market scan |
-| Hard filters (sub-middle, internships, people management, mandatory foreign skills/technologies) | always | intake only — never add unprompted |
-| `<requires_attention>` tag rule | always | fixed convention |
-| 1–5 scale | always | fixed skeleton |
-| `<output_format>` JSON schema + `<comment_string_format>` | always | fixed; labels configurable |
-| `{{ resume_formatted }}` / `{{ vacancy_formatted }}` injection | always | fixed |
-| `<examples>` | always — **≥8 recommended, 2–3 per rules cluster** | real vacancies; more rules ⇒ more examples |
-| `<anti_examples>` + `<why_incorrect>` | always — **1–3 default**; grow from observed real failures | real boundary/junk vacancies |
-| `<final_task_summary>` | always | fixed |
+| `<system_prompt>` + обёртка `<instructions>` + предложение-задача | всегда | фиксировано |
+| Профессиональный профиль кандидата: роль, стек, домены и **кем кандидат НЕ является** | всегда | резюме |
+| Категории скиллов + веса (key / secondary / negligible) | спроси пользователя — рекомендовано | позволяет гибкое ранжирование |
+| Правила смежных / додумывания для скиллов, не указанных явно (PG→SQL, React→React Router, Java→Gradle) | обязательно; **спроси пользователя о конкретных правилах** | реальные резюме опускают скиллы из-за лимитов размера → додумывание предотвращает ложные занижения оценки вакансии |
+| Альтернативные родственные скиллы ("Vue, но рассмотрим опыт с React") | спроси пользователя | обзор рынка |
+| Грейд / годы опыта важно/нет | спроси пользователя | вводные данные |
+| Лидерство: да / нет / частично | спроси пользователя; сопоставь каждый ответ с указанием по оценке | вводные данные |
+| Пользовательские правила | слот, задаваемый пользователем | например "инфра не понижает оценку; DevOps-primary роль = 2" — пример |
+| Таблица архетип → оценка (реальные категории вакансий) | всегда | обзор рынка этапа II |
+| Жёсткие анти фильтры (ниже чем middle, стажировки, управление людьми, посторонние скиллы/технологии) | всегда | только вводные данные — никогда не добавляй без запроса |
+| Правило тега `<requires_attention>` | всегда | фиксированная конвенция |
+| Шкала 1–5 | всегда | фиксированный скелет |
+| `<output_format>` JSON-схема + `<comment_string_format>` | всегда | фиксировано; метки комментариев настраиваемы |
+| Инжекция `{{ resume_formatted }}` / `{{ vacancy_formatted }}` | всегда | фиксировано |
+| `<examples>` | всегда — **≥8 рекомендовано, 2–3 на каждый кластер правил** | реальные вакансии; больше правил ⇒ больше примеров |
+| `<anti_examples>` + `<why_incorrect>` | всегда — **по умолчанию 1–3**; растут из наблюдаемых реальных ошибок скоринга | реальные пограничные/мусорные вакансии |
+| `<final_task_summary>` | всегда | фиксировано |
 
-Reference implementation to decompose: `scoring-java-fullstack.xml.j2` bundled with this skill.
+Эталонная реализация для разбора: `scoring-java-fullstack.xml.j2`, поставляется с этим скиллом. ВНИМАНИЕ: это пример структуры, НО НЕ ПРИМЕР КОНКРЕТНЫХ ПРАВИЛ.
 
-## Stage I — Intake + candidate lens
+## Этап I — Вводные данные + профиль кандидата
 
-**Precondition:** none. **Approval:** not required, proceed directly. **Output:** profile fact sheet.
+**Precondition:** нет. **Одобрение:** не требуется, выполняй сразу. **Вывод:** фактическая карточка профиля.
 
-1. Read the resume. Extract role profile, core/secondary/ignored stack, domains, seniority, and what the candidate does *not* do.
-2. Ask (never skip):
-   - Target roles and **anti-roles** (what must score low).
-   - Stack tiers and which skills are key vs negligible.
-   - **Adjacency/inference rules** the user accepts (list candidates derived from the resume; user confirms).
-   - Tolerance for **related** (not matching) technologies.
-   - Seniority floor and how to treat years.
-   - Leadership: yes / no / partially — and the wanted score mapping.
-   - Mandatory **foreign skills/technologies to hard-exclude**.
-   - Is `<requires_attention>` relevant?
-   - Comment language; strictness dial (avoid false positives vs false negatives); intended `min_required_score`.
-3. Present the fact sheet back for correction before proceeding.
+1. Прочитай резюме. Извлеки профиль роли, ключевой/вторичный/игнорируемый стек, домены, грейд и то, чего кандидат *не* делает.
+2. Спроси (никогда не пропускай):
+   - Целевые роли и **анти-роли** (что должно оцениваться низко).
+   - Группы стека и какие скиллы ключевые, а какие неважные.
+   - **Правила смежных навыков/додумывания**, которые подходят для пользователя (перечисли варианты на основе резюме; пользователь подтверждает).
+   - Толерантность к **родственным** (не совпадающим) технологиям.
+   - Порог грейда и как трактовать годы.
+   - Лидерство: да / нет / частично — и желаемое отображение в оценку.
+   - Обязательные **посторонние скиллы/технологии для жёсткого исключения**.
+   - Релевантен ли `<requires_attention>`?
+   - Язык комментария; уровень строгости (избегать ложных срабатываний vs ложных пропусков); предполагаемый `min_required_score`.
+3. Покажи карточку обратно для правок перед продолжением.
 
-## Stage II — Market scan + archetype mapping
+## Этап II — Обзор рынка + маппинг архетипов
 
-**Precondition:** I done. **Approval:** required. **Output:** archetype→score table + candidate example pool. **Interactive.**
+**Precondition:** I выполнен. **Одобрение:** требуется. **Вывод:** таблица архетип→оценка + пул примеров кандидата. **Интерактивно.**
 
-1. Build/reuse searches with the `jobfucker-collecting-hh-vacancies` skill; preview with `jobfucker search --pipeline-id <id> --query '<q>' --params '<json>' --format json`.
-2. `search` is listing-only: it returns titles/snippets, **not full descriptions**. Use it for real archetypes, titles, counts, and junk detection. Full-description examples need Stage IV (fetch) or a user-pasted vacancy.
-3. Show real results to the user; ask **what is a good fit and what is not**. This drives the archetype→score table and the example/anti-example pools.
-4. Record each archetype with the count, and the real titles that back it. No invented archetypes.
-5. Draft/refresh hard filters from the disliked results — only those matching user-stated exclusions.
+1. Построй/переиспользуй поиски через скилл `jobfucker-collecting-hh-vacancies`; превью через `jobfucker search --pipeline-id <id> --query '<q>' --params '<json>' --format json`.
+2. `search` только списочный: возвращает titles/сниппеты, **не полные описания**. Используй для реальных архетипов, заголовков, счётчиков и детекта мусора. Примеры с полным описанием нужны этап IV (fetch) или вставленная пользователем вакансия.
+3. Покажи реальные результаты пользователю; спроси **что хороший фит, а что нет**. Это двигает таблицу архетип→оценка и пулы примеров/анти-примеров.
+4. Запиши каждый архетип с реальными заголовками, которые его подтверждают. Никаких выдуманных архетипов.
+5. Накидай начерно/обнови жёсткие анти фильтры из неподходящих результатов — только те, что совпадают с заявленными пользователем исключениями.
 
-## Stage III — Prompt assembly + wiring
+## Этап III — Сборка промпта + обвязка
 
-**Precondition:** I (II recommended for the archetype table). **Approval:** required. **Output:** live prompt.
+**Precondition:** I (II рекомендован для таблицы архетипов). **Одобрение:** требуется. **Вывод:** реальный промпт.
 
-1. See `scoring-java-fullstack.xml.j2` example bundled with this skill. It is not example to copy but more like structure to follow.
-2. Select blocks from the table; write `pipelines/prompts/scoring-<profile>.xml.j2`.
-3. Keep measured counts, traps, and rationale as Jinja comments next to the relevant block.
-4. Upd the pipeline YAML: `scoring_prompt_file` (or inline).
-5. New pipeline: `jobfucker init --config <file>`. Existing: `jobfucker update --config <file>`.
-6. Verify: YAML parses; prompt renders; only the two documented variables used; JSON schema block unchanged.
+1. Смотри пример `scoring-java-fullstack.xml.j2`, поставляемый с этим скиллом. Это не пример для копирования, а структура, которой надо следовать.
+2. Выбери блоки из таблицы; напиши `pipelines/prompts/scoring-<profile>.xml.j2`.
+3. Храни измеренные результаты, ловушки и обоснование как Jinja-комментарии рядом с соответствующим блоком.
+4. Обнови pipeline YAML: `scoring_prompt_file` (или inline).
+5. Загрузить новый pipeline в jobfucker: `jobfucker init --config <file>`. Существующий: `jobfucker update --config <file>`.
+6. Проверь: YAML парсится; промпт рендерится; используются только документированные переменные; блок JSON-схемы не изменён.
 
-## Stage IV — Real-score calibration
+## Этап IV — Калибровка на реальных оценках
 
-**Precondition:** III. **Approval:** required for **fetch** (network, slow). **Output:** calibrated rules.
+**Precondition:** III. **Одобрение:** требуется для **fetch** (сеть, медленно). **Вывод:** откалиброванные правила.
 
-1. With approval: `jobfucker fetch --pipeline-id <id> --take N` → `jobfucker score --pipeline-id <id>`. N should be ~10-20 to avoid long feedback loop when experimenting. Do full fetch only when final prompt is ready.
-2. `jobfucker vacancies dump [--pipeline-id <id>]` — inspect `editable.score` and `editable.score_reasoning` per vacancy.
-3. Compare against expectation; classify each disagreement (over-scored junk / under-scored gold).
-4. Map each disagreement to its owning block; patch only that block
-5. Re-run `score` and re-dump to confirm the shift.
+1. С одобрением: `jobfucker fetch --pipeline-id <id> --take N` → `jobfucker score --pipeline-id <id>`. N должно быть ~10-20, чтобы не затягивать цикл обратной связи при экспериментах. Делай полный fetch только когда финальный промпт готов.
+2. `jobfucker vacancies dump [--pipeline-id <id>]` — изучи `editable.score` и `editable.score_reasoning` по каждой вакансии.
+3. Сравни с ожиданием; классифицируй каждое расхождение (завышенный мусор / заниженное золото).
+4. Сопоставь каждое расхождение с владеющим блоком; правь только этот блок.
+5. Через `jobfucker vacancies apply [--pipeline-id <id>]` откати результаты скоринга.
+6. Перезапусти `score` и пересмотри dump, чтобы подтвердить сдвиг.
 
-## Stage V — Example growth
+## Этап V — Увеличение числа примеров
 
-**Precondition:** any dump (IV recommended). **Approval:** not required. **Output:** expanded `<examples>` / `<anti_examples>`.
+**Precondition:** любой dump (рекомендован IV). **Одобрение:** не требуется. **Вывод:** расширенные `<examples>` / `<anti_examples>`.
 
-- Promote real, correctly-scored vacancies into `<examples>` (keep `job_context` compressed).
-- Promote real failures and false positives into `<anti_examples>` with a non-empty `<why_incorrect>`.
-- Keep counts documented; ≥8 positives recommended, 1–3+ anti-examples, both growing with real evidence only.
+- Дополняй реальные, правильно оценённые вакансии в `<examples>` (держи `job_context` сжатым).
+- Дополняй реальные провалы и ложные срабатывания в `<anti_examples>` с непустым `<why_incorrect>`.
+- Количество; ≥8 позитивных примеров рекомендовано, 1–3+ анти-примера, оба растут только на реальных доказательствах.
 
-## Stage VI — Recalibration loop
+## Этап VI — Цикл рекалибровки
 
-**Precondition:** a live prompt, real scores exist. **Approval:** required. **Output:** minimal prompt patch + changelog explanation.
+**Precondition:** готовый промпт, существуют реальные оценки. **Одобрение:** требуется. **Вывод:** минимальный патч промпта + объяснение.
 
-Once basic prompt is ready: `vacancies dump` → classify disagreements → patch the owning block only → explain the change to the user.
+Когда базовый промпт готов: `vacancies dump` → классифицируй расхождения → правь только владеющий блок → объясни изменение пользователю.
 
-## Gates — done only when
+## Гейты — готово только когда
 
-- Prompt parses and renders with exactly `resume_formatted` + `vacancy_formatted`.
-- Output schema untouched (`fit_score` 1..5 + `comment`).
-- Every archetype backed by a vacancy actually seen.
-- Hard filters reflect user-stated exclusions only.
-- Examples agree with the 1–5 scale; every anti-example has `<why_incorrect>`.
-- Pipeline stored via `init`/`update`; no fetch without approval.
+- Промпт парсится и рендерится ровно с `resume_formatted` + `vacancy_formatted`.
+- Схема вывода не тронута (`fit_score` 1..5 + `comment`).
+- Каждый архетип подтверждён реально увиденной вакансией.
+- Жёсткие анти фильтры отражают только заявленные пользователем исключения.
+- Примеры согласуются со шкалой 1–5; у каждого анти-примера есть `<why_incorrect>`.
+- Pipeline сохранён через `init`/`update`; fetch только с одобрения.
 
-## Anti-patterns
+## Анти-паттерны
 
-- Instruction dump with no intake; contradictory rules.
-- Invented archetypes or imagined vacancy behavior.
-- Unprompted hard filters; schema edits.
-- Iterating without a dump snapshot.
-- Running a stage without explicit approval.
+- Свалка инструкций без входных данных от пользователя; противоречивые правила.
+- Выдуманные архетипы или воображаемое поведение вакансий.
+- Жёсткие анти фильтры без запроса; правки схемы.
+- Итерация без снимка dump.
+- Запуск этапа без явного одобрения.
 
-## Where to find commands
+## Где искать команды
 
-CLI syntax and flag windows change. Read `jobfucker search --help`, `... fetch --help`, `... vacancies dump --help`, and the project `AGENTS.md`. Search design lives in `jobfucker-collecting-hh-vacancies`.
+Синтаксис CLI и флаги меняются. Читай `jobfucker search --help`, `... fetch --help`, `... vacancies dump --help` и `AGENTS.md` проекта. Дизайн поиска живёт в `jobfucker-collecting-hh-vacancies`.
