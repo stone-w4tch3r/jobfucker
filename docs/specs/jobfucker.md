@@ -42,7 +42,7 @@ jobfucker vacancies dump | yq/jq | $EDITOR | jobfucker vacancies apply   # human
 
 `run` chains fetch → score → generate → apply in one command. Full command reference:
 [AGENTS.md](../../AGENTS.md#cli-commands-verified-against--h). Config file reference:
-[pipeline.example.yaml](../examples/pipeline.example.yaml).
+[pipeline.hh-fullstack.example.yaml](../examples/pipeline.hh-fullstack.example.yaml).
 
 **Query-iteration flow (`search`):** preview what the board returns for an explicit query —
 listing only, **nothing stored** (no vacancy bodies, no DB writes, no audit). `--query` and

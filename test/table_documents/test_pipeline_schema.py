@@ -6,7 +6,7 @@ Scenario: the typed pipeline contract generates one deterministic schema
   Then the artifact is a Draft 2020-12 schema with the derived version
 
 Scenario: committed example pipelines validate against the generated schema
-  Given the repo's mock/hh/example pipeline yamls
+  Given the repo's mock/hh pipeline yamls
   When each document is validated with jsonschema
   Then every document validates
 
@@ -63,7 +63,7 @@ _JSON_MAPPING = TypeAdapter(dict[str, JsonValue])  # lint-ignore[raw-dict]: pars
 _PROJECT_ROOT = Path(__file__).parents[2]
 _EXAMPLE_PIPELINES = (
     "docs/examples/pipeline.mock.yaml",
-    "docs/examples/pipeline.example.yaml",
+    "docs/examples/pipeline.hh-fullstack.example.yaml",
 )
 
 _FILTER = "filter: {area: [1], schedule: [fullDay], experience: between1And3, only_with_salary: false}"
