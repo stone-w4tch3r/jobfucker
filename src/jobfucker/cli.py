@@ -154,22 +154,42 @@ def _as_str_keyed_mapping(
     return narrowed
 
 
+def _looks_like_inline_document(value: str) -> bool:
+    """True when ``--params`` holds a YAML/JSON document instead of a file path.
+
+    Parse-first: a value that YAML-loads to a mapping is inline regardless of
+    formatting or newlines (block YAML, flow YAML, JSON). A value that loads to
+    a scalar — or fails to parse — falls back to the file-path branch, so a
+    plain path never becomes a document. A value that parses to a non-mapping
+    container (``[1, 2]``) or carries a newline still counts as inline, so the
+    caller reports the targeted "must be a mapping" error instead of a
+    confusing file-not-found.
+    """
+    if value.lstrip().startswith(("{", "[")) or "\n" in value:
+        return True
+    try:
+        return isinstance(_parse_params_yaml(value), dict)
+    except yaml.YAMLError:
+        return False
+
+
 def _load_params_override(
     value: str,
 ) -> Result[tuple[Mapping[str, object], str], str]:  # lint-ignore[restricted-object]: YAML payload boundary
     """Resolve ``--params`` into (board filter mapping, source label): file, stdin, or inline JSON/YAML.
 
-    ``-`` reads stdin; a value starting with ``{`` or ``[`` is an inline
-    YAML/JSON document (a filter document is always a ``{...}`` mapping, so a
-    non-mapping inline doc fails with a targeted message instead of a
-    confusing file-not-found); anything else is a file path. One YAML loader
-    parses all three forms (JSON is a YAML subset). The source label doubles
-    as the header echo so the display can never drift from what was parsed.
+    ``-`` reads stdin; a value that parses to a YAML/JSON mapping (flow or
+    block, any formatting/newlines — see :func:`_looks_like_inline_document`)
+    is inline; anything else is a file path. A filter document is always a
+    ``{...}`` mapping, so a non-mapping inline doc fails with a targeted message
+    instead of a confusing file-not-found. One YAML loader parses all three
+    forms (JSON is a YAML subset). The source label doubles as the header echo
+    so the display can never drift from what was parsed.
     """
     if value == "-":
         raw = sys.stdin.read()
         source = "stdin"
-    elif value.lstrip().startswith(("{", "[")):
+    elif _looks_like_inline_document(value):
         raw = value
         source = "inline"
     else:
@@ -656,7 +676,7 @@ def search(
         "--params",
         help=(
             "Board filter block (required; same schema as the pipeline's searches[].filter): file path, '-' (stdin), or"
-            " inline '{...}'. YAML or JSON — eg a file with 'published: {within_days: 14}',"
+            " inline YAML/JSON (flow '{...}' or a block document). Eg a file with 'published: {within_days: 14}',"
             " 'location: {regions: \\[1, 2]}', 'salary: {only_with_salary: true}',"
             ' or inline \'{"salary": {"only_with_salary": true}}\''
         ),
@@ -689,6 +709,23 @@ def search(
 
     For deep research yaml/json output format is recommended.
     Text output has significantly less fields and is suitable mostly for quick preview.
+
+    Example (inline YAML filter):
+    ```
+    $ jobfucker search \\
+        --pipeline-id 10 \\
+        --query "python" \\
+        --params '
+    query:
+      fields_to_search_in: [name]
+      exclude_words: "стажер,junior,intern,интерн"
+    work_arrangement:
+      work_formats: [remote, hybrid]
+    published:
+      within_days: 30
+    ordering:
+      sort_results_by: publication_time'
+    ```
     """
     _run(
         _search(

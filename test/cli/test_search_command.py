@@ -292,6 +292,25 @@ def test_search_params_stdin_override(initialized_pipeline: int) -> None:
     assert "params:   stdin" in result.output
 
 
+def test_search_params_multiline_block_yaml_is_inline(initialized_pipeline: int) -> None:
+    """Block-style YAML passed as an argument is detected inline, not as a file path."""
+    result = _invoke_search(
+        "--pipeline-id",
+        str(initialized_pipeline),
+        "--params",
+        'area: [1]\nschedule: ["fullDay", "remote"]\nexperience: "between1And3"\nonly_with_salary: true',
+    )
+    assert result.exit_code == 0, result.output
+    assert "params:   inline" in result.output
+
+
+def test_search_params_scalar_still_treated_as_file_path(initialized_pipeline: int) -> None:
+    """A bare scalar (no mapping) keeps the file-path branch, so paths never become documents."""
+    result = _invoke_search("--pipeline-id", str(initialized_pipeline), "--params", "not-a-document.yaml")
+    assert result.exit_code == 1
+    assert "Cannot read --params file" in result.output
+
+
 def test_search_rejects_invalid_params(initialized_pipeline: int, storage: Storage) -> None:
     before = _count(storage, initialized_pipeline)
     result = _invoke_search("--pipeline-id", str(initialized_pipeline), "--params", '{"areas": [1]}')
