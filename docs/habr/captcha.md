@@ -354,3 +354,49 @@ while observing the full flow. The escalation trigger and completion contracts a
 (checkbox → image, `pow`, minimal HTTP solve), so a bounded automated solve is allowed on the
 experiment account at low volume; treat repeated failures or a new `captcha.type` as a stop signal
 and hand off to a human.
+
+## Recommendation: captcha strategy for the client (not final)
+
+> Status: **recommendation, not a decision.** This is the proposed approach for the future
+> `jobfucker.clients.habr` package, derived from the observations above. It is not implemented and
+> not a spec; revisit it when the client is built (Session 4).
+
+Proposed strategy: **browser-first checkbox, vision fallback, session reuse as the main defense.**
+
+1. **Reuse the session first.** An existing Habr Account session skips the login form and captcha
+   entirely ([Authentication](authentication.md#browserless-login-verified)). Persist cookies
+   (`_career_session`, `remember_user_token`, `.habr.com` SSO) and only touch the captcha on a fresh
+   login. This is the cheapest and most reliable option and should be the normal path.
+2. **Primary solver — browser click.** Drive patchright headless with a normal desktop Chrome UA and
+   click the checkbox; jobfucker already owns this browser stack
+   ([`PatchrightDriver`](../../src/jobfucker/clients/hh/browser.py)). No AI cost, fastest when it
+   works. CloakBrowser is an optional robustness upgrade, not required.
+3. **Detect escalation, don't guess.** Treat a non-`ok` `/check`, an empty `smart-token` past a short
+   timeout, or a present `iframe[title="SmartCaptcha advanced"]` as escalation
+   ([Detection and fail-fast](#detection-and-fail-fast)).
+4. **Fallback solver — browserless vision.** On escalation (or when the iframe click breaks), walk
+   the ladder over HTTP, OCR the image through the existing vision boundary, solve `pow`, POST the
+   answer ([Auto-solve feasibility](#auto-solve-feasibility-verified)). Bounded retries: each wrong
+   answer yields a fresh challenge; stop on repeated failure.
+5. **Human handoff last.** Unknown `captcha.type`, rising `pow.complexity`, repeated failures, or a
+   Qrator interstitial go to the headed-browser pair protocol
+   ([CAPTCHA rule](research-playbook.md#captcha-handling-rule)).
+
+Why hybrid rather than either alone:
+
+| | Browser checkbox | Browserless vision |
+| --- | --- | --- |
+| Cost | browser only, no AI | one vision call per attempt |
+| Failure mode | bad fingerprint silently escalates to image | OCR misread → retry |
+| Fragility | fingerprint/version drift, spinner race, iframe click | undocumented `/check` ladder, image legibility |
+
+- Browser-only is insufficient: under a flagged IP or drifted fingerprint it silently becomes the
+  image case with no solver.
+- Vision-only is not preferred: OCR is the reliability bottleneck, adds a paid call per login, and
+  relies on the server tolerating a minimal `rdata`/`picasso`-less POST.
+- The two compose: the browser path's failure mode is exactly the fallback path's input.
+
+Open risks for the eventual implementation (all unresolved, see
+[What is not documented yet](#what-is-not-documented-yet)): block/rate thresholds, whether
+`pow.complexity` rises, image legibility drift, the audio task type (would need STT), and Qrator as
+a separate gate.
