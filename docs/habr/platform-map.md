@@ -19,8 +19,8 @@ logged-in user; it is not an established API surface.
 - The website session cookie is the credential for both HTML pages and same-origin
   `/api/frontend_v1/` XHR. A separate bearer token has not been observed.
 - Mutations require the Rails CSRF token. It appears as a hidden `authenticity_token` field in forms
-  and as `<meta name="csrf-token">` on pages. Whether an `X-CSRF-Token` header is also accepted is
-  not established.
+  and as `<meta name="csrf-token">` on pages; the `X-CSRF-Token` header is **also accepted**
+  ([Transport and errors](api/transport-and-errors.md#csrf)).
 - Login is delegated to Habr Account SSO. The OAuth authorize step, the `account.habr.com` login
   form, and the browserless login are mapped in [Authentication](authentication.md); the fresh-login
   step is gated by a Yandex SmartCaptcha that is enforced on every fresh credential login
@@ -28,9 +28,17 @@ logged-in user; it is not an established API surface.
 
 ## Anonymous behavior
 
-Not yet established. Anonymous search rendering is likely (public listing exists in static HTML),
-but capability and any challenge behavior must be measured with a clean session before being
-treated as fact. Do not infer anonymous access from a logged-in capture.
+Verified 2026-09-18 with a clean cookie jar (see
+[Transport and errors](api/transport-and-errors.md#status-and-body-matrix-verified)):
+
+- Read surfaces are anonymous: `GET /vacancies`, `GET /vacancies/<id>` (with `JobPosting` JSON-LD),
+  and `GET /vacancies/rss` all return `200` with content and no challenge.
+- `GET /responses` is protected: `302` → `/users/auth_required` (HTML, no form).
+- `GET /api/frontend_v1/users/me` returns `200 {}`; authentication is detected from the payload
+  (`user` present), never the status.
+- An anonymous first request still sets `_career_session`, so cookie presence is not an auth signal.
+- Anonymous listing pages are larger than authenticated ones (login/registration promo markup);
+  card markup (`vacancy-card`) is the same. Do not infer identity from page size.
 
 ## Operation routing (candidate surface per contract method)
 
@@ -39,7 +47,7 @@ exercised), `Unknown`.
 
 | Contract method | Candidate surface | Status | Notes |
 | --- | --- | --- | --- |
-| `get_identity` | `GET /api/frontend_v1/users/me` | Verified | `user.alias` / `fullName` / `email` |
+| `get_identity` | `GET /api/frontend_v1/users/me` | Verified | `user.alias` / `fullName` / `email`; anonymous call returns `200 {}` |
 | `authorize` | SSO `/users/auth/tmid` → `account.habr.com` OAuth authorize + login form | Verified | Full browserless pure-HTTP login (captcha via vision OCR + `pow`); cookie set observed (see [Authentication](authentication.md)) |
 | `search_vacancies` | `GET /vacancies?page=N&type=all\|suitable` (HTML) | Known-unverified | Server-rendered cards; detail enrichment via JSON-LD |
 | `list_vacancies` | Same HTML listing, or `/vacancies/rss` | Known-unverified | RSS shape partially observed |
@@ -59,8 +67,10 @@ exercised), `Unknown`.
 
 ## Infrastructure behavior
 
-- Traffic passes through **Qrator** (`qrator_msid2` cookie, ~15 min lifetime), a WAF/DDoS layer
-  distinct from the login CAPTCHA.
+- Every response carries `Server: QRATOR`; the site is fronted by **Qrator**, a WAF/DDoS layer
+  distinct from the login CAPTCHA. No interstitial or throttle was observed at low volume, and the
+  user-agent did not change the outcome. Transport details, status/error mapping, and pacing are in
+  [Transport and errors](api/transport-and-errors.md).
 - The Habr Account login step (`account.habr.com`) is gated by **Yandex SmartCaptcha**; it is
   risk-based and escalates from a checkbox to an image (distorted-text) challenge with a
   proof-of-work. The solve contract and a verified pure-HTTP solve are in [CAPTCHA](captcha.md).
@@ -84,4 +94,10 @@ Revalidate these small signals when behavior appears to drift:
 | CAPTCHA | `account.habr.com` login still loads Yandex SmartCaptcha with sitekey `ysc1_zgWuDVpgrG9kwB8QEfIkuWseZyEnRzHLCAPF2dwh1db6e985` |
 | CAPTCHA escalation | `POST smartcaptcha.cloud.yandex.ru/check` still answers `{status:"failed",captcha:{type:"checkbox"\|"image"},pow:{complexity:10}}`; `pow` still verifies as `sha256(prefix ++ nonce)` with `complexity` leading zero bits |
 | Session | A logged-in session still sets `_career_session` (career) and `.habr.com` `s<hex>` SSO cookies |
-| WAF | `qrator_msid2` cookie still issued |
+| Session refresh | Dropping `_career_session` but keeping `remember_user_token` still returns the identity and re-issues `_career_session` |
+| WAF | Responses still carry `Server: QRATOR`; `qrator_msid2` cookie still issued |
+| Anonymous reads | `GET /vacancies`, `/vacancies/<id>`, `/vacancies/rss` still `200` with content when anonymous |
+| Anonymous identity | `GET /api/frontend_v1/users/me` anonymous still `200 {}` |
+| Protected redirect | `GET /responses` anonymous still `302` to `/users/auth_required` |
+| Error shapes | Unknown API path still `404 {"error":"Not found"}`; token-less `POST` still `422 {"status":422,...}` |
+| CSRF carriers | `X-CSRF-Token` header and `authenticity_token` form field both still accepted |

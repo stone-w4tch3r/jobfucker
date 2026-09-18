@@ -17,6 +17,7 @@ researched.
 | Method every research session follows | [Research playbook](research-playbook.md) |
 | Understand which Habr Career surface owns which operation | [Platform map](platform-map.md) |
 | Log in through Habr Account SSO | [Authentication and session](authentication.md) |
+| Understand transport, statuses, and error mapping | [Transport and errors](api/transport-and-errors.md) |
 | Understand the login challenge | [CAPTCHA](captcha.md) |
 | See what is not yet established | [Known unknowns](known-unknowns.md) |
 | Reuse the HH wiki as the target shape | [HH.ru wiki](../hh/README.md) |
@@ -74,9 +75,20 @@ covers apply and the rest of the challenge handling is not established.
 - An RSS 2.0 listing feed exists: `/vacancies/rss?page=&per_page=` (observed 200; default page size
   not yet established).
 - Vacancy identifiers are numeric, e.g. `/vacancies/1000167594`.
-- `/api/frontend_v1/` uses a structured error envelope
-  `{"httpCode":404,"errorCode":"NOT_FOUND","message":"Not found","data":{}}`; some routes instead
-  return `{"error":"Not found"}`. Both shapes must be tolerated.
+- **Anonymous reads work**: listing, detail (with `JobPosting` JSON-LD), and RSS all return content
+  without a session. Protected pages (`/responses`) answer `302 → /users/auth_required`. The
+  anonymous identity call returns `200 {}` — auth is detected from the payload, never the status.
+  An anonymous request still sets `_career_session`, so cookie presence is not an auth signal.
+- **Session persistence** is `remember_user_token`: dropping `_career_session` but keeping it
+  re-issues a career session; the `.habr.com` SSO cookies alone do **not** authenticate career.
+  `_career_session` is a cookie-store session, so logout does not invalidate a captured cookie value.
+- **CSRF** is required on mutations (`422` without a token); both the `authenticity_token` form field
+  and the `X-CSRF-Token` header are accepted.
+- `/api/frontend_v1/` errors observed are `{"error":"Not found"}` (404) and
+  `{"status":422,"error":"Unprocessable Entity"}` (CSRF/validation), returned as JSON; the same web
+  URL reacts to JSON accept headers. The structured `{"httpCode":...,"errorCode":...}` envelope seen
+  during surface discovery was not reproduced and remains unverified. See
+  [Transport and errors](api/transport-and-errors.md).
 
 ## Scope and authority
 

@@ -8,20 +8,20 @@ the item moves to a canonical page and is removed from here.
 
 Mapped (see [Authentication](authentication.md)): unauthenticated redirect, OAuth authorize URL and
 parameters, login form fields and POST target, the JSON `success`/`rurl` login response, the
-post-login callback chain, and the cookie inventory (`_career_session`, `remember_user_token`,
-`.habr.com` `s<hex>` SSO cookies). The **full login was completed browserlessly over pure HTTP**,
-including the captcha (see [Auto-solve feasibility](captcha.md#auto-solve-feasibility-verified)),
-and the captcha was observed to be **enforced on every fresh credential login**. Still unknown:
+post-login callback chain, the cookie inventory (`_career_session`, `remember_user_token`,
+`.habr.com` `s<hex>` SSO cookies), session refresh via `remember_user_token`, the logout contract
+(`POST /users/sign_out`, form-field and `X-CSRF-Token` carriers), and CSRF enforcement. The **full
+login was completed browserlessly over pure HTTP**, including the captcha (see
+[Auto-solve feasibility](captcha.md#auto-solve-feasibility-verified)), and the captcha was observed
+to be **enforced on every fresh credential login**. Still unknown:
 
-- Session expiry/refresh: how long `_career_session` is honored, whether `remember_user_token`
-  transparently re-establishes a session, and the exact refresh trigger.
-- Logout behavior and whether `meta.logoutToken` is required (`POST /users/sign_out`, `_method=delete`).
-- Whether mutating requests need only the session cookie or also a CSRF header, and which header name
-  (the HTML `authenticity_token` is the confirmed form).
+- Session expiry durations and the exact TTL of `_career_session` / `remember_user_token`.
+- Purpose of `meta.logoutToken` (not used by the HTML logout form); whether any endpoint consumes it.
+- Whether mutating requests ever return a distinguishable expired-session signal instead of a plain
+  redirect / `{}` identity.
 - Whether a captcha can ever be skipped on a fresh login for a very trusted client (never observed).
 - Whether Qrator issues an interstitial/cookie-refresh challenge under load, and its trigger.
-- Anonymous capability: what lists/details are reachable without a session, and whether an
-  anonymous request faces a challenge.
+- Anonymous request behavior at volume (no challenge observed in single requests).
 
 ## Search and listings (Session 2)
 
@@ -64,15 +64,18 @@ and the captcha was observed to be **enforced on every fresh credential login**.
   verified **pure-HTTP solve** (OCR + `pow` → `spravka`, accepted by the login form) — see
   [CAPTCHA](captcha.md#challenge-ladder-how-complexity-rises). Still unknown: the block/rate
   threshold for repeated failures, whether `pow.complexity` ever rises above `10`, whether the audio
-  task type is as solvable, the `spravka` TTL, and whether the credential `POST /ru/ident/in/<state>`
-  step itself works browserless. Follow the [CAPTCHA rule](research-playbook.md#captcha-handling-rule).
+  task type is as solvable, and the `spravka` TTL.
+  Follow the [CAPTCHA rule](research-playbook.md#captcha-handling-rule).
 - Whether a challenge ever appears on `career.habr.com` itself (search/apply at volume) rather than
   only on the Habr Account login step.
 - Qrator WAF behavior under load: whether it issues an interstitial or cookie-refresh challenge, and
   its trigger.
-- Rate-limit behavior, retry headers, and pacing implications.
-- Error taxonomy: reconcile the two observed envelopes (`{"httpCode",...}` vs `{"error":...}`),
-  HTTP codes, and board-specific error codes; map to `ClientError`.
+- Rate-limit behavior and retry headers: none observed at low volume; thresholds, `429`, and
+  `Retry-After` are unestablished (see [Transport and errors](api/transport-and-errors.md)).
+- Error taxonomy: core shapes are mapped in
+  [Transport and errors](api/transport-and-errors.md), but `5xx` bodies, any `429`/`Retry-After`, the
+  Qrator block page, and whether the `{"httpCode":...,"errorCode":...}` envelope exists on any route
+  are unestablished.
 
 ## Resolving an unknown
 

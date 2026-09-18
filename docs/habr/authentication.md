@@ -173,10 +173,47 @@ Notes:
 
 - `_career_session` is the Rails career session (session-scoped). `remember_user_token` is the
   persistent-login token; together they are what makes a logged-in agent session survive restarts.
+- **An anonymous first request also sets `_career_session`** (cookie-store session for flash/CSRF),
+  so the cookie's presence is not an authentication signal. The identity call's payload is.
 - The `s<hex>` cookies on `.habr.com` are the SSO/account session carriers; they are HttpOnly and
   have shorter lifetimes.
 - `qrator_msid2` is a Qrator WAF cookie (see below), not a login credential.
 - Analytics cookies are not required for authentication.
+
+## Session lifecycle (refresh and logout)
+
+Observed 2026-09-18 over pure HTTP with the exported cookie jar; each case rebuilt the jar from the
+same cookie set, so no server-side state was created.
+
+| Case | Cookies sent | Result |
+| --- | --- | --- |
+| Drop `_career_session`, keep `remember_user_token` | remember + SSO | `200` full user; a **new `_career_session` is re-issued** |
+| Keep `_career_session`, drop `remember_user_token` | session + SSO | `200` full user |
+| Keep only `.habr.com` SSO cookies (`s<hex>`, `habr_uuid`) | SSO only | `200 {}` — **SSO cookies alone do not authenticate career** |
+| Keep only `remember_user_token` | remember only | `200` full user; career session re-issued |
+
+Conclusions:
+
+- `remember_user_token` transparently re-establishes a career session; it is the persistence
+  mechanism. `.habr.com` SSO cookies do not authenticate career by themselves.
+- `_career_session` is a **Rails cookie-store session**: after `sign_out` the cookie value captured
+  before logout still authenticated `GET /api/frontend_v1/users/me` until its own expiry. Treat
+  logout as client-side cookie deletion plus `remember_user_token` revocation, **not** as
+  server-side session invalidation. Never rely on logout to kill a leaked session cookie.
+- Anonymous protected access is a redirect, not a `401`: `GET /responses` → `302`
+  `/users/auth_required` (HTML, no form).
+
+### Logout contract
+
+- `POST /users/sign_out` with a hidden `_method=delete`; rendered as a Rails form in the account
+  menu with a hidden `authenticity_token`.
+- CSRF is required: no token → `422`; a valid `authenticity_token` **form field** → `302`; a valid
+  `X-CSRF-Token` **header** (no form field) → `302`. Both carriers are accepted.
+- `meta.logoutToken` from `GET /api/frontend_v1/users/me` is **not** part of the HTML logout — the
+  page contains no `logoutToken`, and a form-token logout succeeded without it. Its use (if any) is
+  unestablished.
+- After logout the career cookies are cleared in the response and `remember_user_token` no longer
+  refreshes a session; the pre-logout `_career_session` value remained replayable (cookie store).
 
 ## Infrastructure
 
@@ -188,12 +225,15 @@ Notes:
 
 ## Career-side session and CSRF
 
-- Career HTML pages expose `<meta name="csrf-token">` and Rails forms include a hidden
-  `authenticity_token` (base64). Mutating requests are expected to require it; whether an
-  `X-CSRF-Token` header is also accepted is not established.
-- Logout is a Rails form: `POST /users/sign_out` with `_method=delete` and `authenticity_token`.
+- Career HTML pages expose `<meta name="csrf-token">` and `<meta name="csrf-param"
+  content="authenticity_token">`; Rails forms include a hidden `authenticity_token`.
+- State-changing requests require the token and answer `422 {"status":422,"error":"Unprocessable
+  Entity"}` without it. Both the form field and the `X-CSRF-Token` header are accepted
+  ([Transport and errors](api/transport-and-errors.md#csrf)).
+- Logout is a Rails form: `POST /users/sign_out` with `_method=delete` and `authenticity_token`
+  (see [Logout contract](#logout-contract)).
 - Same-origin JSON API calls (e.g. `GET /api/frontend_v1/users/me`) authenticate with the session
-  cookie and require no visible token for reads.
+  cookie and require no token for reads; an anonymous call returns `200 {}`.
 - The cookie set above was observed after a successful login; a browserless cookie jar established
   by the same chain also authenticated `GET /api/frontend_v1/users/me` (200).
 
@@ -220,6 +260,9 @@ Notes:
 
 `meta.logoutToken` is a secret; never persist or log it.
 
+Anonymous callers receive `200 {}` (empty object), not `401` — authentication must be detected from
+the payload (`user` present), never from the status code.
+
 ## Verification status
 
 | Item | Status |
@@ -233,5 +276,9 @@ Notes:
 | Cookie inventory and lifetimes | Verified (values redacted) |
 | Browserless (pure-HTTP) full login | Verified (captcha solved via vision OCR + `pow`) |
 | Existing account session skips login/captcha | Verified |
-| Session refresh / expiry / logout | Unknown |
-| Anonymous career pages vs account pages | Unknown |
+| Session refresh via `remember_user_token` | Verified (re-issues `_career_session`) |
+| SSO `.habr.com` cookies authenticate career | Verified negative (no session from SSO alone) |
+| Logout contract (`POST /users/sign_out`, CSRF) | Verified (form field and header both accepted; `logoutToken` not needed) |
+| CSRF enforcement on mutations | Verified (`422` without a token) |
+| Anonymous `GET /api/frontend_v1/users/me` → `200 {}` | Verified |
+| Session expiry durations / remember-token TTL | Unknown |
