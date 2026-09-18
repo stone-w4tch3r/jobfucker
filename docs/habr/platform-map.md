@@ -61,8 +61,10 @@ exercised), `Unknown`.
 
 - Traffic passes through **Qrator** (`qrator_msid2` cookie, ~15 min lifetime), a WAF/DDoS layer
   distinct from the login CAPTCHA.
-- The Habr Account login step (`account.habr.com`) is gated by **Yandex SmartCaptcha**; see
-  [CAPTCHA](captcha.md). `career.habr.com` showed no challenge under ordinary navigation.
+- The Habr Account login step (`account.habr.com`) is gated by **Yandex SmartCaptcha**; it is
+  risk-based and escalates from a checkbox to an image (distorted-text) challenge with a
+  proof-of-work. The solve contract and a verified pure-HTTP solve are in [CAPTCHA](captcha.md).
+  `career.habr.com` showed no challenge under ordinary navigation.
 - Rate limits, retry headers, and pacing are not yet characterized. Any challenge encountered must
   be handled per the [CAPTCHA rule](research-playbook.md#captcha-handling-rule).
 
@@ -79,5 +81,6 @@ Revalidate these small signals when behavior appears to drift:
 | CSRF | Pages still expose `meta[name=csrf-token]` and forms a hidden `authenticity_token` |
 | SSO | Login still routes through `/users/auth/tmid` and `account.habr.com/oauth/authorize`, and the login form POSTs `email`/`password`/`smart-token` |
 | CAPTCHA | `account.habr.com` login still loads Yandex SmartCaptcha with sitekey `ysc1_zgWuDVpgrG9kwB8QEfIkuWseZyEnRzHLCAPF2dwh1db6e985` |
+| CAPTCHA escalation | `POST smartcaptcha.cloud.yandex.ru/check` still answers `{status:"failed",captcha:{type:"checkbox"\|"image"},pow:{complexity:10}}`; `pow` still verifies as `sha256(prefix ++ nonce)` with `complexity` leading zero bits |
 | Session | A logged-in session still sets `_career_session` (career) and `.habr.com` `s<hex>` SSO cookies |
 | WAF | `qrator_msid2` cookie still issued |

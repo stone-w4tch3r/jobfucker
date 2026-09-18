@@ -58,14 +58,15 @@ parameters, login form fields and POST target, post-login callback chain, and th
 
 ## Challenges and infrastructure
 
-- Yandex SmartCaptcha on the Habr Account login step is captured and the automated click-only pass
-  is verified (headless, 3/3 with a normal Chrome UA). Engine finding: the decisive tell is the
-  `HeadlessChrome` user-agent — a wrong UA escalates `/check` to an image captcha; overriding the UA
-  lets patchright's bundled headless Chromium pass, so CloakBrowser is optional — see
-  [Engine comparison](captcha.md#engine-comparison-patchright-vs-cloakbrowser). Still unknown:
-  whether the challenge is mandatory on every fresh login or risk-based, its escalation behavior
-  under repetition or other IPs, and whether a challenge ever appears on `career.habr.com` itself.
-  Follow the [CAPTCHA rule](research-playbook.md#captcha-handling-rule).
+- Yandex SmartCaptcha on the Habr Account login step is captured end-to-end: checkbox pass,
+  risk-based escalation to an **image (distorted-text) challenge**, the `pow` proof-of-work, and a
+  verified **pure-HTTP solve** (OCR + `pow` → `spravka`, accepted by the login form) — see
+  [CAPTCHA](captcha.md#challenge-ladder-how-complexity-rises). Still unknown: the block/rate
+  threshold for repeated failures, whether `pow.complexity` ever rises above `10`, whether the audio
+  task type is as solvable, the `spravka` TTL, and whether the credential `POST /ru/ident/in/<state>`
+  step itself works browserless. Follow the [CAPTCHA rule](research-playbook.md#captcha-handling-rule).
+- Whether a challenge ever appears on `career.habr.com` itself (search/apply at volume) rather than
+  only on the Habr Account login step.
 - Qrator WAF behavior under load: whether it issues an interstitial or cookie-refresh challenge, and
   its trigger.
 - Rate-limit behavior, retry headers, and pacing implications.

@@ -1,15 +1,17 @@
 # CAPTCHA
 
 Habr Career account login is gated by **Yandex SmartCaptcha** on the Habr Account
-(`account.habr.com`) login step. This page records the challenge shape and the observed **trigger → solve → resume** flow. The
-solving step was first performed by the user in a headed browser while the agent recorded traffic,
-then reproduced **fully automatically** by a stealth headless browser (see
-[Automation feasibility](#automation-feasibility-stealth-headless)). Keep a human fallback: the
-challenge is risk-based and escalation is untested (see
-[the research playbook](research-playbook.md#captcha-handling-rule)).
+(`account.habr.com`) login step. This page records the challenge shape, the **complexity ladder**
+(checkbox → image), and the observed **trigger → solve → resume** flow. The checkbox pass was first
+solved by a human, then reproduced automatically by a stealth headless browser
+([Automation feasibility](#automation-feasibility-stealth-headless)); the **advanced image challenge
+was provoked and solved fully automatically, including over pure HTTP**
+([Auto-solve feasibility](#auto-solve-feasibility-verified)). A human fallback is still advisable
+because the challenge is risk-based and the block threshold is unknown
+(see [the research playbook](research-playbook.md#captcha-handling-rule)).
 
-> Freshness: captured 2026-09-18 from a fresh unauthenticated browser session against
-> `career.habr.com/users/auth/tmid`.
+> Freshness: captured 2026-09-18 from fresh unauthenticated browser sessions and browserless HTTP
+> against `career.habr.com/users/auth/tmid` / `account.habr.com`.
 
 ## Where it appears
 
@@ -32,7 +34,7 @@ Yandex SmartCaptcha, checkbox widget.
 | Fact | Value |
 | --- | --- |
 | Engine | Yandex SmartCaptcha |
-| Mode | Checkbox ("Я не робот") |
+| Mode | Checkbox ("Я не робот"), risk-based escalation to an image (distorted-text) task |
 | Sitekey | `ysc1_zgWuDVpgrG9kwB8QEfIkuWseZyEnRzHLCAPF2dwh1db6e985` |
 | Theme / lang / host | `theme=light`, `hl=ru`, `host=account.habr.com` |
 | Loader script | `https://smartcaptcha.cloud.yandex.ru/captcha.js?render=onload&onload=yc_loaded` |
@@ -94,6 +96,141 @@ A human solved the checkbox in the headed browser while the agent recorded traff
 
 The captcha token is single-use, bound to the login page and sitekey, and embeds the client IP and
 a timestamp. It must be used in the same form submission that produced it.
+
+## Challenge ladder (how complexity rises)
+
+SmartCaptcha is risk-based: the same `/check` endpoint returns either a pass token or a challenge
+whose **type** depends on how trustworthy the request looks. Observed levels, cheapest to hardest:
+
+| Level | `captcha.type` | Trigger observed | What the client must do |
+| --- | --- | --- | --- |
+| 0 — pass | *(absent, `status:"ok"`)* | Trusted browser: normal desktop Chrome UA, coherent fingerprint, real click | Nothing; `spravka` written to `smart-token` |
+| 1 — checkbox | `checkbox` | A `/check` POST without browser telemetry (bare HTTP), or an unverifiable checkbox attempt | Produce the widget's interaction proof (canvas `picasso` + encrypted `rdata`) or escalate to image |
+| 2 — image | `image` | Detectable browser (`HeadlessChrome` UA, `navigator.webdriver`), or a failed/unverifiable checkbox attempt | OCR the text image, solve `pow`, POST the answer |
+
+Escalation is server-driven and monotonic per attempt: posting a `checkbox` challenge key with a
+solved `pow` but **no answer** made the server return a fresh `type:"image"` challenge. There is no
+observed "harder than image" level, and `pow.complexity` stayed `10` across every challenge observed.
+
+Consequences for a client:
+
+- A browserless caller does not need to fake the checkbox. It can walk the ladder deliberately:
+  minimal `/check` → `checkbox` key → `/check` with `key` + `pow` (no answer) → `image` challenge.
+- A detectable browser gets the image challenge **immediately**, so a bad fingerprint costs an OCR
+  round instead of a silent pass.
+
+## Advanced (image) challenge contract
+
+When `captcha.type == "image"` the response carries a single distorted-text image (Cyrillic words,
+curved/noisy), not an object-selection grid. A second task type exists: the `voice`/`voiceintro`
+URLs and the widget's "Изменить тип задания" button switch the challenge to audio.
+
+Response shape (sanitized):
+
+```json
+{
+  "status": "failed",
+  "unique_key": "<digits>",
+  "captcha": {
+    "type": "image",
+    "key": "<opaque ~380 chars>",
+    "image": "https://smartcaptcha.yandexcloud.net/load-captchaimg?<b64url>",
+    "voice": "https://smartcaptcha.yandexcloud.net/load-captcha-voice?<b64url>",
+    "voiceintro": "https://smartcaptcha.yandexcloud.net/load-captcha-voiceintro?<b64url>",
+    "d": "",
+    "k": ""
+  },
+  "pow": { "prefix": "<hex>", "complexity": 10 }
+}
+```
+
+- `captcha.image` is a **loader**: base64url-decode the query segment (split on `,`) to get the real
+  URL `https://img.smartcaptcha.yandexcloud.net/image?key=<...>`. The image fetched from that URL
+  with no cookies and no browser returned `200 image/jpeg` and was solvable, so the image is bound
+  to IP + challenge lifetime, not to a cookie jar.
+- A wrong answer returns `status:"failed"` with a **new** `captcha.key` and a new image; the
+  challenge refreshes rather than locking. No lockout was reached in ~4 wrong submissions.
+
+Advanced-challenge DOM (inside `iframe[title="SmartCaptcha advanced"]`,
+`advanced.ru.<hash>.html`):
+
+| Element | Selector / text | Notes |
+| --- | --- | --- |
+| Frame | `iframe[title="SmartCaptcha advanced"]` | Appears alongside the checkbox frame |
+| Answer input | textbox `"Введите текст с картинки"` | Placeholder `"Строчные или прописные буквы"` — answer is case-insensitive |
+| Submit | button `"Отправить"` | |
+| Refresh | button `"Обновить задание"` | Issues a new challenge |
+| Switch to audio | button `"Изменить тип задания"` | Audio alternative |
+| Dismiss | button `"закрыть"` | |
+| Footer | `unique_key` + unix timestamp | Telemetry/debug |
+
+## Proof-of-work (`pow`)
+
+Every challenge (and every answer submission) carries a `pow` object: `{prefix, complexity}`.
+Observed `complexity` = `10`; `prefix` is the hex encoding of an ASCII string
+`t=<unix-ts>;p=<uuid>;c=<complexity>;d=<32-hex>;`.
+
+The client must find a 16-byte `nonce` such that:
+
+```text
+sha256( bytes.fromhex(prefix) ++ nonce )  has >= complexity leading zero bits
+```
+
+The nonce is transmitted as a hex string. Verified against a captured browser submission:
+`sha256(prefix_ascii ++ nonce_bytes)` had exactly 10 leading zero bits. Cost at `complexity:10` is
+~2^10 hashes (single-digit milliseconds); `powCalcTime` in the observed browser submission was
+31 ms.
+
+The answer submission carries the solution in a `pdata` form field: base64url of
+`{"powNonce": "<hex16>", "powCalcTime": <ms>, "powPrefix": "<hex>"}`.
+
+## Detection and fail-fast
+
+Signals a client can check without parsing the widget's internals:
+
+| Signal | Pass | Escalated |
+| --- | --- | --- |
+| `/check` response | `status:"ok"` + `spravka` | `status:"failed"` + `captcha` object |
+| `captcha.type` | absent | `"checkbox"` or `"image"` |
+| Hidden field | `input[name=smart-token]` non-empty | still empty |
+| DOM | no advanced frame | `iframe[title="SmartCaptcha advanced"]` present |
+
+Fail-fast rule: after a checkbox attempt, if no `smart-token` appears within a short timeout **or**
+`/check` returns `status != "ok"`, treat it as escalation. Do not retry the same challenge in a
+loop; either run the documented image-solve path or hand off to a human. A wrong image answer
+returns a *new* challenge, so a bounded retry (fresh challenge each time) is safe, but unbounded
+hammering risks an unknown block.
+
+## Auto-solve feasibility (verified)
+
+The advanced image challenge was solved **fully automatically over pure HTTP** on 2026-09-18:
+
+1. `GET https://career.habr.com/users/auth/tmid` (redirects to the login page; no captcha on GET) to
+   obtain the login-page URL used as `href`.
+2. `POST /check?host=account.habr.com&sitekey=<sitekey>&href=<login-url>` with only
+   `sitekey, lang=ru, test=false, webview=false` → `captcha.type:"checkbox"` + `pow`.
+3. Re-POST `/check` with `key` + solved `pdata` and **no answer** → `captcha.type:"image"` + image
+   URL + a fresh `pow`.
+4. Download `captcha.image`, OCR the text with a vision model.
+5. `POST /check` with `key`, `rep=<ocr text>`, `pdata`, `sitekey, lang, test, webview` →
+   `{"status":"ok","spravka":"..."}`.
+6. Write `spravka` into `input[name=smart-token]` and submit the login form.
+
+Result: the injected `spravka` was accepted; the browser reached `career.habr.com/vacancies` and
+`GET /api/frontend_v1/users/me` returned the account alias. So the image challenge is solvable
+without the widget's `rdata` (encrypted telemetry), `picasso` (canvas proof), or `tdata`
+(pointer/keyboard telemetry) — those fields are present in a real browser submission but were not
+required by the server for a minimal `key + rep + pdata` POST.
+
+Notes on the solve path:
+
+- **OCR quality is the limiting factor, not the protocol.** The vision model read the distorted text
+  on several attempts and misread others; a wrong answer just yields a fresh challenge, so a bounded
+  retry converges.
+- **The audio task type** (`voice`, `voiceintro`) is the alternate challenge; it would need
+  speech-to-text instead of OCR. Not exercised.
+- **Do not over-read the result:** the block threshold, any per-IP rate limit, and whether
+  `complexity` ever rises are unknown. Keep volume low and treat repeated failures as a stop signal.
 
 ## Automation feasibility (stealth headless)
 
@@ -192,14 +329,21 @@ cause.
 
 - Whether the SmartCaptcha is mandatory on every fresh login or only on risk-based sessions.
 - Whether the checkbox ever auto-passes with no click (not observed; a click was always needed).
-- Escalation: whether an image/advanced challenge appears under repetition, IP change, or fingerprint
-  change, and whether Qrator blocks first.
+- The block/escalation threshold: how many failed attempts (per IP, per account) trigger a block or
+  a harder challenge, and whether Qrator blocks first.
+- Whether `pow.complexity` ever rises above `10`, and whether the audio task type is OCR-equivalent
+  in difficulty.
 - The token TTL and whether a token can be reused for a retry of the same login.
+- Whether the whole login can complete browserless: the minimal `/check` chain returns a valid
+  `spravka`, but the `POST /ru/ident/in/<state>` credential step has not been driven over pure HTTP.
 - Whether the same challenge ever appears on `career.habr.com` itself (e.g. on search/apply at
   volume) rather than only on the Habr Account login step.
 
 ## Handling rule
 
-Follow the [CAPTCHA rule](research-playbook.md#captcha-handling-rule): stop, capture, then open the
-challenge in a headed browser and hand solving to the user while observing the full flow. Do not
-try to automate the SmartCaptcha until the trigger and completion contracts are documented.
+Follow the [CAPTCHA rule](research-playbook.md#captcha-handling-rule): stop, capture, then either
+run the documented solve path or open the challenge in a headed browser and hand solving to the user
+while observing the full flow. The escalation trigger and completion contracts are now documented
+(checkbox → image, `pow`, minimal HTTP solve), so a bounded automated solve is allowed on the
+experiment account at low volume; treat repeated failures or a new `captcha.type` as a stop signal
+and hand off to a human.

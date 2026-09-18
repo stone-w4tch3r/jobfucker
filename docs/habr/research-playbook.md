@@ -98,15 +98,19 @@ If a challenge appears on any endpoint:
    automate; until reliable trigger + completion docs exist, CAPTCHA is human-in-the-loop.
 7. Never commit challenge captures, cookies, or tokens.
 
-Current state for Habr Career: the login SmartCaptcha was solved first by a human and then
-reproduced automatically by the stealth headless browser (2/2, checkbox only) — see
-[CAPTCHA](captcha.md#automation-feasibility-stealth-headless). Policy:
+Current state for Habr Career: the login SmartCaptcha checkbox was solved first by a human and then
+reproduced automatically by the stealth headless browser — see
+[CAPTCHA](captcha.md#automation-feasibility-stealth-headless). The higher level was then provoked
+and solved: risk-based escalation to an image (distorted-text) challenge, its `pow` proof-of-work,
+and a verified pure-HTTP solve (OCR + `pow` → `spravka`) — see
+[CAPTCHA](captcha.md#challenge-ladder-how-complexity-rises). Policy:
 
-- Repeat the documented automated click only at low login frequency on an owned account.
-- Treat a missing/`non-ok` token, an image/advanced challenge, or a Qrator interstitial as
-  escalation: stop automating and hand off to a human via the headed-browser protocol above.
+- The documented solve path may be used at low login frequency on an owned account.
+- Treat a new/unknown `captcha.type`, a rising `pow.complexity`, repeated `status:"failed"`, a block
+  response, or a Qrator interstitial as escalation: stop automating and hand off to a human via the
+  headed-browser protocol above.
 - The challenge is risk-based; successes are not a guarantee. Do not build retry loops that hammer
-  the challenge.
+  the challenge, and do not treat the block threshold as known — it is not.
 
 ## Handoff
 
