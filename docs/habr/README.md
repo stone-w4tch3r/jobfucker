@@ -16,6 +16,8 @@ researched.
 | Understand the plan and method for this wiki | [Research plan](research-plan.md) |
 | Method every research session follows | [Research playbook](research-playbook.md) |
 | Understand which Habr Career surface owns which operation | [Platform map](platform-map.md) |
+| Log in through Habr Account SSO | [Authentication and session](authentication.md) |
+| Understand the login challenge | [CAPTCHA](captcha.md) |
 | See what is not yet established | [Known unknowns](known-unknowns.md) |
 | Reuse the HH wiki as the target shape | [HH.ru wiki](../hh/README.md) |
 
@@ -25,11 +27,14 @@ researched.
 credentials
     │
     ▼
-Habr Account SSO  /users/auth/tmid  ──►  career.habr.com session cookie
-                                                │  + Rails CSRF `authenticity_token`
-                                                ▼
-                        career.habr.com website (server-rendered HTML)
-                          search / vacancy detail / profile / responses
+Habr Account SSO  account.habr.com login form + Yandex SmartCaptcha
+    │  OAuth authorize: client_id=career-<uuid>, redirect_uri=/users/auth/tmid/callback_oauth
+    ▼
+career.habr.com session cookie  (Rails CSRF `authenticity_token`)
+    │
+    ▼
+career.habr.com website (server-rendered HTML)
+    search / vacancy detail / profile / responses
 
 Same-origin XHR ──► /api/frontend_v1/...  (JSON: identity, notifications, subscriptions)
 Vacancy detail  ──► schema.org JobPosting JSON-LD (description HTML)
@@ -47,6 +52,11 @@ challenge handling is not established.
   (`<meta name="csrf-token">` also present).
 - Login is **Habr Account SSO**, reached at `/users/auth/tmid`; there is no local career password
   form on the entry URLs observed.
+- A fresh login goes through `account.habr.com` and is gated by a **Yandex SmartCaptcha** checkbox;
+  see [CAPTCHA](captcha.md) and [Authentication](authentication.md).
+- A logged-in session sets the Rails career session `_career_session`, the persistent
+  `remember_user_token`, and `.habr.com` `s<hex>` SSO cookies; traffic passes through **Qrator**
+  (`qrator_msid2`). Cookie inventory is in [Authentication](authentication.md#session-cookies).
 - **Vacancy search and listings are server-rendered HTML.** No JSON listing/search endpoint was
   found under `/api/frontend_v1/` or `/v1/`.
 - **Vacancy detail embeds `application/ld+json` schema.org `JobPosting`** including `title`,

@@ -4,15 +4,23 @@ Integration boundaries that are not established well enough to implement as fact
 research diary. A feature depending on one of these items requires focused verification first, then
 the item moves to a canonical page and is removed from here.
 
-## Authentication (Session 2)
+## Authentication and session
 
-- Full SSO redirect chain for `/users/auth/tmid`: exact hops, cookie name(s) and domains, whether
-  `habr.com` and `career.habr.com` share the session, and any `tmid` token semantics.
-- Session lifetime, refresh, and logout (`/users/sign_out` form) behavior.
-- Whether API requests need only the session cookie or also a CSRF header, and which header name.
-- Whether a browserless credential login exists at all, or whether SSO forces a browser/human step.
-- Anonymous capability: what lists/details are reachable without a session, and whether an anonymous
-  request faces a challenge.
+Mapped (see [Authentication](authentication.md)): unauthenticated redirect, OAuth authorize URL and
+parameters, login form fields and POST target, post-login callback chain, and the cookie inventory
+(`_career_session`, `remember_user_token`, `.habr.com` `s<hex>` SSO cookies). Still unknown:
+
+- Session expiry/refresh: how long `_career_session` is honored, whether `remember_user_token`
+  transparently re-establishes a session, and the exact refresh trigger.
+- Logout behavior and whether `meta.logoutToken` is required (`POST /users/sign_out`, `_method=delete`).
+- Whether mutating requests need only the session cookie or also a CSRF header, and which header name
+  (the HTML `authenticity_token` is the confirmed form).
+- Whether a browserless credential login is viable at all, given the SSO redirect chain plus the
+  human-solved SmartCaptcha.
+- Whether the account.habr.com SmartCaptcha is mandatory on every fresh login or risk-based.
+- Whether Qrator issues an interstitial/cookie-refresh challenge under load, and its trigger.
+- Anonymous capability: what lists/details are reachable without a session, and whether an
+  anonymous request faces a challenge.
 
 ## Search and listings (Session 2)
 
@@ -50,7 +58,9 @@ the item moves to a canonical page and is removed from here.
 
 ## Challenges and infrastructure
 
-- Whether any CAPTCHA or anti-bot gate exists, on which endpoints, and its engine.
+- Yandex SmartCaptcha is confirmed on the Habr Account login step; see [CAPTCHA](captcha.md) for the
+  captured shape. Not yet documented: the full trigger/solve/resume flow, whether the checkbox can
+  auto-pass, and whether a challenge ever appears on `career.habr.com` itself.
   If encountered, follow the [CAPTCHA rule](research-playbook.md#captcha-handling-rule).
 - Rate-limit behavior, retry headers, and pacing implications.
 - Error taxonomy: reconcile the two observed envelopes (`{"httpCode",...}` vs `{"error":...}`),

@@ -21,8 +21,10 @@ logged-in user; it is not an established API surface.
 - Mutations require the Rails CSRF token. It appears as a hidden `authenticity_token` field in forms
   and as `<meta name="csrf-token">` on pages. Whether an `X-CSRF-Token` header is also accepted is
   not established.
-- Login is delegated to Habr Account SSO (`/users/auth/tmid`); the full redirect chain, cookie set,
-  and session lifetime are not yet documented (Session 2).
+- Login is delegated to Habr Account SSO. The OAuth authorize step and the `account.habr.com`
+  login form are mapped in [Authentication](authentication.md); the fresh-login step is gated by a
+  Yandex SmartCaptcha ([CAPTCHA](captcha.md)), and the post-login cookie set and session lifetime
+  are not yet observed.
 
 ## Anonymous behavior
 
@@ -38,7 +40,7 @@ exercised), `Unknown`.
 | Contract method | Candidate surface | Status | Notes |
 | --- | --- | --- | --- |
 | `get_identity` | `GET /api/frontend_v1/users/me` | Verified | `user.alias` / `fullName` / `email` |
-| `authorize` | SSO `/users/auth/tmid` + session cookie | Known-unverified | Full redirect chain and cookie set unknown |
+| `authorize` | SSO `/users/auth/tmid` → `account.habr.com` OAuth authorize + login form | Known-unverified | Chain mapped; fresh login gated by SmartCaptcha; cookie set unknown (see [Authentication](authentication.md)) |
 | `search_vacancies` | `GET /vacancies?page=N&type=all\|suitable` (HTML) | Known-unverified | Server-rendered cards; detail enrichment via JSON-LD |
 | `list_vacancies` | Same HTML listing, or `/vacancies/rss` | Known-unverified | RSS shape partially observed |
 | `get_resumes` | Own profile (`/{alias}`) / `/profile/specialization` | Unknown | `/api/frontend_v1/resumes` is public specialist search, **not** owned resumes |
@@ -57,9 +59,12 @@ exercised), `Unknown`.
 
 ## Infrastructure behavior
 
-Not yet characterized: rate limits, retry behavior, DDoS/CDN posture, and any anti-bot gate. Any
-challenge encountered must be handled per the CAPTCHA rule in
-[the research playbook](research-playbook.md#captcha-handling-rule).
+- Traffic passes through **Qrator** (`qrator_msid2` cookie, ~15 min lifetime), a WAF/DDoS layer
+  distinct from the login CAPTCHA.
+- The Habr Account login step (`account.habr.com`) is gated by **Yandex SmartCaptcha**; see
+  [CAPTCHA](captcha.md). `career.habr.com` showed no challenge under ordinary navigation.
+- Rate limits, retry headers, and pacing are not yet characterized. Any challenge encountered must
+  be handled per the [CAPTCHA rule](research-playbook.md#captcha-handling-rule).
 
 ## Change canaries
 
@@ -72,4 +77,7 @@ Revalidate these small signals when behavior appears to drift:
 | RSS | `GET /vacancies/rss?page=1&per_page=25` returns RSS 2.0 items |
 | Detail | Vacancy page contains a `JobPosting` `ld+json` block |
 | CSRF | Pages still expose `meta[name=csrf-token]` and forms a hidden `authenticity_token` |
-| SSO | Login still routes through `/users/auth/tmid` |
+| SSO | Login still routes through `/users/auth/tmid` and `account.habr.com/oauth/authorize`, and the login form POSTs `email`/`password`/`smart-token` |
+| CAPTCHA | `account.habr.com` login still loads Yandex SmartCaptcha with sitekey `ysc1_zgWuDVpgrG9kwB8QEfIkuWseZyEnRzHLCAPF2dwh1db6e985` |
+| Session | A logged-in session still sets `_career_session` (career) and `.habr.com` `s<hex>` SSO cookies |
+| WAF | `qrator_msid2` cookie still issued |
