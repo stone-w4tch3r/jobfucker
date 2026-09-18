@@ -58,10 +58,13 @@ parameters, login form fields and POST target, post-login callback chain, and th
 
 ## Challenges and infrastructure
 
-- Yandex SmartCaptcha is confirmed on the Habr Account login step; see [CAPTCHA](captcha.md) for the
-  captured shape. Not yet documented: the full trigger/solve/resume flow, whether the checkbox can
-  auto-pass, and whether a challenge ever appears on `career.habr.com` itself.
-  If encountered, follow the [CAPTCHA rule](research-playbook.md#captcha-handling-rule).
+- Yandex SmartCaptcha on the Habr Account login step is captured and the automated click-only pass
+  is verified (2/2, stealth headless); see [CAPTCHA](captcha.md). Still unknown: whether the
+  challenge is mandatory on every fresh login or risk-based, its escalation behavior (image/advanced
+  challenge, blocking) under repetition or other IPs, and whether a challenge ever appears on
+  `career.habr.com` itself. Follow the [CAPTCHA rule](research-playbook.md#captcha-handling-rule).
+- Qrator WAF behavior under load: whether it issues an interstitial or cookie-refresh challenge, and
+  its trigger.
 - Rate-limit behavior, retry headers, and pacing implications.
 - Error taxonomy: reconcile the two observed envelopes (`{"httpCode",...}` vs `{"error":...}`),
   HTTP codes, and board-specific error codes; map to `ClientError`.
