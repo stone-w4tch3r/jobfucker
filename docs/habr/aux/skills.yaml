@@ -1,0 +1,1622 @@
+# Generated auxiliary catalog of Habr Career skill ids.
+# Source: /api/frontend/suggestions/skills?term=<prefix> (full prefix-crawl).
+# Used by the search filter: skills[]=<id>. See aux/README.md.
+
+skills:
+  1: {name: "Redis", alias: "redis"}
+  2: {name: "Haml", alias: "haml"}
+  3: {name: "CoffeeScript", alias: "coffeescript"}
+  4: {name: "Новые медиа", alias: "novye-media"}
+  5: {name: "Медиапланирование", alias: "mediaplanirovanie"}
+  7: {name: "ERM", alias: "erp"}
+  8: {name: "Microsoft SQL", alias: "mssql"}
+  9: {name: "Разработка под Android", alias: "razrabotka-prilozheniy-pod-android"}
+  10: {name: "SOAP", alias: "soap"}
+  11: {name: "WPF", alias: "wpf"}
+  12: {name: "Node.js", alias: "node-js"}
+  13: {name: "Riak", alias: "riak"}
+  15: {name: "Тестирование производительности", alias: "testirovanie-proizvoditelnosti"}
+  16: {name: "Нагрузочное тестирование", alias: "nagruzochnoe-testirovanie"}
+  17: {name: "XSLT", alias: "xslt"}
+  19: {name: "Разработка мобильных приложений", alias: "razrabotka-mobilnyh-prilozheniy"}
+  20: {name: "Google App Engine", alias: "google-app-engine"}
+  21: {name: "Предметная визуализация", alias: "predmetnaya-vizualizatsiya"}
+  22: {name: "Blender", alias: "blender"}
+  23: {name: "GIMP", alias: "gimp"}
+  24: {name: "Inkscape", alias: "inkscape"}
+  25: {name: "Разработка через тестирование", alias: "razrabotka-cherez-testirovanie"}
+  26: {name: "Microsoft SQL Server", alias: "microsoft-sql-server"}
+  27: {name: "Adobe Illustrator", alias: "adobe-illustrator"}
+  28: {name: "Puppet", alias: "puppet"}
+  29: {name: "Большие данные", alias: "bolshie-dannye"}
+  30: {name: "Базы данных", alias: "bazy-dannyh"}
+  31: {name: "ООП", alias: "oop"}
+  32: {name: "CSS", alias: "css"}
+  33: {name: "MySQLi", alias: "mysqli"}
+  34: {name: "PostGIS", alias: "postgis"}
+  35: {name: "Визуализация", alias: "vizualizatsiya"}
+  36: {name: "WCF", alias: "wcf"}
+  38: {name: "Active directory", alias: "active-directory"}
+  39: {name: "DHCP", alias: "dhcp"}
+  40: {name: "GWT", alias: "gwt"}
+  41: {name: "Groovy", alias: "groovy"}
+  42: {name: "Backbone.js", alias: "backbone-js"}
+  43: {name: "Marionette.js", alias: "marionette-js"}
+  44: {name: "Underscore.js", alias: "underscore-js"}
+  45: {name: "Require.js", alias: "require-js"}
+  46: {name: "Jade", alias: "jade"}
+  47: {name: "Adobe Indesign", alias: "adobe-indesign"}
+  48: {name: "Magento", alias: "magento"}
+  50: {name: "Adobe Animate", alias: "adobe-flash"}
+  51: {name: "FreeBSD", alias: "freebsd"}
+  52: {name: "Алгоритмы", alias: "algoritmy"}
+  54: {name: "Perl", alias: "perl"}
+  55: {name: "Linq", alias: "linq"}
+  56: {name: "Microsoft Office", alias: "microsoft-office"}
+  57: {name: "AutoCAD", alias: "autocad"}
+  58: {name: "Google Maps API", alias: "google-maps-api"}
+  59: {name: "Slim", alias: "slim"}
+  60: {name: "Разработка игр", alias: "razrabotka-igr"}
+  61: {name: "Apache", alias: "apache"}
+  62: {name: "MODX CMS", alias: "modx-cms"}
+  63: {name: "Ajax", alias: "ajax"}
+  64: {name: "Chef", alias: "chef"}
+  65: {name: "Vagrant", alias: "vagrant"}
+  66: {name: "Capistrano", alias: "capistrano"}
+  67: {name: "Lamp", alias: "lamp"}
+  68: {name: "Монтаж видео", alias: "montazh-video"}
+  69: {name: "Арт-директинг", alias: "art-direkting"}
+  70: {name: "CakePHP", alias: "cakephp"}
+  71: {name: "Проведение интервью", alias: "provedenie-intervyu"}
+  72: {name: "Visual Basic", alias: "visual-basic"}
+  73: {name: "XAML", alias: "xaml"}
+  74: {name: "Медийная реклама", alias: "mediynaya-reklama"}
+  75: {name: "Powershell", alias: "powershell"}
+  76: {name: "Ppc", alias: "ppc"}
+  77: {name: "Scrum", alias: "scrum"}
+  78: {name: "Таргетированная реклама", alias: "targetirovannaya-reklama"}
+  79: {name: "Высокая доступность", alias: "vysokaya-dostupnost"}
+  80: {name: "Google Ads", alias: "google-ads"}
+  81: {name: "Разработка программного обеспечения", alias: "razrabotka-programmnogo-obespecheniya"}
+  82: {name: "Мониторинг", alias: "monitoring"}
+  83: {name: "Apache CouchDB", alias: "apache-couchdb"}
+  84: {name: "Dart", alias: "dart"}
+  85: {name: "Qt", alias: "qt"}
+  86: {name: "Дизайн интерьера", alias: "dizayn-interiera"}
+  87: {name: "Промышленный дизайн", alias: "promyshlennyy-dizayn"}
+  88: {name: "SSH", alias: "ssh"}
+  89: {name: "Cocoa", alias: "cocoa"}
+  90: {name: "Xamarin", alias: "xamarin"}
+  91: {name: "Debian", alias: "debian"}
+  92: {name: "ActionScript", alias: "actionscript"}
+  94: {name: "Внутренняя оптимизация", alias: "vnutrennyaya-optimizatsiya"}
+  95: {name: "Внешняя оптимизация", alias: "vneshnyaya-optimizatsiya"}
+  96: {name: "Xcode", alias: "xcode"}
+  97: {name: "Разработка под iOS", alias: "razrabotka-prilozheniy-pod-ios"}
+  98: {name: "Планирование", alias: "planirovanie"}
+  99: {name: "Скриптовое программирование", alias: "skriptovoe-programmirovanie"}
+  101: {name: "Golang", alias: "golang"}
+  102: {name: "Датамайнинг", alias: "datamayning"}
+  103: {name: "Codeigniter", alias: "codeigniter"}
+  104: {name: "Электронная коммерция", alias: "elektronnaya-kommertsiya"}
+  105: {name: "Исследование пользователя", alias: "issledovanie-polzovatelya"}
+  106: {name: "SSIS", alias: "ssis"}
+  107: {name: "Интерактивный дизайн", alias: "interaktivnyy-dizayn"}
+  108: {name: "Erlang", alias: "erlang"}
+  109: {name: "Laravel", alias: "laravel"}
+  110: {name: "Cocos2d", alias: "cocos2d"}
+  111: {name: "Cocos2d-x", alias: "cocos2d-x"}
+  112: {name: "SMM", alias: "smm"}
+  114: {name: "DevExpress", alias: "devexpress"}
+  115: {name: "VMWare ESXi", alias: "vmware-esxi"}
+  116: {name: "Postfix", alias: "postfix"}
+  117: {name: "Преподавание в IT", alias: "prepodavanie-v-it"}
+  118: {name: "Lotus Domino", alias: "lotus-domino"}
+  119: {name: "Установка и обслуживание офисной техники", alias: "ustanovka-i-obsluzhivanie-ofisnoy-tehniki"}
+  120: {name: "Сетевая безопасность", alias: "setevaya-bezopasnost"}
+  121: {name: "Администрирование почтовых серверов", alias: "administrirovanie-pochtovyh-serverov"}
+  123: {name: "SVN", alias: "svn"}
+  124: {name: "Xen", alias: "xen"}
+  125: {name: "KVM", alias: "kvm"}
+  126: {name: "Centos", alias: "centos"}
+  128: {name: "QML", alias: "qml"}
+  129: {name: "Hyper-V", alias: "hyper-v"}
+  130: {name: "Tornado Web Server", alias: "tornado-web-server"}
+  131: {name: "Ведение переговоров", alias: "vedenie-peregovorov"}
+  132: {name: "Scala", alias: "scala"}
+  133: {name: "LESS", alias: "less"}
+  134: {name: "Проектирование интерфейсов", alias: "proektirovanie-interfeysov"}
+  135: {name: "Doctrine2", alias: "doctrine2"}
+  136: {name: "Phalcon", alias: "phalcon"}
+  137: {name: "Машинное обучение", alias: "mashinnoe-obuchenie"}
+  138: {name: "ZBrush", alias: "zbrush"}
+  140: {name: "Текстурирование", alias: "teksturirovanie"}
+  141: {name: "Мониторинг сетей", alias: "monitoring-setey"}
+  143: {name: "Cucumber", alias: "cucumber"}
+  144: {name: "RSpec", alias: "rspec"}
+  145: {name: "XPath", alias: "xpath"}
+  146: {name: "Regex", alias: "regex"}
+  147: {name: "TeamCity", alias: "teamcity"}
+  149: {name: "Entity framework", alias: "entity-framework"}
+  150: {name: "SAP", alias: "sap"}
+  151: {name: "Системы контроля версий", alias: "sistemy-kontrolya-versiy"}
+  152: {name: "Twig", alias: "twig"}
+  153: {name: "Netcat CMS", alias: "netcat-cms"}
+  154: {name: "Продажи", alias: "prodazhi"}
+  155: {name: "Angular", alias: "angular"}
+  156: {name: "Nhibernate", alias: "nhibernate"}
+  157: {name: "Ableton live", alias: "ableton-live"}
+  158: {name: "cURL", alias: "curl"}
+  159: {name: "Защита информации", alias: "zaschita-informatsii"}
+  161: {name: "Stylus", alias: "stylus"}
+  163: {name: "Citrix", alias: "citrix"}
+  164: {name: "Vmware vSphere", alias: "vmware-vsphere"}
+  165: {name: "Многопротокольная коммутация по меткам", alias: "mnogoprotokolnaya-kommutatsiya-po-metkam"}
+  166: {name: "Структурированная кабельная система", alias: "strukturirovannaya-kabelnaya-sistema"}
+  167: {name: "Wireframes", alias: "wireframes"}
+  169: {name: "Growth hacking", alias: "growth-hacking"}
+  170: {name: "Lua", alias: "lua"}
+  172: {name: "C++", alias: "cplusplus"}
+  173: {name: "REST", alias: "rest"}
+  174: {name: "Emmet", alias: "emmet"}
+  175: {name: "Hibernate", alias: "hibernate"}
+  176: {name: "Shell", alias: "shell"}
+  177: {name: "Opencart", alias: "opencart"}
+  179: {name: "SCSS", alias: "scss"}
+  180: {name: "Управление рисками", alias: "upravlenie-riskami"}
+  181: {name: "Бизнес-моделирование", alias: "biznes-modelirovanie"}
+  182: {name: "UIKit", alias: "uikit"}
+  183: {name: "Администрирование серверов", alias: "administrirovanie-serverov"}
+  184: {name: "RabbitMQ", alias: "rabbitmq"}
+  185: {name: "Графика для игр", alias: "grafika-dlya-igr"}
+  188: {name: "Видеодизайн", alias: "videodizayn"}
+  189: {name: "Облачные вычисления", alias: "oblachnye-vychisleniya"}
+  191: {name: "Symfony", alias: "symfony"}
+  192: {name: "Технический директор", alias: "tehnicheskiy-direktor"}
+  194: {name: "Система автоматизированного проектирования", alias: "sistema-avtomatizirovannogo-proektirovaniya"}
+  195: {name: "БЭМ", alias: "bem"}
+  196: {name: "PhoneGap", alias: "phonegap"}
+  197: {name: "AWS", alias: "amazon-aws"}
+  198: {name: "Создание архитектуры проектов", alias: "sozdanie-arhitektury-proektov"}
+  199: {name: "Doctrine", alias: "doctrine"}
+  200: {name: "Администрирование MS SQL", alias: "administrirovanie-ms-sql"}
+  201: {name: "Пиксельная графика", alias: "pikselnaya-grafika"}
+  202: {name: "Phantom.js", alias: "phantom-js"}
+  204: {name: "Создание анимации", alias: "sozdanie-animatsii"}
+  205: {name: "OSPF", alias: "ospf"}
+  206: {name: "OpenGL", alias: "opengl"}
+  208: {name: "Ведение блога", alias: "vedenie-bloga"}
+  209: {name: "Simpla CMS", alias: "simpla-cms"}
+  210: {name: "CS-Cart", alias: "cs-cart"}
+  211: {name: "Datalife engine", alias: "datalife-engine"}
+  212: {name: "Cocoa touch", alias: "cocoa-touch"}
+  213: {name: "ASP.NET Webforms", alias: "asp-net-webforms"}
+  214: {name: "GCD", alias: "gcd"}
+  215: {name: "ASP.NET MVC", alias: "asp-net-mvc"}
+  216: {name: "Nunit", alias: "nunit"}
+  217: {name: "Сокеты", alias: "sokety"}
+  219: {name: "Семантическая верстка", alias: "semanticheskaya-verstka"}
+  221: {name: "Создание визуальных эффектов", alias: "sozdanie-vizualnyh-effektov"}
+  222: {name: "Silex", alias: "silex"}
+  223: {name: "Развитие бизнеса", alias: "razvitie-biznesa"}
+  224: {name: "Библиотека стандартных шаблонов", alias: "biblioteka-standartnyh-shablonov"}
+  225: {name: "NoSQL", alias: "nosql"}
+  226: {name: "Клиент-серверные приложения", alias: "klient-servernye-prilozheniya"}
+  228: {name: "JDBC", alias: "jdbc"}
+  229: {name: "MongoDB", alias: "mongodb"}
+  230: {name: "Netty", alias: "netty"}
+  231: {name: "Visual Basic для приложений", alias: "visual-basic-dlya-prilozheniy"}
+  232: {name: "Ubuntu", alias: "ubuntu"}
+  233: {name: "Smarty", alias: "smarty"}
+  234: {name: "VBScript", alias: "vbscript"}
+  235: {name: "Текстовый перевод", alias: "tekstovyy-perevod"}
+  236: {name: "Wowza", alias: "wowza"}
+  237: {name: "Akka", alias: "akka"}
+  238: {name: "Редактура и корректура", alias: "redaktura-i-korrektura"}
+  239: {name: "Kotlin", alias: "kotlin"}
+  240: {name: "Организация бизнес-процессов", alias: "organizatsiya-biznes-protsessov"}
+  241: {name: "Алгоритмы и структуры данных", alias: "algoritmy-i-struktury-dannyh"}
+  242: {name: "Информационная безопасность", alias: "informatsionnaya-bezopasnost"}
+  243: {name: "Apache Cassandra", alias: "apache-cassandra"}
+  244: {name: "SOA", alias: "soa"}
+  245: {name: "TypeScript", alias: "typescript"}
+  247: {name: "Прототипирование", alias: "prototipirovanie"}
+  248: {name: "Mobile", alias: "mobile"}
+  249: {name: "Adobe After Effects", alias: "adobe-after-effects"}
+  251: {name: "Intellij IDEA", alias: "intellij-idea"}
+  252: {name: "Управление продуктами", alias: "upravlenie-produktami"}
+  253: {name: "Бережливое производство", alias: "berezhlivoe-proizvodstvo"}
+  254: {name: "Типографика", alias: "tipografika"}
+  255: {name: "Performance tuning", alias: "performance-tuning"}
+  257: {name: "Red Hat Enterprise Linux", alias: "red-hat-enterprise-linux"}
+  258: {name: "WebGL", alias: "webgl"}
+  259: {name: "Управление проектами", alias: "upravlenie-proektami"}
+  260: {name: "Black box testing", alias: "black-box-testing"}
+  261: {name: "Ручное тестирование", alias: "ruchnoe-testirovanie"}
+  262: {name: "Регрессионное тестирование", alias: "regressionnoe-testirovanie"}
+  263: {name: "Java EE", alias: "java-ee"}
+  264: {name: "JavaScript", alias: "javascript"}
+  265: {name: "Дизайн логотипов", alias: "design-logotipov"}
+  268: {name: "Фотосъемка", alias: "fotos-emka"}
+  269: {name: "Дизайн иконок", alias: "dizayn-ikonok"}
+  270: {name: "Adobe Fireworks", alias: "adobe-fireworks"}
+  271: {name: "Knockout.js", alias: "knockout-js"}
+  272: {name: "Codeception", alias: "codeception"}
+  273: {name: "Yupe", alias: "yupe"}
+  274: {name: "Memcache", alias: "memcache"}
+  275: {name: "Exim", alias: "exim"}
+  276: {name: "Валидная верстка", alias: "validnaya-verstka"}
+  277: {name: "FuelPHP", alias: "fuelphp"}
+  279: {name: "Создание скетчей", alias: "sozdanie-sketchey"}
+  280: {name: "Построение бизнес-моделей", alias: "postroenie-biznes-modeley"}
+  283: {name: "Ant", alias: "ant"}
+  285: {name: "Управление медиа", alias: "upravlenie-media"}
+  286: {name: "Оптимизация под социальные сети", alias: "optimizatsiya-pod-sotsialnye-seti"}
+  287: {name: "Руководитель проектов 1С", alias: "rukovoditel-proektov-1s"}
+  288: {name: "JavaFX", alias: "javafx"}
+  289: {name: "Java Persistence API", alias: "java-persistence-api"}
+  290: {name: "Propel", alias: "propel"}
+  291: {name: "Zend Framework", alias: "zend-framework"}
+  294: {name: "Графический дизайн", alias: "graficheskiy-dizayn"}
+  295: {name: "TestLink", alias: "testlink"}
+  298: {name: "Canvas", alias: "canvas"}
+  299: {name: "Flex", alias: "flex"}
+  300: {name: "Разработка интерфейсов", alias: "razrabotka-interfeysov"}
+  301: {name: "Разработка интернет-магазинов", alias: "razrabotka-internet-magazinov"}
+  303: {name: "XHTML", alias: "xhtml"}
+  304: {name: "Objective-С", alias: "objective-c"}
+  305: {name: "Haskell", alias: "haskell"}
+  306: {name: "ARM architecture", alias: "arm-architecture"}
+  307: {name: "FPGA", alias: "fpga"}
+  308: {name: "Realtime", alias: "realtime"}
+  309: {name: "WebRTC", alias: "webrtc"}
+  310: {name: "Windows Forms", alias: "windows-forms"}
+  311: {name: "Red Hat Linux", alias: "red-hat-linux"}
+  312: {name: "OpenGL ES", alias: "opengl-es"}
+  313: {name: "Express", alias: "express-js"}
+  314: {name: "Cinema 4d", alias: "cinema-4d"}
+  315: {name: "Объектно-реляционное отображение", alias: "ob-ektno-relyatsionnoe-otobrazhenie"}
+  316: {name: "API Интерфейсы", alias: "api-interfeysy"}
+  318: {name: "Веб-разработка", alias: "veb-razrabotka"}
+  319: {name: "Mootools", alias: "mootools"}
+  320: {name: "Solr", alias: "solr"}
+  321: {name: "Flask", alias: "flask"}
+  322: {name: "SQL", alias: "sql"}
+  323: {name: "Организация мероприятий", alias: "organizatsiya-meropriyatiy"}
+  324: {name: "Drupal", alias: "drupal"}
+  326: {name: "Matlab", alias: "matlab"}
+  327: {name: "pgSQL", alias: "pgsql"}
+  328: {name: "Scrapy", alias: "scrapy"}
+  329: {name: "Ember.js", alias: "ember-js"}
+  330: {name: "UML", alias: "uml"}
+  331: {name: "Маршрутизация", alias: "marshrutizatsiya"}
+  332: {name: "Switching", alias: "switching"}
+  333: {name: "Lisp", alias: "lisp"}
+  334: {name: "Clojure", alias: "clojure"}
+  335: {name: "Jenkins", alias: "jenkins"}
+  336: {name: "Разработка персонажа", alias: "razrabotka-personazha"}
+  337: {name: "SolidWorks", alias: "solidworks"}
+  338: {name: "Виртуализация", alias: "virtualizatsiya"}
+  339: {name: "Linux kernel", alias: "linux-kernel"}
+  340: {name: "Администрирование сетей", alias: "administrirovanie-setey"}
+  341: {name: "Firewall", alias: "firewall"}
+  343: {name: "PrestaShop", alias: "prestashop"}
+  344: {name: "Fortran", alias: "fortran"}
+  345: {name: "Интерфейс передачи сообщений", alias: "interfeys-peredachi-soobscheniy"}
+  346: {name: "DirectX", alias: "directx"}
+  348: {name: "Apache JMeter", alias: "apache-jmeter"}
+  349: {name: "Организация работы с CRM", alias: "organizatsiya-raboty-s-crm"}
+  351: {name: "UMI.CMS", alias: "umi-cms"}
+  352: {name: "Подбор специалистов", alias: "podbor-spetsialistov"}
+  353: {name: "GLSL", alias: "glsl"}
+  354: {name: "Sony Vegas", alias: "sony-vegas"}
+  355: {name: "VirtueMart", alias: "virtuemart"}
+  356: {name: "Foundation", alias: "foundation"}
+  357: {name: "Контент маркетинг", alias: "kontent-marketing"}
+  360: {name: "Создание баннеров", alias: "sozdanie-bannerov"}
+  361: {name: "Объектно-ориентированное проектирование", alias: "ob-ektno-orientirovannoe-proektirovanie"}
+  362: {name: "Sinatra", alias: "sinatra"}
+  363: {name: "JQuery", alias: "jquery"}
+  364: {name: "Scada", alias: "scada"}
+  365: {name: "PLC", alias: "plc"}
+  366: {name: "Разработка тест-кейсов", alias: "razrabotka-test-keysov"}
+  367: {name: "Разработка CRM", alias: "razrabotka-crm"}
+  368: {name: "SAP ERP", alias: "sap-erp"}
+  369: {name: "Dojo", alias: "dojo"}
+  370: {name: "Payment gateways", alias: "payment-gateways"}
+  371: {name: "Oracle SQL", alias: "oracle-sql"}
+  372: {name: "Решение проблем", alias: "reshenie-problem"}
+  373: {name: "Meteor.js", alias: "meteor-js"}
+  374: {name: "Erlang/OTP", alias: "erlang-otp"}
+  375: {name: "Samba", alias: "samba"}
+  376: {name: "PhpUnit", alias: "phpunit"}
+  377: {name: "BPMN", alias: "bpmn"}
+  378: {name: "DevOps", alias: "devops"}
+  381: {name: "Pixelmator", alias: "pixelmator"}
+  382: {name: "Adobe Audition", alias: "adobe-audition"}
+  383: {name: "Eclipse", alias: "eclipse"}
+  384: {name: "Microsoft Silverlight", alias: "microsoft-silverlight"}
+  385: {name: "ADO.NET entity framework", alias: "ado-net-entity-framework"}
+  386: {name: "Oracle", alias: "oracle"}
+  387: {name: "WinRT", alias: "winrt"}
+  388: {name: "Neo4j", alias: "neo4j"}
+  389: {name: "Firebird", alias: "firebird"}
+  390: {name: "Сетевые технологии", alias: "setevye-tehnologii"}
+  391: {name: "Стратегические коммуникации", alias: "strategicheskie-kommunikatsii"}
+  392: {name: "Play", alias: "play-framework"}
+  394: {name: "Behat", alias: "behat"}
+  395: {name: "CMS «1С-Битрикс»", alias: "1s-bitriks"}
+  396: {name: "Операционная система реального времени", alias: "operatsionnaya-sistema-realnogo-vremeni"}
+  397: {name: "Системное программирование", alias: "sistemnoe-programmirovanie"}
+  399: {name: "Adobe Air", alias: "adobe-air"}
+  400: {name: "Applicability statement 2", alias: "applicability-statement-2"}
+  401: {name: "Программная инженерия", alias: "programmnaya-inzheneriya"}
+  402: {name: "Кросс-платформенная разработка", alias: "kross-platformennaya-razrabotka"}
+  403: {name: "RESTful API", alias: "restful-api"}
+  404: {name: "Бизнес аналитика", alias: "biznes-analitika"}
+  405: {name: "GNU Make", alias: "gnu-make"}
+  406: {name: "Коучинг", alias: "kouching"}
+  407: {name: "Gentoo", alias: "gentoo"}
+  408: {name: "Chaplin.js", alias: "chaplin-js"}
+  409: {name: "Оптимизация кода", alias: "optimizatsiya-koda"}
+  410: {name: "Sencha touch", alias: "sencha-touch"}
+  411: {name: "UWSGI", alias: "uwsgi"}
+  412: {name: "Академический рисунок", alias: "akademicheskiy-risunok"}
+  413: {name: "Моделирование", alias: "modelirovanie"}
+  415: {name: "Финансовая аналитика", alias: "finansovaya-analitika"}
+  416: {name: "Геоинформационные системы", alias: "geoinformatsionnye-sistemy"}
+  417: {name: "Boost", alias: "boost"}
+  418: {name: "Lync", alias: "lync"}
+  419: {name: "Java message service", alias: "java-message-service"}
+  420: {name: "Сеть хранения данных", alias: "set-hraneniya-dannyh"}
+  421: {name: "Слепая печать", alias: "slepaya-pechat"}
+  422: {name: "Информационный дизайн", alias: "informatsionnyy-dizayn"}
+  423: {name: "Cmake", alias: "cmake"}
+  425: {name: "Регулярные выражения", alias: "regulyarnye-vyrazheniya"}
+  426: {name: "Автоматизация процессов", alias: "avtomatizatsiya-protsessov"}
+  427: {name: "Баг-трекинг", alias: "bag-treking"}
+  428: {name: "PHPMyAdmin", alias: "phpmyadmin"}
+  429: {name: "Мультипликация", alias: "multiplikatsiya"}
+  430: {name: "ADO.NET", alias: "ado-net"}
+  431: {name: "Живопись", alias: "zhivopis"}
+  432: {name: "JSF", alias: "jsf"}
+  433: {name: "SOLID", alias: "solid"}
+  434: {name: ".NET", alias: "net"}
+  435: {name: "Автоматизация тестирования", alias: "avtomatizatsiya-testirovaniya"}
+  436: {name: "Latex", alias: "latex"}
+  438: {name: "Настройка и наладка оборудования", alias: "nastroyka-i-naladka-oborudovaniya"}
+  439: {name: "AVR C", alias: "avr-c"}
+  440: {name: "Паттерны проектирования", alias: "patterny-proektirovaniya"}
+  441: {name: "OpenCL", alias: "opencl"}
+  442: {name: "Flash-программирование", alias: "flash-programmirovanie"}
+  443: {name: "Sharepoint", alias: "sharepoint"}
+  444: {name: "Работа с аудио и видео", alias: "rabota-s-audio-i-video"}
+  446: {name: "Python", alias: "python"}
+  447: {name: "Bower", alias: "bower"}
+  448: {name: "Разработка фирменного стиля", alias: "razrabotka-firmennogo-stilya"}
+  449: {name: "Assembler", alias: "assembler"}
+  450: {name: "SIP", alias: "sip"}
+  451: {name: "Прикладное ПО", alias: "prikladnoe-po"}
+  452: {name: "Adobe Creative Suite 6", alias: "adobe-creative-suite-6"}
+  453: {name: "Цифровой сигнальный процессор", alias: "tsifrovoy-signalnyy-protsessor"}
+  454: {name: "Дизайн продукта", alias: "dizayn-produkta"}
+  455: {name: "Mojolicious", alias: "mojolicious"}
+  456: {name: "OSGI", alias: "osgi"}
+  458: {name: "Немецкий язык", alias: "nemetskiy-yazyk"}
+  459: {name: "Испанский язык", alias: "ispanskiy-yazyk"}
+  460: {name: "MFC", alias: "mfc"}
+  461: {name: "Ремонт и обслуживание ПК", alias: "remont-i-obsluzhivanie-pk"}
+  462: {name: "Openstack", alias: "openstack"}
+  463: {name: "JQuery Mobile", alias: "jquery-mobile"}
+  464: {name: "Разработка систем видеонаблюдения", alias: "razrabotka-sistem-videonablyudeniya"}
+  465: {name: "Написание инструкций", alias: "napisanie-instruktsiy"}
+  466: {name: "Проектирование и прокладка ЛВС", alias: "proektirovanie-i-prokladka-lvs"}
+  468: {name: "Внедрение геймификации", alias: "vnedrenie-geymifikatsii"}
+  469: {name: "Веб-дизайн", alias: "web-design"}
+  470: {name: "Администрирование FreeBSD", alias: "administrirovanie-freebsd"}
+  471: {name: "Прикладная криптография", alias: "prikladnaya-kriptografiya"}
+  472: {name: "Встраиваемая система", alias: "vstraivaemaya-sistema"}
+  473: {name: "Arduino", alias: "arduino"}
+  474: {name: "MVVM", alias: "mvvm"}
+  475: {name: "Построение команды", alias: "postroenie-komandy"}
+  476: {name: "Каллиграфия", alias: "kalligrafiya"}
+  477: {name: "960gs", alias: "960gs"}
+  478: {name: "Проектирование", alias: "proektirovanie"}
+  479: {name: "Дизайн игр", alias: "dizayn-igr"}
+  480: {name: "Продюсирование", alias: "prodyusirovanie"}
+  481: {name: "Axure", alias: "axure"}
+  482: {name: "Elasticsearch", alias: "elasticsearch"}
+  483: {name: "NW.js", alias: "node-webkit"}
+  484: {name: "Twisted", alias: "twisted"}
+  485: {name: "Microsoft PowerPoint", alias: "microsoft-powerpoint"}
+  486: {name: "Keynote", alias: "keynote"}
+  487: {name: "Junit", alias: "junit"}
+  488: {name: "Celery", alias: "celery"}
+  489: {name: "SEO-аудит сайтов", alias: "audit-saytov"}
+  491: {name: "Фоторетушь", alias: "fotoretush"}
+  492: {name: "IIS", alias: "iis"}
+  493: {name: "2d-графика", alias: "2d-grafika"}
+  494: {name: "Видеостриминг", alias: "videostriming"}
+  495: {name: "Smart TV", alias: "smart-tv"}
+  496: {name: "ASP.NET", alias: "asp-net"}
+  497: {name: "Грамотность", alias: "gramotnost"}
+  498: {name: "Pixel-perfect", alias: "pixel-perfect"}
+  499: {name: "Разработка решений по интеграции", alias: "razrabotka-resheniy-po-integratsii"}
+  500: {name: "QNX", alias: "qnx"}
+  501: {name: "Привлечение клиентов", alias: "privlechenie-klientov"}
+  502: {name: "Ansi C", alias: "ansi-c"}
+  504: {name: "Венчурные инвестиции", alias: "venchurnye-investitsii"}
+  505: {name: "Delphi", alias: "delphi"}
+  506: {name: "Разработка бизнес-стратегии", alias: "razrabotka-biznes-strategii"}
+  507: {name: "Facebook API", alias: "facebook-api"}
+  508: {name: "VK API", alias: "vk-api"}
+  510: {name: "Zurb foundation", alias: "zurb-foundation"}
+  511: {name: "Администрирование сайтов", alias: "administrirovanie-saytov"}
+  512: {name: "Обработка естественного языка", alias: "obrabotka-estestvennogo-yazyka"}
+  513: {name: "Стратегический маркетинг", alias: "strategicheskiy-marketing"}
+  514: {name: "Titanium", alias: "titanium"}
+  515: {name: "Создание flash-анимации", alias: "sozdanie-flash-animatsii"}
+  516: {name: "LibGDX", alias: "libgdx"}
+  517: {name: "Documentum", alias: "documentum"}
+  518: {name: "Обучение персонала", alias: "obuchenie-personala"}
+  519: {name: "Redmine", alias: "redmine"}
+  520: {name: "ITIL", alias: "itil"}
+  521: {name: "PMBOK", alias: "pmbok"}
+  522: {name: "Портретная фотография", alias: "portretnaya-fotografiya"}
+  523: {name: "Цветокоррекция", alias: "tsvetokorrektsiya"}
+  524: {name: "DWH", alias: "dwh"}
+  525: {name: "OLAP", alias: "olap"}
+  526: {name: "Kendo UI", alias: "kendo-ui"}
+  527: {name: "Team Foundation Server", alias: "team-foundation-server"}
+  528: {name: "Системы виртуализации", alias: "sistemy-virtualizatsii"}
+  532: {name: "Тестирование дизайна", alias: "testirovanie-dizayna"}
+  533: {name: "Программирование микроконтроллеров", alias: "programmirovanie-mikrokontrollerov"}
+  534: {name: "Adobe Dreamweaver", alias: "adobe-dreamweaver"}
+  535: {name: "Joomla", alias: "joomla"}
+  536: {name: "Iptables", alias: "iptables"}
+  537: {name: "PostgreSQL", alias: "postgresql"}
+  538: {name: "Microsoft Xna", alias: "microsoft-xna"}
+  539: {name: "WxWidgets", alias: "wxwidgets"}
+  540: {name: "Семантический веб", alias: "semanticheskiy-veb"}
+  541: {name: "Яндекс директ", alias: "yandeks-direkt"}
+  542: {name: "DNS", alias: "dns"}
+  543: {name: "Matte painting", alias: "matte-painting"}
+  544: {name: "CCNA", alias: "ccna"}
+  545: {name: "TDD/BDD", alias: "bdd-tdd"}
+  546: {name: "Сопровождение проектов", alias: "soprovozhdenie-proektov"}
+  548: {name: "2d-анимация", alias: "2d-animatsiya"}
+  549: {name: "Bash", alias: "bash"}
+  551: {name: "Grails framework", alias: "grails-framework"}
+  552: {name: "Юриспруденция", alias: "yurisprudentsiya"}
+  553: {name: "Составление семантического ядра", alias: "sostavlenie-semanticheskogo-yadra"}
+  555: {name: "OpenCV", alias: "opencv"}
+  557: {name: "Aris", alias: "aris"}
+  558: {name: "Microsoft Excel", alias: "microsoft-excel"}
+  559: {name: "F#", alias: "fsharp"}
+  561: {name: "3d моделирование", alias: "3d-modelirovanie"}
+  562: {name: "GNU Compiler collection", alias: "gnu-compiler-collection"}
+  563: {name: "Border Gateway Protocol", alias: "border-gateway-protocol"}
+  564: {name: "Socket.io", alias: "socket-io"}
+  565: {name: "Highcharts.js", alias: "highcharts-js"}
+  566: {name: "Common lisp", alias: "common-lisp"}
+  567: {name: "Three.js", alias: "three-js"}
+  568: {name: "Enterprise JavaBeans", alias: "enterprise-javabeans"}
+  569: {name: "Дизайн наружной рекламы", alias: "dizayn-naruzhnoy-reklamy"}
+  570: {name: "Corel Draw", alias: "corel-draw"}
+  571: {name: "Технический дизайн", alias: "tehnicheskiy-dizayn"}
+  572: {name: "Модерирование", alias: "moderirovanie"}
+  573: {name: "VPS", alias: "vps"}
+  574: {name: "PyQT", alias: "pyqt"}
+  575: {name: "Анализ требований", alias: "analiz-trebovaniy"}
+  576: {name: "Информационная архитектура", alias: "informatsionnaya-arhitektura"}
+  577: {name: "Стратегическое управление", alias: "strategicheskoe-upravlenie"}
+  578: {name: "Компьютерная графика", alias: "kompyuternaya-grafika"}
+  579: {name: "Управление компанией", alias: "upravlenie-kompaniey"}
+  580: {name: "Написание сценариев", alias: "napisanie-stsenariev"}
+  581: {name: "Haxe", alias: "haxe"}
+  582: {name: "Mapreduce", alias: "mapreduce"}
+  583: {name: "Freeswitch", alias: "freeswitch"}
+  584: {name: "WebSockets", alias: "websockets"}
+  585: {name: "Host CMS", alias: "host-cms"}
+  586: {name: "Apache2", alias: "apache2"}
+  587: {name: "Руководство стартапом", alias: "rukovodstvo-startapom"}
+  588: {name: "Публичные выступления", alias: "publichnye-vystupleniya"}
+  589: {name: "Проведение исследований", alias: "provedenie-issledovaniy"}
+  590: {name: "Стратегическое планирование", alias: "strategicheskoe-planirovanie"}
+  591: {name: "Продвижение проектов", alias: "prodvizhenie-proektov"}
+  592: {name: "ASM", alias: "asm"}
+  593: {name: "Webasyst", alias: "webasyst"}
+  594: {name: "ArcGIS", alias: "arcgis"}
+  595: {name: "Конфигурационное управление", alias: "konfiguratsionnoe-upravlenie"}
+  596: {name: "Livestreet", alias: "livestreet"}
+  598: {name: "Проектирование сетей", alias: "proektirovanie-setey"}
+  599: {name: "D3.js", alias: "d3-js"}
+  600: {name: "Composer", alias: "composer"}
+  601: {name: "Atmel AVR ASM", alias: "atmel-avr-asm"}
+  602: {name: "SVG", alias: "svg"}
+  603: {name: "Поддержка сайтов", alias: "podderzhka-saytov"}
+  604: {name: "Sybase", alias: "sybase"}
+  605: {name: "Техническая поддержка", alias: "tehnicheskaya-podderzhka"}
+  606: {name: "Обслуживание клиентов", alias: "obsluzhivanie-klientov"}
+  607: {name: "Тестирование ПО", alias: "testirovanie-po"}
+  609: {name: "Archicad", alias: "archicad"}
+  610: {name: "Artlantis", alias: "artlantis"}
+  611: {name: "Cacti", alias: "cacti"}
+  612: {name: "Nagios", alias: "nagios"}
+  613: {name: "Microsoft Exchange Server", alias: "microsoft-exchange-server"}
+  614: {name: "VMware", alias: "vmware"}
+  615: {name: "3d анимация", alias: "3d-animatsiya"}
+  616: {name: "Oracle Solaris", alias: "oracle-solaris"}
+  617: {name: "Kanban", alias: "kanban"}
+  618: {name: "Оптимизация бизнес-процессов", alias: "optimizatsiya-biznes-protsessov"}
+  619: {name: "Xen Cloud Platform", alias: "xen-cloud-platform"}
+  620: {name: "Коллажирование", alias: "kollazhirovanie"}
+  621: {name: "Microsoft Dynamic CRM", alias: "microsoft-dynamic-crm"}
+  622: {name: "Мониторинг и анализ рынка", alias: "monitoring-i-analiz-rynka"}
+  623: {name: "Apache Maven", alias: "apache-maven"}
+  624: {name: "Ремонт и обслуживание оргтехники", alias: "remont-i-obsluzhivanie-orgtehniki"}
+  625: {name: "Настройка и ремонт компьютерной техники", alias: "nastroyka-i-remont-kompyuternoy-tehniki"}
+  626: {name: "Cuda", alias: "cuda"}
+  627: {name: "OpenMP", alias: "openmp"}
+  628: {name: "Создание концепций", alias: "sozdanie-kontseptsiy"}
+  629: {name: "Исследование рынка", alias: "issledovanie-rynka"}
+  630: {name: "Starling", alias: "starling"}
+  631: {name: "Windows API", alias: "windows-api"}
+  632: {name: "Java Spring Framework", alias: "java-spring-framework"}
+  633: {name: "Swing", alias: "swing"}
+  635: {name: "Нейминг", alias: "neyming"}
+  636: {name: "Oracle weblogic server", alias: "oracle-weblogic-server"}
+  637: {name: "Создание звуковых эффектов", alias: "sozdanie-zvukovyh-effektov"}
+  638: {name: "Работа в команде", alias: "rabota-v-komande"}
+  639: {name: "Java SE", alias: "java-se"}
+  640: {name: "Верстка печатных изданий", alias: "verstka-pechatnyh-izdaniy"}
+  641: {name: "Управление разработкой", alias: "upravlenie-razrabotkoy"}
+  642: {name: "Microsoft Azure", alias: "microsoft-azure"}
+  643: {name: "Рендеринг", alias: "rendering"}
+  644: {name: "Компоновка", alias: "komponovka"}
+  645: {name: "Высоконагруженные системы", alias: "vysokonagruzhennye-sistemy"}
+  646: {name: "Программирование ЧПУ", alias: "programmirovanie-chpu"}
+  647: {name: "Yii framework", alias: "yii-framework"}
+  648: {name: "Компиляторы", alias: "kompilyatory"}
+  649: {name: "MQL4", alias: "mql4"}
+  650: {name: "Pawn", alias: "pawn"}
+  651: {name: "Mikrotik", alias: "mikrotik"}
+  652: {name: "Службы отчётности SQL Server", alias: "sluzhby-otchyotnosti-sql-server"}
+  654: {name: "Обратная разработка", alias: "obratnaya-razrabotka"}
+  655: {name: "LDAP", alias: "ldap"}
+  656: {name: "Проектирование архитектуры приложений", alias: "proektirovanie-arhitektury-prilozheniy"}
+  658: {name: "Многопоточность", alias: "mnogopotochnost"}
+  659: {name: "Администрирование *nix", alias: "administrirovanie-nix"}
+  660: {name: "Vim", alias: "vim"}
+  661: {name: "Распределённые вычисления", alias: "raspredelyonnye-vychisleniya"}
+  662: {name: "Apache Camel", alias: "apache-camel"}
+  663: {name: "Interbase", alias: "interbase"}
+  664: {name: "Autoit", alias: "autoit"}
+  665: {name: "Microsoft Project", alias: "microsoft-project"}
+  666: {name: "Jasmine", alias: "jasmine"}
+  667: {name: "Нейронные сети", alias: "neyronnye-seti"}
+  668: {name: "Настройка VPN", alias: "vpn"}
+  669: {name: "Разработка под 1С", alias: "razrabotka-pod-1s"}
+  670: {name: "Настройка офисных мини-атс", alias: "nastroyka-ofisnyh-mini-ats"}
+  671: {name: "Cisco CCNP", alias: "cisco-ccnp"}
+  672: {name: "Compass", alias: "compass"}
+  673: {name: "Cortex-M3", alias: "cortex-m3"}
+  674: {name: "Atmel AVR", alias: "atmel-avr"}
+  675: {name: "АСУ ТП", alias: "asu-tp"}
+  676: {name: "Axapta", alias: "axapta"}
+  677: {name: "RESTful WebServices.", alias: "restful-webservices"}
+  678: {name: "Oracle E-Business Suite", alias: "oracle-e-business-suite"}
+  679: {name: "MSP430", alias: "msp430"}
+  680: {name: "pfSense", alias: "pfsense"}
+  681: {name: "Управление событиями", alias: "upravlenie-sobytiyami"}
+  682: {name: "Администрирование 1С", alias: "administrirovanie-1s"}
+  683: {name: "Обеспечение качества", alias: "obespechenie-kachestva"}
+  684: {name: "Бюджетирование проектов", alias: "byudzhetirovanie-proektov"}
+  686: {name: "Altium designer", alias: "altium-designer"}
+  687: {name: "Поисковая оптимизация", alias: "poiskovaya-optimizatsiya"}
+  688: {name: "NumPy", alias: "numpy"}
+  689: {name: "Параллельное программирование", alias: "parallelnoe-programmirovanie"}
+  691: {name: "Verilog HDL", alias: "verilog"}
+  694: {name: "Microsoft Visio", alias: "microsoft-visio"}
+  695: {name: "Oracle DBA", alias: "oracle-dba"}
+  696: {name: "API Яндекс.Карты", alias: "api-yandeks-kart"}
+  697: {name: "WooCommerce", alias: "woocommerce"}
+  698: {name: "VHDL", alias: "vhdl"}
+  699: {name: "Синхронная цифровая иерархия", alias: "sinhronnaya-tsifrovaya-ierarhiya"}
+  700: {name: "Saas", alias: "saas"}
+  701: {name: "Верстка полиграфической продукции", alias: "verstka-poligraficheskoy-produktsii"}
+  702: {name: "ETL", alias: "etl"}
+  703: {name: "JBoss Application Server", alias: "jboss-application-server"}
+  704: {name: "IBM Db2", alias: "ibm-db2"}
+  705: {name: "Управление людьми", alias: "upravlenie-personalom"}
+  706: {name: "C#", alias: "csharp"}
+  707: {name: "Описание бизнес-процессов", alias: "opisanie-biznes-protsessov"}
+  708: {name: "Внедрение CRM", alias: "vnedrenie-crm"}
+  709: {name: "Email маркетинг", alias: "email-marketing"}
+  713: {name: "MySQL", alias: "mysql"}
+  714: {name: "Visual C#", alias: "visual-csharp"}
+  716: {name: "Беспроводные технологии", alias: "besprovodnye-tehnologii"}
+  717: {name: "Поддержка клиентов", alias: "podderzhka-klientov"}
+  718: {name: "Рисование от руки", alias: "risovanie-ot-ruki"}
+  719: {name: "Тестирование мобильных приложений", alias: "testirovanie-mobilnyh-prilozheniy"}
+  721: {name: "Oracle application express", alias: "oracle-application-express"}
+  722: {name: "Sass", alias: "sass"}
+  723: {name: "Адаптивный дизайн", alias: "adaptivnyy-dizayn"}
+  724: {name: "Форензика", alias: "forenzika"}
+  725: {name: "Внутренняя и внешняя оптимизация", alias: "vnutrennyaya-i-vneshnyaya-optimizatsiya"}
+  727: {name: "Схемотехника", alias: "shemotehnika"}
+  728: {name: "Red Hat", alias: "redhat"}
+  729: {name: "Низкоуровневое программирование", alias: "nizkourovnevoe-prgrammirovanie"}
+  730: {name: "CoreData", alias: "core-data"}
+  731: {name: "Microsoft Access", alias: "microsoft-access"}
+  732: {name: "Business intelligence", alias: "business-intelligence"}
+  734: {name: "Цифровые медиа", alias: "tsifrovye-media"}
+  736: {name: "Adobe Premiere", alias: "adobe-premiere"}
+  737: {name: "C++ builder", alias: "splusplus-builder"}
+  738: {name: "Виртуализация Hyper-V", alias: "virtualizatsiya-hyper-v"}
+  739: {name: "Внедрение монетизации", alias: "vnedrenie-monetizatsii"}
+  740: {name: "Написание музыки", alias: "napisanie-muzyki"}
+  741: {name: "X86 asm", alias: "x86-asm"}
+  742: {name: "Управление изменениями", alias: "upravlenie-izmeneniyami"}
+  743: {name: "Ретуширование", alias: "retushirovanie"}
+  744: {name: "TYPO3", alias: "typo3"}
+  745: {name: "Adobe Photoshop", alias: "adobe-photoshop"}
+  747: {name: "Разработка продуктовой стратегии", alias: "razrabotka-produktovoy-strategii"}
+  748: {name: "Бережливый стартап", alias: "berezhlivyy-startap"}
+  749: {name: "Управление IT-услугами", alias: "upravlenie-it-uslugami"}
+  751: {name: "Репортажная фотография", alias: "reportazhnaya-fotografiya"}
+  752: {name: "MODX EVO", alias: "modx-evo"}
+  753: {name: "PCI DSS", alias: "pci-dss"}
+  754: {name: "Защита от DDOS", alias: "zaschita-ot-ddos"}
+  755: {name: "Avaya", alias: "avaya"}
+  756: {name: "Связи с общественностью", alias: "svyazi-s-obschestvennostyu"}
+  757: {name: "Векторная графика", alias: "vektornaya-grafika"}
+  758: {name: "Netbeans", alias: "netbeans"}
+  759: {name: "Бизнес-консультирование", alias: "biznes-konsultirovanie"}
+  762: {name: "Vaadin", alias: "vaadin"}
+  763: {name: "Дополненная реальность", alias: "dopolnennaya-realnost"}
+  765: {name: "Box2d", alias: "box2d"}
+  766: {name: "Cisco CCNA", alias: "cisco-ccna"}
+  767: {name: "Журналистика", alias: "zhurnalistika"}
+  768: {name: "Допечатная подготовка", alias: "dopechatnaya-podgotovka"}
+  769: {name: "QlikView", alias: "qlikview"}
+  770: {name: "Создание инфографики", alias: "sozdanie-infografiki"}
+  772: {name: "MODX REVOLUTION", alias: "modx-revolution"}
+  773: {name: "Поиск талантов", alias: "poisk-talantov"}
+  774: {name: "Аффилированный маркетинг", alias: "affilirovannyy-marketing"}
+  775: {name: "Kerio", alias: "kerio"}
+  777: {name: "ABAP", alias: "abap"}
+  779: {name: "Леттеринг", alias: "lettering"}
+  781: {name: "Apache Subversion", alias: "apache-subversion"}
+  782: {name: "Математическое моделирование", alias: "matematicheskoe-modelirovanie"}
+  783: {name: "Шейдеры", alias: "sheydery"}
+  784: {name: "It-консультирование", alias: "it-konsultirovanie"}
+  785: {name: "Asterisk", alias: "asterisk"}
+  786: {name: "QuarkXPress", alias: "quarkxpress"}
+  787: {name: "Pascal", alias: "pascal"}
+  788: {name: "Signalr", alias: "signalr"}
+  789: {name: "Организационная разработка", alias: "organizatsionnaya-razrabotka"}
+  790: {name: "Консультирование по подбору персонала", alias: "konsultirovanie-po-podboru-personala"}
+  791: {name: "Концепт-арт", alias: "kontsept-art"}
+  792: {name: "PCB дизайн", alias: "pcb-dizayn"}
+  795: {name: "Администрирование LAMP", alias: "administrirovanie-lamp"}
+  797: {name: "Функциональное программирование", alias: "funktsionalnoe-programmirovanie"}
+  798: {name: "Системный анализ", alias: "sistemnyy-analiz"}
+  799: {name: "Apache Struts", alias: "apache-struts"}
+  800: {name: "XML", alias: "xml"}
+  801: {name: "Axure RP", alias: "axure-rp"}
+  802: {name: "Кроссбраузерная верстка", alias: "krossbrauzernaya-verstka"}
+  804: {name: "Разработка систем биллинга", alias: "razrabotka-sistem-billinga"}
+  805: {name: "Веб аналитика", alias: "veb-analitika"}
+  807: {name: "Подбор команды", alias: "podbor-komandy"}
+  808: {name: "Системная интеграция", alias: "sistemnaya-integratsiya"}
+  809: {name: "XMPP", alias: "xmpp"}
+  810: {name: "Liferay", alias: "liferay"}
+  811: {name: "PrimeFaces", alias: "primefaces"}
+  812: {name: "Document Object Model", alias: "document-object-model"}
+  813: {name: "Проектирование информационных систем", alias: "proektirovanie-informatsionnyh-sistem"}
+  814: {name: "Обработка фотографий", alias: "obrabotka-fotografiy"}
+  815: {name: "Agile", alias: "agile"}
+  817: {name: "SSAS", alias: "ssas"}
+  818: {name: "Дизайн групп Вконтакте", alias: "dizayn-grupp-vkontakte"}
+  819: {name: "Верстка книг", alias: "verstka-knig"}
+  820: {name: "Литературное редактирование", alias: "literaturnoe-redaktirovanie"}
+  821: {name: "Linux", alias: "linux"}
+  822: {name: "Дизайн уровней", alias: "dizayn-urovney"}
+  823: {name: "Jee", alias: "jee"}
+  824: {name: "Маркетинг мобильных приложений", alias: "marketing-mobilnyh-prilozheniy"}
+  825: {name: "FreeMarker Template Engine", alias: "freemarker-template-engine"}
+  826: {name: "Проектирование взаимодействия", alias: "proektirovanie-vzaimodeystviya"}
+  827: {name: "Саунд-дизайн", alias: "saund-dizayn"}
+  828: {name: "Парсинг", alias: "parsing"}
+  829: {name: "Художественный перевод", alias: "hudozhestvennyy-perevod"}
+  830: {name: "Модульное тестирование", alias: "modulnoe-testirovanie"}
+  833: {name: "ASP.NET WEB API", alias: "asp-net-web-api"}
+  834: {name: "Gevent", alias: "gevent"}
+  835: {name: "Спецификация программного обеспечения", alias: "spetsifikatsiya-programmnogo-obespecheniya"}
+  836: {name: "Cocos2d-iPhone", alias: "cocos2d-iphone"}
+  837: {name: "Coldfusion", alias: "coldfusion"}
+  838: {name: "Создание креативных концепций", alias: "sozdanie-kreativnyh-kontseptsiy"}
+  839: {name: "Nuke", alias: "nuke"}
+  840: {name: "Balsamiq mockups", alias: "balsamiq-mockups"}
+  842: {name: "Композинг", alias: "kompozing"}
+  844: {name: "Android NDK", alias: "android-ndk"}
+  845: {name: "LabVIEW", alias: "labview"}
+  846: {name: "CCS", alias: "ccs"}
+  847: {name: "STM32", alias: "stm32"}
+  848: {name: "Rust", alias: "rust"}
+  849: {name: "C", alias: "c-lang"}
+  851: {name: "Технический перевод", alias: "tehnicheskiy-perevod"}
+  852: {name: "Squid", alias: "squid"}
+  853: {name: "Gearman", alias: "gearman"}
+  854: {name: "Lazarus", alias: "lazarus"}
+  855: {name: "Прикладная математика", alias: "prikladnaya-matematika"}
+  856: {name: "J2ME", alias: "j2me"}
+  857: {name: "Pure C", alias: "pure-c"}
+  858: {name: "OpenVZ", alias: "openvz"}
+  859: {name: "Управление контентом", alias: "upravlenie-kontentom"}
+  860: {name: "САПР", alias: "sapr"}
+  861: {name: "ATL", alias: "atl"}
+  862: {name: "Gradle", alias: "gradle"}
+  863: {name: "V-Ray", alias: "vray"}
+  864: {name: "Vanilla.js", alias: "vanilla-js"}
+  868: {name: "Цифровая живопись", alias: "tsifrovaya-zhivopis"}
+  869: {name: "Sphinx", alias: "sphinx"}
+  870: {name: "Научно-исследовательская работа", alias: "nauchno-issledovatelskaya-rabota"}
+  872: {name: "Проектирование и строительство СКС", alias: "proektirovanie-i-stroitelstvo-sks"}
+  873: {name: "Администрирование Oracle", alias: "administrirovanie-oracle"}
+  874: {name: "Разработка ТЗ", alias: "razrabotka-tz"}
+  875: {name: "Бизнес-планирование", alias: "biznes-planirovanie"}
+  876: {name: "Adobe Acrobat", alias: "adobe-acrobat"}
+  877: {name: "Просмотр кода", alias: "prosmotr-koda"}
+  878: {name: "Nginx", alias: "nginx"}
+  881: {name: "Функциональное тестирование", alias: "funktsionalnoe-testirovanie"}
+  882: {name: "Подбор руководителей", alias: "podbor-rukovoditeley"}
+  883: {name: "Разработка креативных стратегий коммуникаций", alias: "razrabotka-kreativnyh-strategiy-kommunikatsiy"}
+  884: {name: "Консультирование", alias: "konsultirovanie"}
+  885: {name: "CIO", alias: "cio"}
+  886: {name: "Раскрутка сайтов", alias: "raskrutka-saytov"}
+  887: {name: "Kohana framework", alias: "kohana-framework"}
+  890: {name: "SQLalchemy", alias: "sqlalchemy"}
+  891: {name: "SQL Server Reporting Services", alias: "sql-server-reporting-services"}
+  892: {name: "MathCAD", alias: "mathcad"}
+  893: {name: "Диаграммы связей", alias: "diagrammy-svyazey"}
+  894: {name: "Pyramid", alias: "pyramid"}
+  895: {name: "Адаптивная верстка", alias: "adaptivnaya-verstka"}
+  896: {name: "Fl studio", alias: "fl-studio"}
+  898: {name: "Компас 3d", alias: "kompas-3d"}
+  900: {name: "Android studio", alias: "android-studio"}
+  901: {name: "Waterfall", alias: "waterfall"}
+  902: {name: "Onboarding", alias: "onboarding"}
+  903: {name: "Лидогенерация", alias: "lidogeneratsiya"}
+  904: {name: "Unity3d", alias: "unity3d"}
+  905: {name: "GNU", alias: "gnu"}
+  906: {name: "Администрирование Windows", alias: "administrirovanie-windows"}
+  907: {name: "Prism", alias: "prism"}
+  908: {name: "Верстка лендингов", alias: "verstka-lendingov"}
+  909: {name: "MVVM WS WCF", alias: "mvvm-ws-wcf"}
+  910: {name: "Контроль качества", alias: "kontrol-kachestva"}
+  911: {name: "Shell scripting", alias: "shell-scripting"}
+  912: {name: "Posix", alias: "posix"}
+  913: {name: "Parallax", alias: "parallax"}
+  914: {name: "Архитектура предприятия", alias: "arhitektura-predpriyatiya"}
+  916: {name: "Пайка радиокомпонентов", alias: "payka-radiokomponentov"}
+  917: {name: "Pic microcontroller", alias: "pic-microcontroller"}
+  918: {name: "Копирайтинг", alias: "kopirayting"}
+  919: {name: "Oracle PL", alias: "oracle-pl"}
+  920: {name: "Разработка шрифтов", alias: "razrabotka-shriftov"}
+  921: {name: "Qemu", alias: "qemu"}
+  922: {name: "Разработка под Windows Phone", alias: "razrabotka-pod-windows-phone"}
+  923: {name: "Администрирование Вebian", alias: "administrirovanie-debian"}
+  924: {name: "Обработка изображений", alias: "obrabotka-izobrazheniy"}
+  925: {name: "3ds Max", alias: "3ds-max"}
+  926: {name: "Wolfram Mathematica", alias: "wolfram-mathematica"}
+  927: {name: "Телекоммуникации", alias: "telekommunikatsii"}
+  928: {name: "Insales", alias: "insales"}
+  929: {name: "Рисование", alias: "risovanie"}
+  930: {name: "Настройка оборудования Cisco", alias: "nastroyka-oborudovaniya-cisco-systems"}
+  934: {name: "IBM WebSphere", alias: "ibm-websphere"}
+  935: {name: "Проектирование сайтов", alias: "proektirovanie-saytov"}
+  936: {name: "GIS", alias: "gis"}
+  937: {name: "Криптография", alias: "kriptografiya"}
+  939: {name: "Java Servlet", alias: "java-servlet"}
+  940: {name: "Генерация идей", alias: "generatsiya-idey"}
+  941: {name: "Ansible", alias: "ansible"}
+  944: {name: "Безопасность сетей", alias: "bezopasnost-setey"}
+  946: {name: "Final Cut Pro X", alias: "final-cut-pro-x"}
+  947: {name: "Git", alias: "git"}
+  948: {name: "Создание визиток", alias: "sozdanie-vizitok"}
+  949: {name: "Низкополигональное моделирование", alias: "nizkopoligonalnoe-modelirovanie"}
+  950: {name: "Дизайн мобильных приложений", alias: "dizayn-mobilnyh-prilozheniy"}
+  951: {name: "TCP", alias: "tcp"}
+  952: {name: "C++ boost", alias: "cplusplus-boost"}
+  953: {name: "GTK+", alias: "gtkplus"}
+  954: {name: "Предметная фотография", alias: "predmetnaya-fotografiya"}
+  955: {name: "SAI Paint Tool", alias: "painttool-sai"}
+  956: {name: "Проектное планирование", alias: "proektnoe-planirovanie"}
+  958: {name: "SugarCRM", alias: "sugarcrm"}
+  960: {name: "Разработка электроники", alias: "razrabotka-elektroniki"}
+  961: {name: "Mercurial", alias: "mercurial"}
+  962: {name: "Notepad++", alias: "notepadplusplus"}
+  963: {name: "Kaspersky Endpoint Security", alias: "kaspersky-endpoint-security"}
+  964: {name: "Вирусный маркетинг", alias: "virusnyy-marketing"}
+  965: {name: "Разработка печатных плат", alias: "razrabotka-pechatnyh-plat"}
+  966: {name: "Zabbix", alias: "zabbix"}
+  967: {name: "Обработка звука", alias: "obrabotka-zvuka"}
+  968: {name: "JQuery UI", alias: "jquery-ui"}
+  969: {name: "Локализация ПО", alias: "lokalizatsiya-po"}
+  970: {name: "C++ stl", alias: "cplusplus-stl"}
+  971: {name: "WordPress", alias: "wordpress"}
+  972: {name: "Системное администрирование", alias: "sistemnoe-administrirovanie"}
+  973: {name: "Звукорежиссура", alias: "zvukorezhissura"}
+  974: {name: "Selenium", alias: "selenium"}
+  975: {name: "Core graphics", alias: "core-graphics"}
+  976: {name: "SAP BI", alias: "sap-business-intelligence"}
+  979: {name: "QT QML", alias: "qt-qml"}
+  980: {name: "JBoss EJB3", alias: "jboss-ejb3"}
+  981: {name: "Corona SDK", alias: "corona-sdk"}
+  982: {name: "Администрирование Linux", alias: "administrirovanie-linux"}
+  983: {name: "Контекстная реклама", alias: "kontekstnaya-reklama"}
+  984: {name: "Edius", alias: "edius"}
+  986: {name: "Capybara", alias: "capybara"}
+  987: {name: "Corel Painter", alias: "corel-painter"}
+  988: {name: "OpenVPN", alias: "openvpn"}
+  989: {name: "Английский язык", alias: "angliyskiy-yazyk"}
+  990: {name: "V-Ray", alias: "v-ray"}
+  991: {name: "Озвучивание", alias: "ozvuchivanie"}
+  992: {name: "Создание чертежей", alias: "sozdanie-chertezhey"}
+  993: {name: "Рерайтинг", alias: "rerayting"}
+  996: {name: "Растровая графика", alias: "rastrovaya-grafika"}
+  997: {name: "Продуктовый маркетинг", alias: "produktovyy-marketing"}
+  998: {name: "Раскадровка", alias: "raskadrovka"}
+  999: {name: "Sony Vegas Pro", alias: "sony-vegas-pro"}
+  1001: {name: "Создание иконок", alias: "sozdanie-ikonok"}
+  1002: {name: "Полиграфический дизайн", alias: "dizayn-poligraficheskoy-produktsii"}
+  1003: {name: "Создание комиксов", alias: "sozdanie-komiksov"}
+  1004: {name: "Mudbox", alias: "mudbox"}
+  1005: {name: "PHP", alias: "php"}
+  1006: {name: "Разработка драйверов", alias: "razrabotka-drayverov"}
+  1007: {name: "Leaflet", alias: "leaflet-js"}
+  1008: {name: "Пунктуальность", alias: "punktualnost"}
+  1009: {name: "Storyboard", alias: "storyboard"}
+  1010: {name: "Разработка продукта", alias: "razrabotka-produkta"}
+  1011: {name: "Дизайн упаковки", alias: "dizayn-upakovki"}
+  1012: {name: "Java", alias: "java"}
+  1013: {name: "Mailchimp", alias: "mailchimp"}
+  1014: {name: "Win32 API", alias: "win32-api"}
+  1017: {name: "HTML", alias: "html"}
+  1019: {name: "SQLite", alias: "sqlite"}
+  1020: {name: "Oracle PL/SQL", alias: "oracle-plsql"}
+  1021: {name: "Плоский дизайн", alias: "ploskiy-dizayn"}
+  1022: {name: "Microsoft Word", alias: "microsoft-word"}
+  1023: {name: "Администрирование оборудования Juniper Networks", alias: "administrirovanie-oborudovaniya-juniper-networks"}
+  1024: {name: "Adobe Edge Animate", alias: "adobe-edge-animate"}
+  1025: {name: "Администрирование баз данных", alias: "administrirovanie-baz-dannyh"}
+  1026: {name: "Проектирование баз данных", alias: "proektirovanie-baz-dannyh"}
+  1027: {name: "Дизайн концептов", alias: "dizayn-kontseptov"}
+  1028: {name: "Управление требованиями к ПО", alias: "upravlenie-trebovaniyami-k-po"}
+  1029: {name: "GUI дизайн", alias: "gui-dizayn"}
+  1030: {name: "Swift", alias: "swift"}
+  1031: {name: "Embedded linux", alias: "embedded-linux"}
+  1032: {name: "UX тестирование", alias: "testirovanie-na-priemlemost-dlya-polzovatelya"}
+  1033: {name: "Шаблон проектирования", alias: "shablon-proektirovaniya"}
+  1035: {name: "Русский язык", alias: "russkiy-yazyk"}
+  1036: {name: "Adobe Muse", alias: "adobe-muse"}
+  1037: {name: "Управление программами", alias: "upravlenie-programmami"}
+  1038: {name: "Unix Shell Scripting", alias: "unix-shell-scripting"}
+  1039: {name: "Autodesk Maya", alias: "autodesk-maya"}
+  1040: {name: "Повышение конверсии", alias: "povyshenie-konversii"}
+  1041: {name: "Управление бизнес-процессами", alias: "upravlenie-biznes-protsessami"}
+  1042: {name: "Маркетинговые исследования", alias: "marketingovye-issledovaniya"}
+  1043: {name: "New business development", alias: "new-business-development"}
+  1044: {name: "Дизайн лендингов", alias: "dizayn-lendingov"}
+  1045: {name: "Jira", alias: "jira"}
+  1046: {name: "Администрирование оборудования Cisco", alias: "administrirovanie-oborudovaniya-cisco-systems"}
+  1047: {name: "Simatic step7", alias: "simatic-step7"}
+  1048: {name: "Обработка резюме", alias: "obrabotka-rezyume"}
+  1049: {name: "Брендирование", alias: "brendirovanie"}
+  1050: {name: "Twitter Bootstrap", alias: "twitter-bootstrap"}
+  1051: {name: "Тестирование сайтов", alias: "testirovanie-saytov"}
+  1052: {name: "Системная аналитика", alias: "sistemnaya-analitika"}
+  1053: {name: "Съемка видео", alias: "s-emka-video"}
+  1054: {name: "Parser3", alias: "parser3"}
+  1055: {name: "Тестирование методом свободного поиска", alias: "testirovanie-metodom-svobodnogo-poiska"}
+  1056: {name: "Java core", alias: "java-core"}
+  1058: {name: "Ext JS", alias: "ext-js"}
+  1059: {name: "Sublime Text", alias: "sublime-text"}
+  1060: {name: "Apache Tomcat", alias: "apache-tomcat"}
+  1061: {name: "Paint Tool SAI", alias: "paint-tool-sai"}
+  1062: {name: "Математика", alias: "matematika"}
+  1063: {name: "Apache Cordova", alias: "apache-cordova"}
+  1064: {name: "Проектирование в Axure", alias: "proektirovanie-v-axure"}
+  1066: {name: "Unix", alias: "unix"}
+  1067: {name: "Docker", alias: "docker"}
+  1069: {name: "Анимация персонажей", alias: "animatsiya-personazhey"}
+  1070: {name: "React", alias: "react-js"}
+  1071: {name: "Презентации", alias: "prezentatsii"}
+  1072: {name: "Visual Studio", alias: "visual-studio"}
+  1073: {name: "Osi model", alias: "osi-model"}
+  1074: {name: "Информационные технологии", alias: "informatsionnye-tehnologii"}
+  1075: {name: "Django", alias: "django"}
+  1076: {name: "Верстка Email", alias: "verstka-email"}
+  1077: {name: "Sketch", alias: "sketch"}
+  1078: {name: "Sails.js", alias: "sails-js"}
+  1079: {name: "Grunt", alias: "grunt-js"}
+  1080: {name: "Ruby on Rails", alias: "ruby-on-rails"}
+  1081: {name: "Ruby", alias: "ruby"}
+  1082: {name: "Монтаж систем связи", alias: "montazh-sistem-svyazi"}
+  1083: {name: "Интернет маркетинг", alias: "internet-marketing"}
+  1085: {name: "VirtualBox", alias: "virtualbox"}
+  1088: {name: "Продажи HR-услуг", alias: "hr-sales"}
+  1089: {name: "Рекрутмент", alias: "recruitment"}
+  1090: {name: "Unreal Engine", alias: "unrealengine"}
+  1091: {name: "Gulp", alias: "gulp"}
+  1092: {name: "Apache Flex", alias: "apacheflex"}
+  1093: {name: "Splunk", alias: "splunk"}
+  1094: {name: "Webpack", alias: "webpack"}
+  1095: {name: "HTTP", alias: "http"}
+  1096: {name: "Game Maker Language (GML)", alias: "gml"}
+  1097: {name: "Французский язык", alias: "fransais"}
+  1098: {name: "TOGAF", alias: "togaf"}
+  1099: {name: "Forth", alias: "forth"}
+  1100: {name: "Domain Specific Languages", alias: "dsl"}
+  1101: {name: "Prolog", alias: "prolog"}
+  1102: {name: "Autolayout", alias: "autolayout"}
+  1103: {name: "SmartCards", alias: "smartcards"}
+  1104: {name: "React Native", alias: "react-native"}
+  1105: {name: "Разработка браузерных расширений", alias: "browsersextensions"}
+  1106: {name: "Redux", alias: "redux"}
+  1107: {name: "Karma", alias: "karma"}
+  1108: {name: "Babel", alias: "babel"}
+  1109: {name: "Git-Flow", alias: "git-flow"}
+  1111: {name: "SAS", alias: "sas"}
+  1112: {name: "R", alias: "r-lang"}
+  1113: {name: "Tarantool", alias: "tarantool"}
+  1114: {name: "Elixir", alias: "elixir"}
+  1115: {name: "vTiger", alias: "vtiger"}
+  1116: {name: "Asyncio", alias: "asyncio"}
+  1117: {name: "Асинхронное программирование", alias: "asynchrony"}
+  1118: {name: "Vue.js", alias: "vue-js"}
+  1120: {name: "Elm", alias: "elm"}
+  1121: {name: "Алгоритмическая закупка рекламы", alias: "programmatic"}
+  1123: {name: "HP LoadRunner", alias: "hp-loadrunner"}
+  1124: {name: "Protobuf", alias: "protobuf"}
+  1125: {name: "Microsoft Dynamics NAV", alias: "ms-dynamics-nav"}
+  1126: {name: "Microsoft Dynamics CRM", alias: "ms-dynamics-crm"}
+  1127: {name: "Яндекс.Метрика", alias: "ya-metrika"}
+  1128: {name: "Google Analytics", alias: "google-analytics"}
+  1129: {name: "SAP Hybris", alias: "sap-hybris"}
+  1130: {name: "SAP TM", alias: "sap-tm"}
+  1131: {name: "SAP SD/MM", alias: "sap-sd-mm"}
+  1132: {name: "SAP HCM", alias: "sap-hcm"}
+  1133: {name: "SAP HR", alias: "sap-hr"}
+  1134: {name: "SAP PM", alias: "sap-toro"}
+  1135: {name: "SAP НСИ", alias: "sap-nsi"}
+  1136: {name: "SAP FI-TV", alias: "fi-tv"}
+  1137: {name: "IPS Community Suite", alias: "ips-community-suite"}
+  1138: {name: "Point Cloud Library", alias: "point-cloud-library"}
+  1139: {name: "Компьютерное зрение", alias: "computer-vision"}
+  1140: {name: "AIX", alias: "aix"}
+  1141: {name: "NetBackup", alias: "netbackup"}
+  1142: {name: "Way4 Platform", alias: "way4-platform"}
+  1143: {name: "Juniper", alias: "juniper"}
+  1144: {name: "MPLS", alias: "mpls"}
+  1145: {name: "BGP", alias: "bgp"}
+  1146: {name: "Filemaker", alias: "filemaker"}
+  1147: {name: "Caché ObjectScript", alias: "cache-objectscript"}
+  1148: {name: "InterSystems Ensemble", alias: "intersystems-ensemble"}
+  1149: {name: "Enterprise Service Bus", alias: "enterprise-service-bus"}
+  1150: {name: "СУБД InterSystems Caché", alias: "subd-intersystems-cache"}
+  1151: {name: "Polymer (library)", alias: "polymer-library"}
+  1152: {name: "Salesforce", alias: "salesforce"}
+  1153: {name: "T-SQL", alias: "t-sql"}
+  1154: {name: "Responsys", alias: "responsys"}
+  1155: {name: "Eloqua", alias: "eloqua"}
+  1156: {name: "Zeplin", alias: "zeplin"}
+  1157: {name: "Marvel App", alias: "marvel-app"}
+  1158: {name: "Web Interface Design", alias: "web-interface-design"}
+  1159: {name: "UI/UX дизайн", alias: "ui-ux"}
+  1160: {name: "Android User Interface Guidelines", alias: "android-user-interface-guidelines"}
+  1161: {name: "iOS Human Interface Guidelines", alias: "ios-human-interface-guidelines"}
+  1162: {name: "ASP Classic", alias: "asp-classic"}
+  1163: {name: "Программирование ПЛК", alias: "plk-programming"}
+  1164: {name: "koa.js", alias: "koajs"}
+  1165: {name: "Apache Spark", alias: "spark"}
+  1166: {name: "Vulkan API", alias: "vulkan-api"}
+  1168: {name: "Apache Hadoop", alias: "hadoop"}
+  1169: {name: "TensorFlow", alias: "tensorflow"}
+  1170: {name: "Caffe", alias: "caffe"}
+  1171: {name: "RDMA", alias: "rdma"}
+  1172: {name: "RnD", alias: "rnd"}
+  1173: {name: "CI/CD", alias: "ci-cd-methodologies"}
+  1174: {name: "SW/HW", alias: "sw-hw"}
+  1175: {name: "InfiniBand Protocol", alias: "infiniband-protocol"}
+  1176: {name: "Ethernet 802.1Q", alias: "ethernet-802-1q"}
+  1177: {name: "QoS / ETS (Enhanced Transmission Selection) RFC", alias: "qos-ets-enhanced-transmission-selection-rfc"}
+  1178: {name: "ECN RFC", alias: "ecn-explicit-congestion-notification-rfc"}
+  1179: {name: "LLDP/LACP/DCBX protocols", alias: "lldp-lacp-dcbx-protocols"}
+  1180: {name: "NVM Express protocol", alias: "nvm-express-protocol"}
+  1181: {name: "Computer Science", alias: "computer-science"}
+  1182: {name: "Computer Engineering", alias: "computer-engineering"}
+  1183: {name: "MobX", alias: "mobx"}
+  1184: {name: "D", alias: "d-lang"}
+  1185: {name: "z/OS", alias: "zos"}
+  1186: {name: "Разработка под AR и VR", alias: "vrar"}
+  1187: {name: "Apache Kafka", alias: "kafka"}
+  1188: {name: "Tool Command Language", alias: "tool-command-language"}
+  1189: {name: "Scratch", alias: "scratch"}
+  1190: {name: "App Inventor", alias: "app-inventor"}
+  1191: {name: "MaterializeCSS", alias: "materializecss"}
+  1192: {name: "Oracle Engineered Systems", alias: "oracle-engineered-systems"}
+  1195: {name: "RGB", alias: "rgb"}
+  1196: {name: "STANAG", alias: "stanag"}
+  1197: {name: "VESA", alias: "vesa"}
+  1198: {name: "GraphQL", alias: "graphql"}
+  1199: {name: "Apollo", alias: "apollo"}
+  1200: {name: "Atom", alias: "atom"}
+  1201: {name: "Electron", alias: "electron"}
+  1203: {name: "Solidity", alias: "solidity"}
+  1204: {name: "Ethereum", alias: "ethereum"}
+  1205: {name: "Blockchain", alias: "blockchain"}
+  1206: {name: "Bitcoin", alias: "bitcoin"}
+  1207: {name: "Kubernetes", alias: "kubernetes"}
+  1208: {name: "Material Design", alias: "material-design"}
+  1209: {name: "DBA", alias: "dba"}
+  1210: {name: "Pug", alias: "pug"}
+  1211: {name: "Oracle Workflow", alias: "oracle-workflow"}
+  1212: {name: "TSLab", alias: "tslab"}
+  1213: {name: "Zennoposter", alias: "zennoposter"}
+  1214: {name: "ADFOX", alias: "adfox"}
+  1215: {name: "RealBig", alias: "realbig"}
+  1216: {name: "Keras", alias: "keras"}
+  1217: {name: "Falcon", alias: "falcon"}
+  1218: {name: "Flutter", alias: "flutter"}
+  1219: {name: "Robot Framework", alias: "robot-framework"}
+  1221: {name: ".NET Core", alias: "net-core"}
+  1222: {name: "Crystal", alias: "crystal"}
+  1223: {name: "Figma Design", alias: "figmadesign"}
+  1224: {name: "Ionic", alias: "ionic-framework"}
+  1225: {name: "ReasonML", alias: "reasonml"}
+  1226: {name: "ReasonReact", alias: "reasonreact"}
+  1227: {name: "Китайский язык", alias: "kitaysky"}
+  1228: {name: "Babylon.js", alias: "babylonjs"}
+  1229: {name: "Phoenix", alias: "phoenix-framework"}
+  1230: {name: "OpenAPI Specification", alias: "openapi-specification"}
+  1231: {name: "DBIx::Class", alias: "dbix-class"}
+  1232: {name: "RxJava 2", alias: "rx-java-2"}
+  1233: {name: "Dagger 2", alias: "dagger-2"}
+  1234: {name: "Realm", alias: "realm"}
+  1235: {name: "ClickHouse", alias: "clickhouse"}
+  1236: {name: "Aerospike", alias: "aerospike"}
+  1237: {name: "FUSE", alias: "fuse"}
+  1238: {name: "FFmpeg", alias: "ffmpeg"}
+  1239: {name: "Тестирование на проникновение", alias: "penetration-testing"}
+  1240: {name: "SAP Business Objects BI", alias: "sap-business-objects"}
+  1241: {name: "PyTorch", alias: "pytorch"}
+  1242: {name: "WebTutor", alias: "webtutor"}
+  1243: {name: "Flow", alias: "flowjs"}
+  1244: {name: "Smalltalk", alias: "smalltalk"}
+  1245: {name: "ZigBee", alias: "zigbee"}
+  1246: {name: "MQTT", alias: "mqtt"}
+  1247: {name: "Svelte.js", alias: "sveltejs"}
+  1248: {name: "NestJS", alias: "nestjs"}
+  1249: {name: "Tilda", alias: "tilda"}
+  1250: {name: "PWA", alias: "pwa"}
+  1251: {name: "Google Polymer", alias: "google-polymer"}
+  1252: {name: "Lit Elements", alias: "lit-elements"}
+  1253: {name: "Google Firebase", alias: "google-firebase"}
+  1254: {name: "Clarion", alias: "clarion"}
+  1255: {name: "Cypress", alias: "cypress"}
+  1256: {name: "Mocha", alias: "mochajs"}
+  1257: {name: "Oracle Siebel CRM", alias: "oracle-siebel-crm"}
+  1258: {name: "Nightwatch.js", alias: "nightwatchjs"}
+  1259: {name: "Camunda", alias: "camunda"}
+  1261: {name: "AUTOSAR", alias: "autosar"}
+  1262: {name: "Разработчик RPA", alias: "rpa_developer"}
+  1263: {name: "gRPC", alias: "grpc"}
+  1264: {name: "Jest", alias: "jest"}
+  1265: {name: "JSS", alias: "jss"}
+  1266: {name: "OData", alias: "odata"}
+  1267: {name: "ELK Stack", alias: "elk-stack"}
+  1268: {name: "Apache Airflow", alias: "airflow"}
+  1269: {name: "Apache Flink", alias: "flink"}
+  1270: {name: "Grafana", alias: "grafana"}
+  1271: {name: "Deep Learning", alias: "deep-learning"}
+  1272: {name: "PowerScript", alias: "powerscript"}
+  1273: {name: "PowerBuilder", alias: "powerbuilder"}
+  1274: {name: "Spring Boot", alias: "spring-boot"}
+  1275: {name: "Vert.x", alias: "vertx"}
+  1276: {name: "UVM", alias: "uvm"}
+  1278: {name: "SystemC", alias: "system-c"}
+  1279: {name: "MyBatis", alias: "mybatis"}
+  1280: {name: "Storybook", alias: "storybook"}
+  1281: {name: "PostCSS", alias: "postcss"}
+  1282: {name: "CSS-in-JS", alias: "css-in-js"}
+  1283: {name: "GitHub Actions", alias: "githubactions"}
+  1284: {name: "Битрикс24", alias: "bitrix24"}
+  1285: {name: "Qlik Sense", alias: "qliksense"}
+  1286: {name: "Google Cloud Platform", alias: "gcp"}
+  1287: {name: "AmoCRM", alias: "amocrm"}
+  1288: {name: "GitLab", alias: "gitlab"}
+  1289: {name: "Nuxt.js", alias: "nuxt"}
+  1290: {name: "TypeORM", alias: "typeorm"}
+  1291: {name: "DocBook", alias: "docbook"}
+  1292: {name: "Markdown", alias: "markdown"}
+  1293: {name: "AsciiDoc", alias: "asciidoc"}
+  1294: {name: "DITA", alias: "dita"}
+  1295: {name: "reStructuredText", alias: "restructuredtext"}
+  1296: {name: "Frida", alias: "frida"}
+  1297: {name: "Ghidra", alias: "ghidra"}
+  1298: {name: "IDA Pro", alias: "ida-pro"}
+  1300: {name: "Wireshark", alias: "wireshark"}
+  1301: {name: "Bytecode Viewer", alias: "bytecode-viewer"}
+  1302: {name: "Взаимодействие с государственными органами", alias: "government-relations"}
+  1303: {name: "Google Kubernetes Engine", alias: "google-kubernetes-engine"}
+  1304: {name: "Service Discovery", alias: "service-discovery"}
+  1305: {name: "Consul", alias: "consul"}
+  1306: {name: "Prometheus", alias: "prometheus"}
+  1307: {name: "FluxCD", alias: "fluxcd"}
+  1308: {name: "Terraform", alias: "terraform"}
+  1309: {name: "Amazon EKS", alias: "amazon-eks"}
+  1311: {name: "GitHub Deployments", alias: "github-deployments"}
+  1312: {name: "Fastlane", alias: "fastlane"}
+  1313: {name: "Next.js", alias: "next-js"}
+  1314: {name: "Recoil", alias: "recoil"}
+  1315: {name: "Blazor", alias: "blazor"}
+  1316: {name: "Graylog", alias: "graylog"}
+  1317: {name: "Техническая документация", alias: "tech-documentation"}
+  1318: {name: "Calabash", alias: "calabash"}
+  1319: {name: "Fullstack", alias: "fullstack"}
+  1320: {name: "Корпоративные коммуникации", alias: "corp-communications"}
+  1321: {name: "Mac", alias: "mac"}
+  1322: {name: "WinDbg", alias: "windbg"}
+  1323: {name: "Brand", alias: "brand"}
+  1324: {name: "Web", alias: "web"}
+  1325: {name: "Performance", alias: "performance"}
+  1326: {name: "B2B", alias: "b2b"}
+  1327: {name: "B2C", alias: "b2c"}
+  1328: {name: "Enterprise", alias: "enterprise"}
+  1329: {name: "SMB", alias: "smb"}
+  1330: {name: "Channel", alias: "channel"}
+  1331: {name: "Global", alias: "global"}
+  1332: {name: "Operations", alias: "operations"}
+  1333: {name: "Product training", alias: "product-training"}
+  1334: {name: "BI", alias: "bi"}
+  1335: {name: "Google Partners", alias: "partners"}
+  1336: {name: "MSP", alias: "msp"}
+  1337: {name: "Siemens NX", alias: "siemens-nx"}
+  1338: {name: "FHIR", alias: "fhir"}
+  1339: {name: "YouTrack", alias: "youtrack"}
+  1340: {name: "Pre-sale", alias: "pre-sale"}
+  1341: {name: "Houdini", alias: "houdini"}
+  1342: {name: "Manticore", alias: "manticore"}
+  1343: {name: "Математическая статистика", alias: "matematicheskaya-statistika"}
+  1344: {name: "Pre-sale", alias: "presale"}
+  1345: {name: "ProAV", alias: "proav"}
+  1346: {name: "ВКС", alias: "vks"}
+  1347: {name: "Postman", alias: "postman"}
+  1348: {name: "Appium", alias: "appium"}
+  1349: {name: "FastAPI", alias: "fastapi"}
+  1350: {name: "AIOHTTP", alias: "aiohttp"}
+  1351: {name: "Google BigQuery", alias: "google-big-query"}
+  1352: {name: "PowerBI", alias: "powerbi"}
+  1353: {name: "Tableau", alias: "tableau"}
+  1354: {name: "ER-диаграммы", alias: "er-diagrams"}
+  1355: {name: "DLT", alias: "dlt"}
+  1356: {name: "BFT", alias: "bft"}
+  1357: {name: "SAP S/4 HANA", alias: "sap-s4-hana"}
+  1358: {name: "Yandex Database", alias: "yandex-database"}
+  1359: {name: "Selenide", alias: "selenide"}
+  1360: {name: "REST Assured", alias: "rest-assured"}
+  1392: {name: "Strapi", alias: "strapi"}
+  1393: {name: "Android SDK", alias: "android-sdk"}
+  1394: {name: "Buddy", alias: "buddy"}
+  1395: {name: "Bamboo CI", alias: "bamboo-ci"}
+  1396: {name: "Circle CI", alias: "circle-ci"}
+  1397: {name: "Amplitude", alias: "amplitude"}
+  1398: {name: "Appsflyer", alias: "appsflyer"}
+  1399: {name: "Google Tag Manager", alias: "google-tag-manager"}
+  1400: {name: "OpenEdge ABL", alias: "openedge-abl"}
+  1401: {name: "Pandas", alias: "pandas"}
+  1402: {name: "StatsModels", alias: "statsmodels"}
+  1403: {name: "JOOQ", alias: "jooq"}
+  1404: {name: "Sanic", alias: "sanic"}
+  1405: {name: "Sophos", alias: "sophos"}
+  1406: {name: "McAfee DLP", alias: "mcafee_dlp"}
+  1407: {name: "IDS", alias: "ids"}
+  1408: {name: "SIEM", alias: "siem"}
+  1409: {name: "LogRhythm", alias: "logrhythm"}
+  1410: {name: "SSDL", alias: "ssld"}
+  1411: {name: "SDL/SDLC", alias: "sdl_sdlc"}
+  1412: {name: "OpenSAMM", alias: "opensamm"}
+  1413: {name: "BSIMM", alias: "bsimm"}
+  1414: {name: "OWASP", alias: "owasp"}
+  1415: {name: "DevSecOps", alias: "devsecops"}
+  1416: {name: "SAST/DAST", alias: "sast_dast"}
+  1417: {name: "SonarQube", alias: "sonarqube"}
+  1418: {name: "Dependency Check", alias: "dependency_-check"}
+  1419: {name: "Sonatype Nexus", alias: "sonatype_nexus"}
+  1420: {name: "JFrog", alias: "jfrog"}
+  1421: {name: "Burp Suite", alias: "burp_suite"}
+  1422: {name: "Acunetix", alias: "acunetix"}
+  1423: {name: "w3af", alias: "w3af"}
+  1424: {name: "HCL AppScan", alias: "appscan"}
+  1425: {name: "Webinspect", alias: "webinspect"}
+  1426: {name: "Разработка систем защиты информации", alias: "razrabotka_sistem_zashiti_informacii"}
+  1427: {name: "SwiftUI", alias: "swiftui"}
+  1428: {name: "TestRail", alias: "testrail"}
+  1429: {name: "Sentry", alias: "sentry"}
+  1430: {name: "Тестирование API", alias: "api-testing"}
+  1431: {name: "DevRel", alias: "devrel"}
+  1432: {name: "Link Building", alias: "linkbuilder"}
+  1433: {name: "Angular.js", alias: "angularjs"}
+  1434: {name: "October Cms", alias: "octobercms"}
+  1435: {name: "Анализ данных", alias: "data_analisys"}
+  1436: {name: "Solana", alias: "solana"}
+  1437: {name: "Screaming Frog", alias: "screamingfrog"}
+  1438: {name: "Ahrefs", alias: "ahrefs"}
+  1439: {name: "Semrush", alias: "semrush"}
+  1440: {name: "SerpStat", alias: "serpstat"}
+  1441: {name: "SE Ranking", alias: "seranking"}
+  1442: {name: "Google Search Console", alias: "googlesearchconsole"}
+  1443: {name: "SRE", alias: "sre"}
+  1444: {name: "Contentful", alias: "contentful"}
+  1445: {name: "Yandex.Cloud", alias: "yandex-cloud"}
+  1446: {name: "Creatio CRM", alias: "sreatio-crm"}
+  1447: {name: "AvaloniaUI", alias: "avalonia-avaloniya"}
+  1448: {name: "Infolog", alias: "infolog"}
+  1449: {name: "Charles", alias: "charles"}
+  1450: {name: "Cygwin", alias: "cygwin"}
+  1451: {name: "UX-копирайтинг", alias: "uxcopywriting"}
+  1452: {name: "RTL", alias: "rtl"}
+  1453: {name: "ASIC", alias: "asic"}
+  1454: {name: "SystemVerilog", alias: "system_verilog"}
+  1455: {name: "Netlist", alias: "netlist"}
+  1456: {name: "STA", alias: "sta"}
+  1457: {name: "System-on-a-Chip", alias: "system_on_a_chip"}
+  1458: {name: "AXI-Stream", alias: "axistream"}
+  1459: {name: "AXI", alias: "axi"}
+  1460: {name: "AXI4-Lite", alias: "axi4lite"}
+  1461: {name: "RISC-V", alias: "riscv"}
+  1462: {name: "GitKraken", alias: "gitkraken"}
+  1463: {name: "GitHub", alias: "github"}
+  1465: {name: "Sailfish OS", alias: "sailfish"}
+  1466: {name: "TalosOS", alias: "talosos"}
+  1467: {name: "Sidero", alias: "sidero"}
+  1468: {name: "RxSwift", alias: "rxswift"}
+  1469: {name: "TestNG", alias: "testng"}
+  1470: {name: "Jackson", alias: "jackson"}
+  1471: {name: "Moleculer.js", alias: "moleculer"}
+  1472: {name: "Bubble", alias: "bubble"}
+  1473: {name: "Webflow", alias: "webflow"}
+  1474: {name: "Airtable", alias: "airtable"}
+  1475: {name: "Integromat", alias: "integromat"}
+  1476: {name: "Glide", alias: "glide"}
+  1477: {name: "Adalo", alias: "adalo"}
+  1478: {name: "Bravo Studio", alias: "bravo-studio"}
+  1479: {name: "Carrd", alias: "carrd"}
+  1480: {name: "Thunkable", alias: "thunkable"}
+  1481: {name: "Zapier", alias: "zapier"}
+  1482: {name: "Voiceflow", alias: "voiceflow"}
+  1483: {name: "Asana", alias: "asana"}
+  1484: {name: "Fine BI", alias: "fine-bi"}
+  1485: {name: "Yandex DataLens", alias: "yandex-datalens"}
+  1486: {name: "DDD", alias: "domain_driven_design"}
+  1487: {name: "GRASP", alias: "grasp"}
+  1488: {name: "Adobe XD", alias: "adobe-xd"}
+  1489: {name: "Quarkus", alias: "quarkus"}
+  1490: {name: "Lean startup", alias: "lean-startup"}
+  1491: {name: "Reinforcement learning", alias: "reinforcement-learning"}
+  1492: {name: "Julia", alias: "julia"}
+  1493: {name: "NativeScript", alias: "nativescript"}
+  1494: {name: "ArchiMate", alias: "archimate"}
+  1495: {name: "Модель C4", alias: "c4model"}
+  1496: {name: "Pixi.js", alias: "pixi-js"}
+  1497: {name: "B2G", alias: "b2g"}
+  1498: {name: "Retrofit", alias: "retrofit"}
+  1499: {name: "Custom View", alias: "custom-view"}
+  1500: {name: "ExoPlayer", alias: "exoplayer"}
+  1501: {name: "Room", alias: "room"}
+  1502: {name: "Clean Architecture", alias: "clean-architecture"}
+  1503: {name: "Coroutines", alias: "coroutines"}
+  1504: {name: "Datawrapper", alias: "datawrapper"}
+  1505: {name: "NancyFX", alias: "nancyfx"}
+  1506: {name: "Blade", alias: "blade"}
+  1507: {name: "Dropwizard", alias: "dropwizard"}
+  1508: {name: "JHipster", alias: "jhipster"}
+  1509: {name: "Qwik", alias: "qwik"}
+  1510: {name: "Vapor", alias: "vapor"}
+  1511: {name: "SwiftMonkey", alias: "swiftmonkey"}
+  1512: {name: "Kitura", alias: "kitura"}
+  1513: {name: "SwiftyFORM", alias: "swiftyform"}
+  1514: {name: "SwiftShell", alias: "swiftshell"}
+  1515: {name: "Chatto", alias: "chatto"}
+  1516: {name: "SwiftyOnboard", alias: "swiftyonboard"}
+  1517: {name: "SwiftCLI", alias: "swiftcli"}
+  1518: {name: "Ultimate++", alias: "ultimateplusplus"}
+  1519: {name: "Dear ImGui", alias: "dear-imgui"}
+  1520: {name: "Nana", alias: "nana"}
+  1521: {name: "FLTK", alias: "fltk"}
+  1522: {name: "SFML", alias: "sfml"}
+  1523: {name: "Poco", alias: "poco"}
+  1524: {name: "Ktor", alias: "ktor"}
+  1525: {name: "Kweb", alias: "kweb"}
+  1526: {name: "Javalin", alias: "javalin"}
+  1527: {name: "Jooby", alias: "jooby"}
+  1528: {name: "Hexagon", alias: "hexagon"}
+  1529: {name: "Camping", alias: "camping"}
+  1530: {name: "Ramaze", alias: "ramaze"}
+  1531: {name: "Goliath", alias: "goliath"}
+  1532: {name: "Hanami", alias: "hanami"}
+  1533: {name: "Padrino", alias: "padrino"}
+  1534: {name: "Jmix", alias: "jmix"}
+  1535: {name: "Grape", alias: "grape"}
+  1536: {name: "Gin", alias: "gin"}
+  1537: {name: "Revel", alias: "revel"}
+  1538: {name: "Echo", alias: "echo"}
+  1539: {name: "BeeGo", alias: "beego"}
+  1540: {name: "Fiber", alias: "fiber"}
+  1541: {name: "Buffalo", alias: "buffalo"}
+  1542: {name: "go-chi", alias: "go-chi"}
+  1543: {name: "Negroni", alias: "negroni"}
+  1544: {name: "Martini", alias: "martini"}
+  1545: {name: "Goji", alias: "goji"}
+  1546: {name: "PHPixie", alias: "phpixie"}
+  1547: {name: "Chaos", alias: "chaos"}
+  1548: {name: "Lift", alias: "lift"}
+  1549: {name: "BlueEyes", alias: "blueeyes"}
+  1550: {name: "Slick", alias: "slick"}
+  1551: {name: "Scalatra", alias: "scalatra"}
+  1552: {name: "Spray", alias: "spray"}
+  1553: {name: "Aurelia", alias: "aurelia"}
+  1554: {name: "Bottle", alias: "bottle"}
+  1555: {name: "CherryPy", alias: "cherrypy"}
+  1556: {name: "Dash", alias: "dash"}
+  1557: {name: "Giotto", alias: "giotto"}
+  1558: {name: "Growler", alias: "growler"}
+  1559: {name: "Uvloop", alias: "uvloop"}
+  1560: {name: "BDE", alias: "bde"}
+  1561: {name: "dbExpress", alias: "dbexpress"}
+  1562: {name: "FireDAC", alias: "firedac"}
+  1563: {name: "Nerves", alias: "nerves"}
+  1564: {name: "Sugar", alias: "sugar"}
+  1565: {name: "Plug", alias: "plug"}
+  1566: {name: "Trot", alias: "trot"}
+  1567: {name: "Kitto", alias: "kitto"}
+  1568: {name: "Flowex", alias: "flowex"}
+  1569: {name: "Разработка SEO-стратегии", alias: "seo-strategy-developing"}
+  1570: {name: "Progressive Web Apps", alias: "progressive-web-apps"}
+  1571: {name: "Accessibility", alias: "accessibility"}
+  1572: {name: "Making layouts", alias: "making-layouts"}
+  1573: {name: "Modern CSS", alias: "modern-css"}
+  1574: {name: "CSS Architecture", alias: "css-architecture"}
+  1575: {name: "CSS processors", alias: "css-processors"}
+  1576: {name: "Testing apps", alias: "testing-apps"}
+  1577: {name: "Server-side rendering", alias: "server-side-rendering"}
+  1578: {name: "Static Site Generators", alias: "static-site-generators"}
+  1579: {name: "Trello", alias: "trello"}
+  1580: {name: "Юзабилити-аудит сайта", alias: "usability-audit"}
+  1581: {name: "SEO-оптимизация", alias: "seo-optimization"}
+  1582: {name: "Формирование ссылочной стратегии", alias: "formation-of-a-reference-strategy"}
+  1583: {name: "Мультирегиональное продвижение сайтов", alias: "multi-regional-website-promotion"}
+  1584: {name: "MatPlotLib", alias: "matplotlib"}
+  1585: {name: "Создание telegram-ботов", alias: "telegram-bots"}
+  1586: {name: "Jupyter Notebook", alias: "jupyter-notebook"}
+  1587: {name: "Эзотерические языки программирования", alias: "esoteric"}
+  1588: {name: "JScript", alias: "jscript"}
+  1589: {name: "PerlScript", alias: "perlscript"}
+  1590: {name: "Thymeleaf", alias: "thymeleaf"}
+  1591: {name: "Настройка Proxy", alias: "proxy"}
+  1592: {name: "Eiffel", alias: "eiffel"}
+  1593: {name: "SourcePawn", alias: "sourcepawn"}
+  1594: {name: "Анализ вредоносных программ", alias: "malware-analysis"}
+  1595: {name: "HTML-приложения", alias: "html-application"}
+  1596: {name: "CHILL", alias: "chill"}
+  1597: {name: "Playwright", alias: "playwright"}
+  1598: {name: "Настройка RSS", alias: "rss"}
+  1599: {name: "GoogleScript", alias: "googlescript"}
+  1600: {name: "XUL", alias: "xul"}
+  1601: {name: "SugarSS", alias: "sugarss"}
+  1602: {name: "Handlebars", alias: "handlebars"}
+  1603: {name: "Mustache", alias: "mustache"}
+  1604: {name: "Nunjucks", alias: "nunjucks"}
+  1605: {name: "Squirrel", alias: "squirrel"}
+  1606: {name: "DuckyScript", alias: "duckyscript"}
+  1607: {name: "Dr.Web Enterprise Suite", alias: "drweb-enterprise-suite"}
+  1608: {name: "AnyLogic", alias: "anylogic"}
+  1609: {name: "FigJam", alias: "figjam"}
+  1610: {name: "Swagger", alias: "swagger"}
+  1611: {name: "JSON", alias: "javascript-xml-rest-api"}
+  1612: {name: "Микросервисная архитектура", alias: "microservices"}
+  1613: {name: "JTBD", alias: "jtbd"}
+  1614: {name: "Effector", alias: "effector"}
+  1615: {name: "Magik", alias: "magik"}
+  1616: {name: "Ceylon", alias: "ceylon"}
+  1617: {name: "Processing (язык программирования)", alias: "processing"}
+  1618: {name: "Batch Script", alias: "batch-script"}
+  1619: {name: "Zig", alias: "zig"}
+  1620: {name: "Vala", alias: "vala"}
+  1621: {name: "AWK", alias: "awk"}
+  1622: {name: "AutoHotKey", alias: "autohotkey"}
+  1623: {name: "Raku", alias: "raku"}
+  1624: {name: "Racket", alias: "racket"}
+  1625: {name: "Boo", alias: "boo"}
+  1626: {name: "Реактивное программирование", alias: "reaktivnoe-programmirovanie"}
+  1627: {name: "Реактивная архитектура", alias: "reactive-architecture"}
+  1628: {name: "Дизайн-система", alias: "design_system"}
+  1629: {name: "Scheme", alias: "scheme"}
+  1630: {name: "apiDoc", alias: "apidoc"}
+  1631: {name: "NLU", alias: "nlu"}
+  1632: {name: "1C: ERP", alias: "1s-erp"}
+  1633: {name: "ChatFuel", alias: "chatfuel"}
+  1634: {name: "Stacker", alias: "stacker"}
+  1635: {name: "Clide", alias: "clide"}
+  1636: {name: "Анализ угроз", alias: "threat_analysis"}
+  1637: {name: "Flutter Riverpod", alias: "flutter-riverpod"}
+  1638: {name: "Flutter Provider", alias: "flutter-provider"}
+  1639: {name: "Flutter Widgets", alias: "flutter-widgets"}
+  1640: {name: "Flutter Bloc", alias: "flutter-bloc"}
+  1641: {name: "NATS", alias: "nats"}
+  1642: {name: "HashiCorp Vault", alias: "hashicorp-vault"}
+  1643: {name: "Emacs", alias: "emacs"}
+  1644: {name: "VoIP", alias: "voip"}
+  1645: {name: "Godot Engine", alias: "godot-engine"}
+  1646: {name: "GDScript", alias: "gdscript"}
+  1647: {name: "Apache NiFi", alias: "apache-nifi"}
+  1648: {name: "Unit-экономика", alias: "unit-economics"}
+  1649: {name: "kPHP", alias: "kphp"}
+  1650: {name: "Android Debug Bridge", alias: "android-debug-bridge"}
+  1651: {name: "Wrike", alias: "wrike"}
+  1652: {name: "Yocto Project", alias: "yocto"}
+  1653: {name: "Allure", alias: "allure"}
+  1654: {name: "Приоритизация", alias: "prioritizaciya"}
+  1655: {name: "Кадровое делопроизводство", alias: "kadrovoe-deloproizvodstvo"}
+  1656: {name: "Ведение воинского учета", alias: "vedenie-voinskogo-ucheta"}
+  1657: {name: "Охрана труда", alias: "ohrana-truda"}
+  1658: {name: "Polymatica", alias: "polymatica"}
+  1659: {name: "Персональные данные", alias: "personalnye-dannye"}
+  1660: {name: "Продуктовая аналитика", alias: "produktovaya-analitika"}
+  1661: {name: "Teradata", alias: "teradata"}
+  1662: {name: "Informatica", alias: "informatica"}
+  1663: {name: "IBM Watson Studio", alias: "ibm-watson-studio"}
+  1664: {name: "IBM Cloud", alias: "ibm-cloud"}
+  1665: {name: "IBM Data Refinery", alias: "ibm-data-refinery"}
+  1666: {name: "Наставничество", alias: "nastavnichestvo"}
+  1667: {name: "Адаптация персонала", alias: "adaptaciya-personala"}
+  1668: {name: "Развитие сотрудников", alias: "razvitie-sotrudnikov"}
+  1669: {name: "WSO2", alias: "wso2"}
+  1670: {name: "SAML", alias: "saml"}
+  1671: {name: "OpenID", alias: "openid"}
+  1672: {name: "JasperReports", alias: "jasperreports"}
+  1673: {name: "MariaDB", alias: "mariadb"}
+  1674: {name: "Micronaut", alias: "micronaut"}
+  1675: {name: "Kotlin Multiplatform", alias: "kotlin-multiplatform"}
+  1676: {name: "Apache POI", alias: "apache-poi"}
+  1677: {name: "Adobe Flex", alias: "adobe-flex"}
+  1678: {name: "QuestDB", alias: "questdb"}
+  1679: {name: "Minitest", alias: "minitest"}
+  1680: {name: "Зерокодинг", alias: "zerocoding"}
+  1681: {name: "Создание чат-ботов", alias: "sozdanie-chat-botov"}
+  1682: {name: "HTMX", alias: "htmx"}
+  1683: {name: "A/B тестирование", alias: "a-b-testing"}
+  1684: {name: "Яндекс Трекер", alias: "yandex-tracker"}
+  1685: {name: "Miro", alias: "miro"}
+  1686: {name: "Datadog", alias: "datadog"}
+  1687: {name: "Jaeger", alias: "jaeger"}
+  1688: {name: "Apache Superset", alias: "superset"}
+  1689: {name: "Greenplum", alias: "greenplum"}
+  1690: {name: "Metabase", alias: "metabase"}
+  1691: {name: "FlutterFlow", alias: "flutterflow"}
+  1724: {name: "amphp", alias: "amphp"}
+  1725: {name: "CQRS", alias: "cqrs"}
+  1726: {name: "Odoo", alias: "odoo"}
+  1727: {name: "MES", alias: "mes"}
+  1728: {name: "ЕСКД", alias: "eskd"}
+  1729: {name: "ЕСПД", alias: "espd"}
+  1730: {name: "KSAS", alias: "ksas"}
+  1731: {name: "ГОСТ", alias: "gost"}
+  1732: {name: "SmartLogger", alias: "smartlogger"}
+  1733: {name: "VoiceKey", alias: "voicekey"}
+  1734: {name: "DATAREON Platform", alias: "datareon-plalform"}
+  1735: {name: "OpenXR", alias: "openxr"}
+  1736: {name: "Active Record", alias: "active-record"}
+  1737: {name: "ORM", alias: "orm"}
+  1738: {name: "NLP", alias: "nlp"}
+  1771: {name: "Web 3.0", alias: "web3"}
+  1772: {name: "DeFi", alias: "defi"}
+  1774: {name: "LLVM", alias: "llvm"}
+  1775: {name: "Тестирование UI", alias: "testirovanie-ui"}
+  1776: {name: "n8n", alias: "n8n"}
+  1777: {name: "Notion", alias: "notion"}
+  1778: {name: "TailwindCSS", alias: "tailwindcss"}
+  1779: {name: "Vite", alias: "vite"}
+  1780: {name: "Performance Center", alias: "performance_center"}
+  1781: {name: "VuGen", alias: "vugen"}
+  1782: {name: "Настройка SAN-коммутатора", alias: "san_switch"}
+  1783: {name: "Confluence", alias: "confluence"}
+  1784: {name: "Web Object Framework", alias: "wof"}
+  1785: {name: "WMS", alias: "wms"}
+  1786: {name: "ScyllaDB", alias: "scylladb"}
+  1787: {name: "InfernoJS", alias: "infernojs"}
+  1789: {name: "Dapr", alias: "dapr"}
+  1790: {name: "Temporal", alias: "temporal"}
+  1791: {name: "Pytest", alias: "pytest"}
+  1792: {name: "Объектное хранилище S3", alias: "simple-storage-service"}
+  1793: {name: "ActiveMQ Artemis", alias: "activemq-artemis"}
+  1794: {name: "Чтение чертежей", alias: "blueprint-reading"}
+  1795: {name: "Autodesk Revit", alias: "autodesk-revit"}
+  1796: {name: "Диагностика оборудования", alias: "equipment-diagnostics"}
+  1797: {name: "ANSYS", alias: "ansys"}
+  1798: {name: "Проведение инспекций", alias: "conducting-inspections"}
+  1799: {name: "Электротехнические расчёты", alias: "electrical-calculations"}
+  1800: {name: "ETAP", alias: "etap"}
+  1801: {name: "MS Project", alias: "ms-project"}
+  1802: {name: "Primavera P6", alias: "primavera-p6"}
+  1803: {name: "Подготовка смет", alias: "cost-estimation"}
+  1804: {name: "1С: Смета", alias: "1s-smeta"}
+  1805: {name: "Управление строительными проектами", alias: "construction-project-management"}
+  1806: {name: "BIM-моделирование", alias: "bim"}
+  1807: {name: "Tekla Structures", alias: "tekla-structure"}
+  1808: {name: "TIA Portal", alias: "tia-portal"}
+  1809: {name: "CODESY", alias: "codesy"}
+  1810: {name: "WinCC", alias: "wincc"}
+  1811: {name: "Диагностика и мониторинг", alias: "diagnostics-monitoring"}
+  1812: {name: "PVSyst", alias: "pvsyst"}
+  1813: {name: "PV*SOL", alias: "pvsol"}
+  1814: {name: "Управление эксплуатацией", alias: "operations-management"}
+  1815: {name: "CMMS-системы", alias: "cmms"}
+  1816: {name: "Maximo", alias: "maximo"}
+  1817: {name: "Системы экологического мониторинга", alias: "environmental-monitoring-systems"}
+  1818: {name: "QGIS", alias: "qgis"}
+  1819: {name: "CockroachDB", alias: "cockroach-db"}
+  1820: {name: "Кроссбраузерное тестирование", alias: "cross-browser-testing"}
+  1821: {name: "Jetpack Compose", alias: "jetpack-compose"}
+  1822: {name: "Soda Core", alias: "soda-core"}
+  1823: {name: "Pine Script", alias: "pine_script"}
+  1824: {name: "GPT", alias: "gpt"}
+  1825: {name: "LLM", alias: "llm"}
+  1826: {name: "BPMsoft", alias: "bpmsoft"}
+  1827: {name: "ITSM", alias: "itsm"}
+  1828: {name: "Astra Linux", alias: "astra_linux"}
+  1829: {name: "GitFlic", alias: "gitflic"}
+  1830: {name: "Astra Configuration Manager", alias: "acm"}
+  1831: {name: "ALD Pro", alias: "ald"}
+  1832: {name: "Astra Automation", alias: "astra_automation"}
+  1833: {name: "Astra Monitoring", alias: "astra_monitoring"}
+  1834: {name: "Tantor", alias: "tantor"}
+  1835: {name: "Termidesk", alias: "termidesk"}
+  1836: {name: "Боцман", alias: "bootsman"}
+  1837: {name: "RuBackup", alias: "rubackup"}
+  1838: {name: "WorksPad", alias: "workspad"}
+  1839: {name: "RuPost", alias: "rupost"}
+  1840: {name: "Quasar", alias: "quasar"}
+  1841: {name: "Scikit-learn", alias: "scikit-learn"}
+  1842: {name: "Shiny", alias: "shiny"}
+  1843: {name: "flexdashboard", alias: "flexdashboard"}
+  1844: {name: "Data Version Control", alias: "data-version-control"}
+  1845: {name: "NGFW", alias: "ngfw"}
+  1846: {name: "Palo Alto", alias: "palo-alto"}
+  1847: {name: " BAS", alias: "bas"}
+  1848: {name: "Hotwire", alias: "hotwire"}
+  1849: {name: "ArkTS", alias: "arkts"}
+  1850: {name: "HarmonyOS", alias: "harmonyos"}
+  1851: {name: "Langgraph", alias: "langgraph"}
+  1852: {name: "Agentic systems ", alias: "agentic-systems"}
+  1853: {name: "TTS", alias: "tts"}
+  1854: {name: "TTI", alias: "tti"}
+  1855: {name: "Langfuse", alias: "langfuse"}
+  1856: {name: "ComfyUI", alias: "comfyui"}
+  1857: {name: "Open WebUI", alias: "open-webui"}
+  1858: {name: " Power Query M", alias: "power-query-m"}
+  1859: {name: "Yandex AI Studio", alias: "yandex_ai_studio"}
+  1860: {name: "Qdrant", alias: "qdrant"}
+  1861: {name: "LangChain", alias: "langchain"}
+  1862: {name: "Cloud.ru", alias: "cloud_ru"}
+  1863: {name: "vLLM", alias: "vllm"}
+  1864: {name: "Ragas", alias: "ragas"}
+  1865: {name: "DeepEval", alias: "deepeval"}
+  1866: {name: "Agent Skills", alias: "agent_skills"}
+  1867: {name: "Chaining", alias: "shaining"}
+  1868: {name: "SCCM", alias: "sccm"}
+  1869: {name: "ROS 2", alias: "ros_2"}
+  1870: {name: "Liquibase", alias: "liquibase"}

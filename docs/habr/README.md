@@ -18,6 +18,7 @@ researched.
 | Understand which Habr Career surface owns which operation | [Platform map](platform-map.md) |
 | Search, list, and page vacancies | [Search and listings](api/search.md) |
 | Decode listing/detail/resume payloads | [Response models](api/response-models.md) |
+| Look up filter ids (cities, regions, skills) | [Auxiliary id catalogs](aux/README.md) |
 | Log in through Habr Account SSO | [Authentication and session](authentication.md) |
 | Understand transport, statuses, and error mapping | [Transport and errors](api/transport-and-errors.md) |
 | Understand the login challenge | [CAPTCHA](captcha.md) |

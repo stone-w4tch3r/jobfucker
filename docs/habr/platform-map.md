@@ -17,6 +17,9 @@ integration-relevant; static assets and analytics are not.
 `/v1/...` is disallowed by `robots.txt` but returned `404 {"error":"Not found"}` when probed as a
 logged-in user; it is not an established API surface.
 
+Generated id catalogs for search filters (cities, regions, countries, skills) live in
+[aux/](aux/README.md); they are a prefix-crawl snapshot, not an official dictionary.
+
 ## Authentication boundaries
 
 - The website session cookie is the credential for both HTML pages and same-origin

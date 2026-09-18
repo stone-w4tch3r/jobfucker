@@ -55,6 +55,9 @@ Response:
 Repeatable filters use bracket syntax (`skills[]=446&skills[]=1241`). `qid` and `employment_type`
 and `currency` are singletons.
 
+Value catalogs (generated from the same endpoints): [auxiliary id catalogs](../aux/README.md) hold
+the skill ids (`skills.yaml`) and the city/region/country ids (`locations.yaml`).
+
 Verified effects (examples): `qid=5`, `remote=true`, `with_salary=true`, `salary=200000&currency=RUR`,
 `skills[]=446`, `city_id=678`, `employment_type=part_time`, `sort=date`/`salary_desc` all change
 `totalResults` or ordering. `sort` values outside the enum are ignored (no `400`).
