@@ -43,8 +43,9 @@ Listings        ──► HTML cards, or RSS /vacancies/rss?page=&per_page=
 
 The website is the primary surface and is **server-rendered HTML**; the JSON API
 (`/api/frontend_v1/`) covers account widgets but exposed no vacancy search or vacancy detail
-endpoint during discovery. Whether a browserless pure-HTTP path fully covers login, apply, and
-challenge handling is not established.
+endpoint during discovery. Login is now established as fully browserless (see
+[Authentication](authentication.md#browserless-login-verified)); whether a pure-HTTP path fully
+covers apply and the rest of the challenge handling is not established.
 
 ## Facts observed so far
 
@@ -52,11 +53,13 @@ challenge handling is not established.
   (`<meta name="csrf-token">` also present).
 - Login is **Habr Account SSO**, reached at `/users/auth/tmid`; there is no local career password
   form on the entry URLs observed.
-- A fresh login goes through `account.habr.com` and is gated by a **Yandex SmartCaptcha**. It is
-  risk-based: a trusted browser passes the checkbox, while a detectable fingerprint (e.g. the
-  `HeadlessChrome` UA) escalates to an **image (distorted-text) challenge** protected by a
-  proof-of-work. The escalation contract was provoked, and the image challenge was solved fully
-  automatically over pure HTTP (vision OCR + `pow` → `spravka`). See [CAPTCHA](captcha.md) and
+- A fresh login goes through `account.habr.com` and is gated by a **Yandex SmartCaptcha that is
+  enforced on every fresh credential login** (a token-less POST returns
+  `errors.smart-token`). It is risk-based: a trusted browser passes the checkbox, while a detectable
+  fingerprint (e.g. the `HeadlessChrome` UA) escalates to an **image (distorted-text) challenge**
+  protected by a proof-of-work. Both the escalation contract and a **fully browserless login** (pure
+  HTTP: vision OCR + `pow` → `spravka` → login POST → `rurl`) were verified. An existing Habr
+  Account session skips the login form and captcha. See [CAPTCHA](captcha.md) and
   [Authentication](authentication.md).
 - A logged-in session sets the Rails career session `_career_session`, the persistent
   `remember_user_token`, and `.habr.com` `s<hex>` SSO cookies; traffic passes through **Qrator**

@@ -214,13 +214,21 @@ The advanced image challenge was solved **fully automatically over pure HTTP** o
 4. Download `captcha.image`, OCR the text with a vision model.
 5. `POST /check` with `key`, `rep=<ocr text>`, `pdata`, `sitekey, lang, test, webview` →
    `{"status":"ok","spravka":"..."}`.
-6. Write `spravka` into `input[name=smart-token]` and submit the login form.
+6. `POST account.habr.com/ru/ident/in/<state>` with `email`, `password`, `smart-token=<spravka>` →
+   `{"success":true,"rurl":"https://account.habr.com/oauth/authorize/done/<hash>"}`; follow `rurl`
+   with the same cookie jar.
 
-Result: the injected `spravka` was accepted; the browser reached `career.habr.com/vacancies` and
-`GET /api/frontend_v1/users/me` returned the account alias. So the image challenge is solvable
-without the widget's `rdata` (encrypted telemetry), `picasso` (canvas proof), or `tdata`
-(pointer/keyboard telemetry) — those fields are present in a real browser submission but were not
-required by the server for a minimal `key + rep + pdata` POST.
+Result: the full login completed **browserlessly**, no browser in any step; the jar authenticated
+`GET /api/frontend_v1/users/me` (alias returned). The image challenge is solvable without the
+widget's `rdata` (encrypted telemetry), `picasso` (canvas proof), or `tdata` (pointer/keyboard
+telemetry) — those fields are present in a real browser submission but were not required by the
+server for a minimal `key + rep + pdata` POST.
+
+Captcha presence: on every fresh credential login observed, the login page carried the captcha
+placeholder and the server rejected a token-less POST with
+`{"success":false,"errors":{"smart-token":"Необходимо пройти капчу"}}`. A fresh login therefore
+always costs a captcha round (checkbox type for a bare client, image type for a detectable one).
+An existing Habr Account session skips the login form and the captcha entirely.
 
 Notes on the solve path:
 
@@ -327,15 +335,14 @@ cause.
 
 ## What is not documented yet
 
-- Whether the SmartCaptcha is mandatory on every fresh login or only on risk-based sessions.
+- Whether the captcha can ever be skipped on a fresh login for a very trusted client; every observed
+  fresh credential login required it (server-enforced).
 - Whether the checkbox ever auto-passes with no click (not observed; a click was always needed).
 - The block/escalation threshold: how many failed attempts (per IP, per account) trigger a block or
   a harder challenge, and whether Qrator blocks first.
 - Whether `pow.complexity` ever rises above `10`, and whether the audio task type is OCR-equivalent
   in difficulty.
 - The token TTL and whether a token can be reused for a retry of the same login.
-- Whether the whole login can complete browserless: the minimal `/check` chain returns a valid
-  `spravka`, but the `POST /ru/ident/in/<state>` credential step has not been driven over pure HTTP.
 - Whether the same challenge ever appears on `career.habr.com` itself (e.g. on search/apply at
   volume) rather than only on the Habr Account login step.
 

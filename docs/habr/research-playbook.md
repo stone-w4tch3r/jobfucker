@@ -103,7 +103,10 @@ reproduced automatically by the stealth headless browser — see
 [CAPTCHA](captcha.md#automation-feasibility-stealth-headless). The higher level was then provoked
 and solved: risk-based escalation to an image (distorted-text) challenge, its `pow` proof-of-work,
 and a verified pure-HTTP solve (OCR + `pow` → `spravka`) — see
-[CAPTCHA](captcha.md#challenge-ladder-how-complexity-rises). Policy:
+[CAPTCHA](captcha.md#challenge-ladder-how-complexity-rises). The **full login was completed
+browserlessly over pure HTTP** (`spravka` → login POST → `rurl` → session), and the captcha was
+observed to be enforced on every fresh credential login — see
+[Authentication](authentication.md#browserless-login-verified). Policy:
 
 - The documented solve path may be used at low login frequency on an owned account.
 - Treat a new/unknown `captcha.type`, a rising `pow.complexity`, repeated `status:"failed"`, a block

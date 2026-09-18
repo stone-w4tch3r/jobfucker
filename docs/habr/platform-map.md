@@ -21,10 +21,10 @@ logged-in user; it is not an established API surface.
 - Mutations require the Rails CSRF token. It appears as a hidden `authenticity_token` field in forms
   and as `<meta name="csrf-token">` on pages. Whether an `X-CSRF-Token` header is also accepted is
   not established.
-- Login is delegated to Habr Account SSO. The OAuth authorize step and the `account.habr.com`
-  login form are mapped in [Authentication](authentication.md); the fresh-login step is gated by a
-  Yandex SmartCaptcha ([CAPTCHA](captcha.md)), and the post-login cookie set and session lifetime
-  are not yet observed.
+- Login is delegated to Habr Account SSO. The OAuth authorize step, the `account.habr.com` login
+  form, and the browserless login are mapped in [Authentication](authentication.md); the fresh-login
+  step is gated by a Yandex SmartCaptcha that is enforced on every fresh credential login
+  ([CAPTCHA](captcha.md)). The post-login cookie set is observed.
 
 ## Anonymous behavior
 
@@ -40,7 +40,7 @@ exercised), `Unknown`.
 | Contract method | Candidate surface | Status | Notes |
 | --- | --- | --- | --- |
 | `get_identity` | `GET /api/frontend_v1/users/me` | Verified | `user.alias` / `fullName` / `email` |
-| `authorize` | SSO `/users/auth/tmid` → `account.habr.com` OAuth authorize + login form | Known-unverified | Chain mapped; fresh login gated by SmartCaptcha; cookie set unknown (see [Authentication](authentication.md)) |
+| `authorize` | SSO `/users/auth/tmid` → `account.habr.com` OAuth authorize + login form | Verified | Full browserless pure-HTTP login (captcha via vision OCR + `pow`); cookie set observed (see [Authentication](authentication.md)) |
 | `search_vacancies` | `GET /vacancies?page=N&type=all\|suitable` (HTML) | Known-unverified | Server-rendered cards; detail enrichment via JSON-LD |
 | `list_vacancies` | Same HTML listing, or `/vacancies/rss` | Known-unverified | RSS shape partially observed |
 | `get_resumes` | Own profile (`/{alias}`) / `/profile/specialization` | Unknown | `/api/frontend_v1/resumes` is public specialist search, **not** owned resumes |
@@ -79,7 +79,8 @@ Revalidate these small signals when behavior appears to drift:
 | RSS | `GET /vacancies/rss?page=1&per_page=25` returns RSS 2.0 items |
 | Detail | Vacancy page contains a `JobPosting` `ld+json` block |
 | CSRF | Pages still expose `meta[name=csrf-token]` and forms a hidden `authenticity_token` |
-| SSO | Login still routes through `/users/auth/tmid` and `account.habr.com/oauth/authorize`, and the login form POSTs `email`/`password`/`smart-token` |
+| SSO | Login still routes through `/users/auth/tmid` and `account.habr.com/oauth/authorize`, the login form POSTs `email`/`password`/`smart-token`, and a valid login answers JSON `{"success":true,"rurl":".../oauth/authorize/done/<hash>"}` |
+| CAPTCHA enforcement | A token-less login POST still answers `{"success":false,"errors":{"smart-token":"..."}}` |
 | CAPTCHA | `account.habr.com` login still loads Yandex SmartCaptcha with sitekey `ysc1_zgWuDVpgrG9kwB8QEfIkuWseZyEnRzHLCAPF2dwh1db6e985` |
 | CAPTCHA escalation | `POST smartcaptcha.cloud.yandex.ru/check` still answers `{status:"failed",captcha:{type:"checkbox"\|"image"},pow:{complexity:10}}`; `pow` still verifies as `sha256(prefix ++ nonce)` with `complexity` leading zero bits |
 | Session | A logged-in session still sets `_career_session` (career) and `.habr.com` `s<hex>` SSO cookies |

@@ -7,17 +7,18 @@ the item moves to a canonical page and is removed from here.
 ## Authentication and session
 
 Mapped (see [Authentication](authentication.md)): unauthenticated redirect, OAuth authorize URL and
-parameters, login form fields and POST target, post-login callback chain, and the cookie inventory
-(`_career_session`, `remember_user_token`, `.habr.com` `s<hex>` SSO cookies). Still unknown:
+parameters, login form fields and POST target, the JSON `success`/`rurl` login response, the
+post-login callback chain, and the cookie inventory (`_career_session`, `remember_user_token`,
+`.habr.com` `s<hex>` SSO cookies). The **full login was completed browserlessly over pure HTTP**,
+including the captcha (see [Auto-solve feasibility](captcha.md#auto-solve-feasibility-verified)),
+and the captcha was observed to be **enforced on every fresh credential login**. Still unknown:
 
 - Session expiry/refresh: how long `_career_session` is honored, whether `remember_user_token`
   transparently re-establishes a session, and the exact refresh trigger.
 - Logout behavior and whether `meta.logoutToken` is required (`POST /users/sign_out`, `_method=delete`).
 - Whether mutating requests need only the session cookie or also a CSRF header, and which header name
   (the HTML `authenticity_token` is the confirmed form).
-- Whether a browserless credential login is viable at all, given the SSO redirect chain plus the
-  human-solved SmartCaptcha.
-- Whether the account.habr.com SmartCaptcha is mandatory on every fresh login or risk-based.
+- Whether a captcha can ever be skipped on a fresh login for a very trusted client (never observed).
 - Whether Qrator issues an interstitial/cookie-refresh challenge under load, and its trigger.
 - Anonymous capability: what lists/details are reachable without a session, and whether an
   anonymous request faces a challenge.
