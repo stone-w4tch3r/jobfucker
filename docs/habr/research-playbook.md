@@ -35,6 +35,12 @@ agent-browser --session habr-exp --restore habr-exp open <url>
 - Prefer `snapshot -i`, `eval --stdin`, and `network requests` over raw HTML dumps to keep context
   small.
 
+For jobfucker's own browser work: patchright headless is sufficient **if the user-agent is a normal
+desktop Chrome string**. The `HeadlessChrome` UA makes SmartCaptcha escalate to an image challenge;
+overriding the UA passes (see
+[Engine comparison](captcha.md#engine-comparison-patchright-vs-cloakbrowser)). CloakBrowser is an
+optional robustness upgrade, not a requirement for this challenge.
+
 ## Recording traffic
 
 ```bash

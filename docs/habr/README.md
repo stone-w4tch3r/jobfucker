@@ -53,8 +53,9 @@ challenge handling is not established.
 - Login is **Habr Account SSO**, reached at `/users/auth/tmid`; there is no local career password
   form on the entry URLs observed.
 - A fresh login goes through `account.habr.com` and is gated by a **Yandex SmartCaptcha** checkbox;
-  a stealth headless browser passed it automatically (click-only, 2/2), but it is risk-based and
-  needs a human fallback. See [CAPTCHA](captcha.md) and [Authentication](authentication.md).
+  it passes automatically in headless Chrome **only with a normal desktop user-agent** — the
+  `HeadlessChrome` UA escalates it to an image challenge. CloakBrowser is optional. See
+  [CAPTCHA](captcha.md) and [Authentication](authentication.md).
 - A logged-in session sets the Rails career session `_career_session`, the persistent
   `remember_user_token`, and `.habr.com` `s<hex>` SSO cookies; traffic passes through **Qrator**
   (`qrator_msid2`). Cookie inventory is in [Authentication](authentication.md#session-cookies).

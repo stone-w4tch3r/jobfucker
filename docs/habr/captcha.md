@@ -127,6 +127,67 @@ Caveats — do not over-read this result:
 - Use sparingly: low-frequency logins on an owned account only. Treat `status != "ok"` or a missing
   token as escalation and hand off to a human.
 
+## Engine comparison: patchright vs CloakBrowser
+
+jobfucker drives browsers with **patchright** (`clients/hh/browser.py`, `PatchrightDriver`). Tested
+2026-09-18 whether patchright's bundled headless Chromium is enough for the Habr login SmartCaptcha,
+or whether CloakBrowser is required, using one probe script (`/tmp/kilo/habr_captcha_probe.py`,
+patchright async API, same `locale="ru-RU"` + `navigator.webdriver` spoof as jobfucker):
+
+| Engine / mode | UA | plugins | `window.chrome` | `/check` | `smart-token` | login |
+| --- | --- | --- | --- | --- | --- | --- |
+| patchright bundled 151, old headless | `HeadlessChrome/151` | 0 | false | 200, not ok | none | **no** |
+| patchright bundled 151, old headless + UA override | `Chrome/151` | 0 | false | ok | 400/396 | **yes (3/3)** |
+| patchright bundled 151, headed | `Chrome/151` | 5 | true | ok | 396 | yes |
+| patchright bundled 151, `--headless=new` | `HeadlessChrome/151` | 5 | true | **`failed`, `captcha.type=image`** | none | **no** |
+| patchright bundled 151, `--headless=new` + UA override | `Chrome/151` | 5 | true | ok | 396 | yes |
+| patchright + CloakBrowser 146, headless | `Chrome/146 (Windows)` | 5 | true | ok | 396 | yes (2/2) |
+
+Conclusions:
+
+- **CloakBrowser is not required.** The decisive tell is the `HeadlessChrome` user-agent string.
+  Overriding it to a normal desktop Chrome UA makes patchright's own bundled headless Chromium pass
+  (3/3 old headless; 1/1 `--headless=new`), even though old headless still reports 0 plugins and no
+  `window.chrome`. SmartCaptcha here does not gate on plugins or `window.chrome`.
+- **A wrong UA is not rejected — it escalates to an image challenge.** `--headless=new` with the
+  default UA returned `/check` body
+  `{"status":"failed","unique_key":"…","captcha":{"type":"image","key":"…"}}`. Detecting headless
+  switches the widget from click-only to an image puzzle.
+- `navigator.webdriver` was `false` in every run; patchright's JS patches hold. The failure is purely
+  the UA/fingerprint surface.
+- CloakBrowser (patched binary, coherent Windows fingerprint) also passes without a UA override and
+  is the more robust option, but it is optional for this challenge.
+
+Minimal recipe for headless patchright (no CloakBrowser):
+
+```python
+browser = await p.chromium.launch(headless=True)  # or args=["--headless=new"]
+context = await browser.new_context(
+    locale="ru-RU",
+    user_agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+               "(KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+)
+```
+
+If CloakBrowser is preferred for robustness, patchright can drive it through the same API — the
+`PatchrightDriver`/`BrowserDriver` seam already allows an engine selection (binary path + args):
+
+```python
+browser = await p.chromium.launch(
+    headless=True,
+    executable_path="<cloakbrowser binary>",   # cloakbrowser.download.ensure_binary()
+    args=["--no-sandbox", "--fingerprint=<seed>", "--fingerprint-platform=windows"],
+)
+```
+
+Gotcha that caused a false negative in the first probe run: the widget's
+`.SmartCaptcha-Overlay_show_spinner` overlay must clear before clicking the checkbox. Clicking while
+the spinner is present does not produce a token. Wait for the overlay to disappear, then click.
+
+Escalation handling: if `/check` returns `status != "ok"` (e.g. an image captcha), do not retry in a
+loop. Treat it as escalation and hand off per the playbook; a UA/fingerprint mismatch is the likely
+cause.
+
 ## What is not documented yet
 
 - Whether the SmartCaptcha is mandatory on every fresh login or only on risk-based sessions.

@@ -59,10 +59,13 @@ parameters, login form fields and POST target, post-login callback chain, and th
 ## Challenges and infrastructure
 
 - Yandex SmartCaptcha on the Habr Account login step is captured and the automated click-only pass
-  is verified (2/2, stealth headless); see [CAPTCHA](captcha.md). Still unknown: whether the
-  challenge is mandatory on every fresh login or risk-based, its escalation behavior (image/advanced
-  challenge, blocking) under repetition or other IPs, and whether a challenge ever appears on
-  `career.habr.com` itself. Follow the [CAPTCHA rule](research-playbook.md#captcha-handling-rule).
+  is verified (headless, 3/3 with a normal Chrome UA). Engine finding: the decisive tell is the
+  `HeadlessChrome` user-agent — a wrong UA escalates `/check` to an image captcha; overriding the UA
+  lets patchright's bundled headless Chromium pass, so CloakBrowser is optional — see
+  [Engine comparison](captcha.md#engine-comparison-patchright-vs-cloakbrowser). Still unknown:
+  whether the challenge is mandatory on every fresh login or risk-based, its escalation behavior
+  under repetition or other IPs, and whether a challenge ever appears on `career.habr.com` itself.
+  Follow the [CAPTCHA rule](research-playbook.md#captcha-handling-rule).
 - Qrator WAF behavior under load: whether it issues an interstitial or cookie-refresh challenge, and
   its trigger.
 - Rate-limit behavior, retry headers, and pacing implications.
