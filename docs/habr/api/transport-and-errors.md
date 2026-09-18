@@ -2,7 +2,7 @@
 
 Habr Career exposes one cookie-authenticated origin (`career.habr.com`) behind the Qrator WAF: HTML
 for the website and JSON for `/api/frontend_v1/`. This page records the transport contract observed
-over pure HTTP and how it maps onto the [client contract](../specs/client-contract.md) error union.
+over pure HTTP and how it maps onto the [client contract](../../specs/client-contract.md) error union.
 
 > Freshness: probes run 2026-09-18 over pure HTTP with an exported authenticated cookie jar and a
 > clean anonymous jar, against live `career.habr.com`. Low volume (single requests, one 10-request

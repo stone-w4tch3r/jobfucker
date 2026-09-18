@@ -16,6 +16,8 @@ researched.
 | Understand the plan and method for this wiki | [Research plan](research-plan.md) |
 | Method every research session follows | [Research playbook](research-playbook.md) |
 | Understand which Habr Career surface owns which operation | [Platform map](platform-map.md) |
+| Search, list, and page vacancies | [Search and listings](api/search.md) |
+| Decode listing/detail/resume payloads | [Response models](api/response-models.md) |
 | Log in through Habr Account SSO | [Authentication and session](authentication.md) |
 | Understand transport, statuses, and error mapping | [Transport and errors](api/transport-and-errors.md) |
 | Understand the login challenge | [CAPTCHA](captcha.md) |
@@ -37,16 +39,16 @@ career.habr.com session cookie  (Rails CSRF `authenticity_token`)
 career.habr.com website (server-rendered HTML)
     search / vacancy detail / profile / responses
 
-Same-origin XHR ──► /api/frontend_v1/...  (JSON: identity, notifications, subscriptions)
-Vacancy detail  ──► schema.org JobPosting JSON-LD (description HTML)
-Listings        ──► HTML cards, or RSS /vacancies/rss?page=&per_page=
+Listings        ──► GET /api/frontend/vacancies?<filters>   (JSON {list, meta})
+Vacancy detail  ──► /vacancies/<id> inline "vacancy" JSON (description HTML) + JobPosting JSON-LD
+Same-origin XHR ──► /api/frontend_v1/...  (JSON: identity, notifications, subscriptions, suggestions)
+Owned resume    ──► GET /profile (public /<alias>)
 ```
 
-The website is the primary surface and is **server-rendered HTML**; the JSON API
-(`/api/frontend_v1/`) covers account widgets but exposed no vacancy search or vacancy detail
-endpoint during discovery. Login is now established as fully browserless (see
-[Authentication](authentication.md#browserless-login-verified)); whether a pure-HTTP path fully
-covers apply and the rest of the challenge handling is not established.
+The website is the primary surface; the **listing data is JSON** (`/api/frontend/vacancies`) and the
+vacancy detail page embeds structured JSON, so scraping is not needed. Login is established as fully
+browserless (see [Authentication](authentication.md#browserless-login-verified)); whether a pure-HTTP
+path fully covers apply and the rest of the challenge handling is not established.
 
 ## Facts observed so far
 
@@ -65,18 +67,28 @@ covers apply and the rest of the challenge handling is not established.
 - A logged-in session sets the Rails career session `_career_session`, the persistent
   `remember_user_token`, and `.habr.com` `s<hex>` SSO cookies; traffic passes through **Qrator**
   (`qrator_msid2`). Cookie inventory is in [Authentication](authentication.md#session-cookies).
-- **Vacancy search and listings are server-rendered HTML.** No JSON listing/search endpoint was
-  found under `/api/frontend_v1/` or `/v1/`.
-- **Vacancy detail embeds `application/ld+json` schema.org `JobPosting`** including `title`,
-  `datePosted`, and the full `description` HTML. This is the most stable structured detail source.
+- **Vacancy listings are JSON**: `GET /api/frontend/vacancies?<filters>` (note `/api/frontend/`, not
+  `/api/frontend_v1/`) returns `{list, meta}` with `meta.totalResults`. `/vacancies` is the same data
+  server-rendered. See [Search and listings](api/search.md).
+- Listing filters: `q`, `type=all|suitable`, `qid`, `remote`, `with_salary`, `salary`+`currency`,
+  `skills[]`, `city_id`, `employment_type`, `sort=relevance|date|salary_desc|salary_asc`, `page`,
+  `per_page`. `type=suitable` is resume-scoped when authenticated and **ignored when anonymous**.
+- Listing caps: effective page size is **50** (even when `per_page` is larger); positions at/after
+  offset ~1000 return an empty list; a page beyond `meta.totalPages` is `404 {"error":"Not found"}`.
+  Declare `max_search_items = 1000`.
+- **Vacancy detail** (`/vacancies/<id>`) embeds the listing item shape plus the full `description`
+  HTML under `"vacancy":{...}`; a `schema.org/JobPosting` `ld+json` block is also present. Prefer the
+  inline JSON. No description/snippet is in the listing.
 - The authenticated identity endpoint is `GET /api/frontend_v1/users/me`, returning
   `{user: {alias, fullName, email, ...}}`.
-- Listing modes observed: `?type=all` and `?type=suitable` (resume-scoped for a logged-in user).
-- An RSS 2.0 listing feed exists: `/vacancies/rss?page=&per_page=` (observed 200; default page size
-  not yet established).
+- **Owned resume** is the profile page `GET /profile` (public `/<alias>`); no owned-resume JSON
+  endpoint was found (`/api/frontend_v1/resumes` is the public specialist directory). The observable
+  resume identifier is the account alias.
+- **RSS is not a search surface**: `/vacancies/rss` returns a fixed latest 50 and ignores
+  `page`/`per_page`/`q`; use it only as a canary.
 - Vacancy identifiers are numeric, e.g. `/vacancies/1000167594`.
-- **Anonymous reads work**: listing, detail (with `JobPosting` JSON-LD), and RSS all return content
-  without a session. Protected pages (`/responses`) answer `302 → /users/auth_required`. The
+- **Anonymous reads work**: listing (JSON), detail (with inline JSON / JSON-LD), and RSS all return
+  content without a session. Protected pages (`/responses`) answer `302 → /users/auth_required`. The
   anonymous identity call returns `200 {}` — auth is detected from the payload, never the status.
   An anonymous request still sets `_career_session`, so cookie presence is not an auth signal.
 - **Session persistence** is `remember_user_token`: dropping `_career_session` but keeping it

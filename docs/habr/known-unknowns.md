@@ -23,30 +23,39 @@ to be **enforced on every fresh credential login**. Still unknown:
 - Whether Qrator issues an interstitial/cookie-refresh challenge under load, and its trigger.
 - Anonymous request behavior at volume (no challenge observed in single requests).
 
-## Search and listings (Session 2)
+## Search and listings
 
-- The full query-parameter surface of `/vacancies` (text, skills, salary, grade, remote, city,
-  experience, company, sorting).
-- Native page size and whether `per_page` is honored on the HTML listing (RSS honors it).
-- Listing cap / maximum accessible items.
-- Whether `type=suitable` requires an owned resume and how it is selected.
-- Whether any XHR/fragment endpoint exists for "load more" or listing refresh.
-- RSS field completeness versus HTML cards, and whether RSS is a viable `list_vacancies` source.
+Mapped (see [Search and listings](api/search.md)): the JSON endpoint, query/filter params, sorting,
+paging, page-size cap, accessible-position cap, `type=suitable` semantics, and RSS limits. Still
+unknown:
 
-## Vacancy detail (Session 2)
+- The accepted value shape of `company_ids[]` and the specialization filter (`divisions` / `s`);
+  both were attempted and did not filter as expected.
+- Archived/hidden vacancies: whether they appear in listings and how they count toward totals.
+- The exact accessible-position cap (last observed position 995; declared 1000) and whether it
+  varies per query or account.
+- Whether `type=suitable` requires an owned resume and how the board selects it.
+- Rate/captcha behavior on the listing endpoint at fetch volume.
 
-- JSON-LD field completeness (salary, location, employment type, skills, company) versus DOM fields.
+## Vacancy detail
+
+Mapped (see [Response models](api/response-models.md#detail-page)): the inline `"vacancy"` JSON with
+the full `description`, and the fallback `JobPosting` JSON-LD. Still unknown:
+
 - Archived / closed vacancy representation and the corresponding detail response.
-- External-application ("отклик на другом сайте") representation.
+- External-application ("отклик на другом сайте") representation at detail level.
 - Screening-test or questionnaire presence flag, if any.
+- Company size / salary semantics beyond the stated-salary fields.
 
-## Resumes (Session 2)
+## Resumes
 
-- Where an owned resume lives and how to list/read it (`/{alias}`, `/profile/specialization`, or a
-  JSON route not yet found).
-- Whether one account has one resume or many, and how to obtain the resume id used at apply.
-- Whether `/api/frontend_v1/resumes` has a resume-search contract relevant to us (it returned a
-  public specialist list).
+Mapped (see [Response models](api/response-models.md#owned-resume)): the owned resume is the profile
+page `/profile` (public `/<alias>`); no numeric resume id was found; `/api/frontend_v1/resumes` is
+the public specialist directory. Still unknown:
+
+- Whether an account can hold more than one resume, and if so how they are listed.
+- The exact `resume_id` the apply request expects (alias vs an undocumented id) — Session 3.
+- Resume `updated_at` and any structured resume endpoint not yet found.
 
 ## Apply and responses (Session 3)
 
