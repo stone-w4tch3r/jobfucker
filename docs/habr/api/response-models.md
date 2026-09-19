@@ -3,9 +3,8 @@
 Structures observed on the live read surfaces, and how they map to the
 [client contract](../../specs/client-contract.md) models.
 
-> Freshness: captured 2026-09-18 from `GET /api/frontend/vacancies`, `GET /vacancies/<id>`,
-> `GET /profile`, and `/vacancies/rss`. Field sets are additive; treat missing/extra keys as
-> non-breaking.
+> Freshness: read-shape capture 2026-09-18; apply-response shape added 2026-09-19 (see
+> [Applications and responses](../applications-and-responses.md)).
 
 ## Listing item
 
@@ -32,7 +31,8 @@ One element of `list[]` from [the search endpoint](search.md#endpoint):
   "qualification": "Middle",
   "archived": false,
   "hidden": false,
-  "quickResponseHref": "/api/frontend/quick_responses"
+  "quickResponseHref": "/api/frontend/quick_responses",
+  "response": {"kind": "direct"}
 }
 ```
 
@@ -53,9 +53,16 @@ Field notes:
 | `divisions[]`, `locations[]` | specialization / city chips |
 | `employment` | `full_time` \| `part_time` |
 | `archived`, `hidden` | availability flags |
-| `quickResponseHref` | apply endpoint hint (Session 3); `response.kind` on detail gives the apply mode |
+| `response.kind` | apply mode: `direct` (not responded) \| `applied` \| `guest` (see note); the same field is on the detail object |
+| `quickResponseHref` | UI hint (`/api/frontend/quick_responses`); the path itself 404s, the real apply endpoint is `POST /api/frontend/vacancies/<id>/responses` |
 
 No description/snippet is present in the listing — fetch the detail page for it.
+
+Note on `response.kind`: `direct`/`applied` are returned for XHR-style requests — the site's own calls
+send `X-Requested-With: XMLHttpRequest` (and/or `X-CSRF-Token`) and get the account-aware kinds;
+request profiles without them (observed with plain `urllib`) get `kind":"guest"` for **every** item,
+which is not an apply state. Always send `X-Requested-With: XMLHttpRequest` and treat `guest` as an
+unusable listing signal. See [Applications and responses](../applications-and-responses.md#apply-mode-signal).
 
 ## Detail page
 
@@ -76,7 +83,8 @@ structured detail source:
 
 - `description` is escaped HTML (`\u003c...`) and must be normalized to text for
   `Vacancy.description` (the contract requires full normalized text, not a snippet).
-- `response.kind` is the apply-mode signal (`direct` observed); other kinds are Session 3.
+- `response.kind` is the apply-mode signal (`direct` unresponded, `applied` responded; same as the
+  listing item). It is the only apply field on the detail object.
 - The page also carries a schema.org `JobPosting` `ld+json` block with a smaller field set:
   `datePosted`, `title`, `description`, `identifier.value` (= vacancy id), `validThrough`,
   `hiringOrganization.{name,logo,sameAs}`, `jobLocation[]`, `jobLocationType`, `employmentType`.
@@ -88,6 +96,11 @@ Detail fetch is one request per vacancy; there is no bulk/variant endpoint.
 
 `GET /api/frontend_v1/users/me` → `{user, meta, userCompanies}`; `user.alias` / `fullName` / `email`.
 Anonymous returns `200 {}`. See [Authentication](../authentication.md#authenticated-identity).
+
+## Apply response
+
+The apply/edit/withdraw calls return a `response` object; its shape, the outcome status map, and the
+limits live in [Applications and responses](../applications-and-responses.md). Not repeated here.
 
 ## Owned resume
 
@@ -131,6 +144,8 @@ employment, hashtag skills). Useful as a cheap sanity canary, not as a client da
 | `ServiceIdentity` | `/api/frontend_v1/users/me`: `alias`→`external_id`, `fullName`→`display_name`, `email` |
 | `found` | listing `meta.totalResults` |
 | `ui_url` | constructed by the client from the executed params |
+| apply outcome | `POST /api/frontend/vacancies/<id>/responses` → `200 {response:{id,…}}` / `401` duplicate / `400` throttle / `404` / `422`; map in [Applications and responses](../applications-and-responses.md#applyresult-mapping-verified) |
+| applied flag | `response.kind == "applied"` in listing/detail marks an existing response |
 
 `Salary` mapping: `salary.{from,to,currency}` → `Salary.from_/to/currency`; gross is not reported
 (the board does not distinguish), so fix `gross` to the product default. `predictedSalary` must not
@@ -149,5 +164,6 @@ be silently merged into `salary`.
 ## Not established yet
 
 - Whether `updated_at` is available for the resume.
-- Archived/hidden items: whether they appear in listings and how `response.kind` differs.
-- The exact `response.kind` enum and its apply implications (Session 3).
+- Archived/hidden items: whether they appear in listings and their detail/apply representation.
+- The full `response.kind` enum and the meaning of the apply-response fields `isQuick`, `result`,
+  `vacancyRecommendationAccuracyPercent`.

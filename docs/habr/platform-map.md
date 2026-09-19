@@ -7,8 +7,9 @@ integration-relevant; static assets and analytics are not.
 | --- | --- | --- | --- | --- |
 | Website | `https://career.habr.com/` | Session cookie + Rails CSRF `authenticity_token` | Server-rendered HTML, schema.org JSON-LD | Search listing, vacancy detail, profile, responses, apply UI |
 | Search and listings | `GET /api/frontend/vacancies?<filters>` | Session cookie optional (anonymous works) | JSON `{list, meta}` | Primary listing surface ([Search and listings](api/search.md)) |
-| Frontend JSON API | `https://career.habr.com/api/frontend_v1/` | Same-origin session cookie | JSON | Identity, notifications, subscriptions, skill suggestions; **no vacancy search/detail** |
-| Legacy frontend JSON | `https://career.habr.com/api/frontend/` | Session cookie optional | JSON | Vacancy search, suggestions, apply endpoint hint; not `/frontend_v1` |
+| Frontend JSON API | `https://career.habr.com/api/frontend_v1/` | Same-origin session cookie | JSON | Identity, notifications, subscriptions, skill suggestions, `chat/conversations`; **no vacancy search/detail** |
+| Legacy frontend JSON | `https://career.habr.com/api/frontend/` | Session cookie optional | JSON | Vacancy search, suggestions, vacancy responses (apply/update/withdraw); not `/frontend_v1` |
+| Employer API (official) | `https://career.habr.com/api/v1/integrations/` | OAuth 2.0 access token | JSON | Company vacancies + inbound responses with resumes; **employer CRM export, not a seeker apply path** |
 | RSS | `https://career.habr.com/vacancies/rss` | Anonymous works | RSS 2.0, fixed latest 50 | Canary only — ignores `page`/`per_page`/`q` |
 | SSO / Habr Account | `https://career.habr.com/users/auth/tmid` | Existing Habr Account session | Redirects + login/register pages | Login and registration |
 | Static assets | `https://assets.habr.com/career/...` | None | JS/CSS/fonts | Not integration-relevant |
@@ -58,9 +59,9 @@ exercised), `Unknown`.
 | `search_vacancies` | `GET /api/frontend/vacancies?q=&type=all\|suitable&...` + `GET /vacancies/<id>` per item | Verified | JSON listing ([Search](api/search.md)) + detail inline `"vacancy"` JSON with full `description` ([Response models](api/response-models.md#detail-page)) |
 | `list_vacancies` | `GET /api/frontend/vacancies?<filters>` | Verified | `meta.totalResults`→`found`; `list[]`→`VacancyShort`; listing-only, no enrichment; RSS is not viable |
 | `get_resumes` | Own profile `GET /profile` (public `/{alias}`) | Verified | One profile-resume; `resume_id` observed as the account alias; no owned-resume JSON endpoint found |
-| `apply_to_vacancy` | Vacancy detail "Откликнуться"; `quickResponseHref: /api/frontend/quick_responses`; detail `response.kind` | Known-unverified | Apply-mode signal located; request contract is Session 3 |
+| `apply_to_vacancy` | `POST /api/frontend/vacancies/<id>/responses` (multipart, optional `body` letter); `PATCH`/`DELETE` on `…/responses/<rid>` | Verified | Apply + letter + withdraw; `response.kind` `direct`/`applied`; full `ApplyResult` map and limits ([Applications and responses](applications-and-responses.md)) |
 | `aclose` | n/a | n/a | No background resources observed |
-| `service_info.per_auth_daily_cap` | Unknown | Unknown | No limit signal observed yet |
+| `service_info.per_auth_daily_cap` | `POST …/responses` monthly quota | Verified | **150 responses/month** per account (not daily); 151st → `400 {"message":"Можно оставлять не более 150 откликов в месяц"}`; deletes still count; reset boundary unknown ([Applications and responses](applications-and-responses.md#limits-and-pacing)) |
 | `service_info.max_search_items` | `/api/frontend/vacancies` accessible-position cap | Verified | Windows at offset ≥ ~1000 return an empty list; declare `1000` ([Search](api/search.md#pagination-page-size-and-caps)) |
 
 ## Media and detail enrichment
@@ -114,3 +115,11 @@ Revalidate these small signals when behavior appears to drift:
 | Protected redirect | `GET /responses` anonymous still `302` to `/users/auth_required` |
 | Error shapes | Unknown API path still `404 {"error":"Not found"}`; token-less `POST` still `422 {"status":422,...}` |
 | CSRF carriers | `X-CSRF-Token` header and `authenticity_token` form field both still accepted |
+| Apply | `POST /api/frontend/vacancies/<id>/responses` still returns `200 {"response":{"id":…}}`; multipart field `body` still carries the cover letter |
+| Apply mode | Listing/detail item still carries `response.kind` ∈ `direct`/`applied` |
+| Apply duplicate | Re-apply still `401 {"error":{"message":"Вы уже откликнулись на эту вакансию"}}` |
+| Apply throttle | Two responses <10 s apart still `400` with the "раз в 10 секунд" message and no `Retry-After` |
+| Apply monthly cap | Beyond 150 responses/month the board still answers `400 {"message":"…не более 150 откликов в месяц"}` |
+| Withdraw | `DELETE …/responses/<rid>` still `200 {"status":"success"}` |
+| Conversations | `GET /api/frontend_v1/chat/conversations` still returns `{conversations, meta}` |
+| Employer API docs | `/info/api` still documents OAuth 2.0 CRM integration at `/integrations/oauth/*` and `/api/v1/integrations/vacancies` |

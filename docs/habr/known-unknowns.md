@@ -54,17 +54,32 @@ page `/profile` (public `/<alias>`); no numeric resume id was found; `/api/front
 the public specialist directory. Still unknown:
 
 - Whether an account can hold more than one resume, and if so how they are listed.
-- The exact `resume_id` the apply request expects (alias vs an undocumented id) — Session 3.
+- The apply request carries **no** resume id — the single profile resume is used implicitly; the
+  observable identifier stays the alias. Whether a multi-resume account would need a parameter is not
+  established (see [Applications and responses](applications-and-responses.md#apply-request)).
 - Resume `updated_at` and any structured resume endpoint not yet found.
 
-## Apply and responses (Session 3)
+## Apply and responses
 
-- The logged-in apply request: endpoint, method, body, required CSRF field/header.
-- Resume selection and cover-letter mechanics.
-- Success, duplicate/already-applied, vacancy-unavailable, external-application, and limit signals.
-- Limit tracking: existence, daily cap, reset boundary, account dependence.
-- Reconciliation reads: `/responses` (applications) and `/conversations` (dialogs) shapes.
+Mapped (see [Applications and responses](applications-and-responses.md)): the apply endpoint
+(`POST /api/frontend/vacancies/<id>/responses`, multipart, optional `body` letter), letter
+attach/edit (`PATCH …/responses/<rid>`), withdrawal (`DELETE …/responses/<rid>`), the full
+`ApplyResult` map (applied / duplicate / anonymous / throttle / not-found / CSRF), the response
+object, the global ~10 s minimum interval between responses, and the seeker reconciliation surfaces
+(`/responses` HTML + `/api/frontend_v1/chat/conversations`) and the **150 responses/month** cap (not
+daily; deletes still count). Still unknown:
+
+- Monthly-cap reset boundary (calendar month vs rolling window) and reset time/timezone.
+- Whether the cap is per account only or also per IP/subnet.
+- External / "отклик на другом сайте" applications and their `response.kind`.
+- Archival / closed-vacancy apply signal (no archived vacancy provokable from listings).
 - Screening tests / questionnaires at apply, if any.
+- Full `response.kind` enum and the meaning of `isQuick`, `result`,
+  `vacancyRecommendationAccuracyPercent`.
+- Response status vocabulary beyond `Не прочитано`, which needs employer-side action.
+- `/conversations` item shape (no dialog on the experiment account).
+- Whether the apply UI ever offers a cover-letter modal before creating the response (the observed
+  flow POSTs the quick response first and edits the letter afterwards).
 
 ## Challenges and infrastructure
 

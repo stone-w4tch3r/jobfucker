@@ -6,8 +6,9 @@ stage: this wiki starts as a high-level playbook and is deepened one topic per r
 researched.
 
 > Freshness: surface discovery performed against live `career.habr.com` on 2026-09-18 with the
-> authenticated `habr-exp` account. Habr Career is an external system and can change without notice.
-> Revalidate the canaries in each page when behavior drifts.
+> authenticated `habr-exp` account; the apply/letter/withdraw surface was added 2026-09-19. Habr
+> Career is an external system and can change without notice. Revalidate the canaries in each page
+> when behavior drifts.
 
 ## Start here
 
@@ -20,6 +21,7 @@ researched.
 | Decode listing/detail/resume payloads | [Response models](api/response-models.md) |
 | Look up filter ids (cities, regions, skills) | [Auxiliary id catalogs](aux/README.md) |
 | Log in through Habr Account SSO | [Authentication and session](authentication.md) |
+| Apply, add a letter, withdraw, read responses back | [Applications and responses](applications-and-responses.md) |
 | Understand transport, statuses, and error mapping | [Transport and errors](api/transport-and-errors.md) |
 | Understand the login challenge | [CAPTCHA](captcha.md) |
 | See what is not yet established | [Known unknowns](known-unknowns.md) |
@@ -43,6 +45,9 @@ career.habr.com website (server-rendered HTML)
 Listings        ──► GET /api/frontend/vacancies?<filters>   (JSON {list, meta})
 Vacancy detail  ──► /vacancies/<id> inline "vacancy" JSON (description HTML) + JobPosting JSON-LD
 Same-origin XHR ──► /api/frontend_v1/...  (JSON: identity, notifications, subscriptions, suggestions)
+Apply/letter    ──► POST /api/frontend/vacancies/<id>/responses  (multipart; `body` = letter)
+                    PATCH|DELETE .../responses/<rid>             (edit letter / withdraw)
+Applied list    ──► GET /responses (HTML) · dialogs GET /api/frontend_v1/chat/conversations
 Owned resume    ──► GET /profile (public /<alias>)
 ```
 
@@ -88,6 +93,18 @@ path fully covers apply and the rest of the challenge handling is not establishe
 - **RSS is not a search surface**: `/vacancies/rss` returns a fixed latest 50 and ignores
   `page`/`per_page`/`q`; use it only as a canary.
 - Vacancy identifiers are numeric, e.g. `/vacancies/1000167594`.
+- **Apply is `POST /api/frontend/vacancies/<id>/responses`** (`multipart/form-data`, CSRF required);
+  the cover letter is the `body` field, optionally in the same POST. Letter edit is
+  `PATCH …/responses/<rid>`, withdraw is `DELETE …/responses/<rid>`. `response.kind` in a listing /
+  detail item is `direct` (unresponded) or `applied`. Duplicate → `401`, throttle → `400`
+  (`~10 s` min interval, no `Retry-After`), anonymous → `401`. Full map and reconciled reads:
+  [Applications and responses](applications-and-responses.md).
+- Limits: **~10 s minimum interval** between responses (global, no `Retry-After`) and a
+  **150 responses/month** cap per account (`400 {"message":"Можно оставлять не более 150 откликов в
+  месяц"}`); deleted responses still count. There is no *daily* cap — `service_info.per_auth_daily_cap`
+  must be derived from the monthly quota.
+- Habr documents an **OAuth 2.0 employer API** (`/info/api`, `/api/v1/integrations/...`) for pulling
+  inbound responses into a CRM. It is company-side; it is not a seeker search/apply API.
 - **Anonymous reads work**: listing (JSON), detail (with inline JSON / JSON-LD), and RSS all return
   content without a session. Protected pages (`/responses`) answer `302 → /users/auth_required`. The
   anonymous identity call returns `200 {}` — auth is detected from the payload, never the status.

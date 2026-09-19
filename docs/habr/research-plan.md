@@ -59,6 +59,13 @@ challenge captures live in `/tmp`, never in the repo; docs carry sanitized durab
 Session 2 is the largest; split into reads-auth/search and detail/resumes only if it overflows.
 Sessions may split, but the total should stay small (roughly 2–4 core sessions plus splits).
 
+**Status (2026-09-19):** Sessions 1–3 complete. `apply_to_vacancy` is verified (apply / letter /
+withdraw / `ApplyResult` map in [Applications and responses](applications-and-responses.md)).
+`service_info.per_auth_daily_cap` is resolved as a **150 responses/month** account quota (not daily;
+deletes still count) — only its reset boundary stays open. Session 4 (spec + AGENTS rows) is the
+remaining step; residual unknowns that do not block implementation stay in
+[known-unknowns.md](known-unknowns.md).
+
 ## CAPTCHA handling rule (all sessions)
 
 If a challenge appears on any endpoint:
