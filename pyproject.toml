@@ -99,7 +99,6 @@ exclude = [
     "wrktrs",
     ".kilo",
     "test/fixtures",
-    "shared_tests/fixtures",
     "secrets",
     # Alembic-generated scaffolding (env.py, versions/*) — built tooling, not
     # hand-written app code; kept under storage/ but exempt from strict checks.
@@ -120,7 +119,6 @@ extend-exclude = [
     "**/__pycache__", "*.pyc", "*.pyo", "*.pyd", "*.so", "wrktrs",
     ".git", ".kilo", ".pytest_cache",
     "test/fixtures",
-    "shared_tests/fixtures",
     # Alembic-generated scaffolding (see basedpyright exclude).
     "src/jobfucker/storage/migrations",
 ]
@@ -173,17 +171,18 @@ ignore = [
 # Vacancy document policy deliberately enumerates a closed eight-field contract
 # so types stay narrow and schema/application mutation rules cannot drift.
 "src/jobfucker/app/vacancy_documents.py" = ["PLR0911", "PLR0912"]
-"shared_tests/*" = ["S101", "PT018", "PLW1510", "ISC004"]
-"shared_tests/fixtures/*" = ["C408", "RUF012", "F841", "B018"]
-"shared_tests/test_linting/conftest.py" = ["S603"]
-"shared_tests/test_linting/test_check_frozen_dataclasses.py" = ["PLR2004"]
-"shared_tests/test_linting/test_check_module_mutables.py" = ["S603", "PLR2004"]
-"shared_tests/test_linting/test_check_object_annotations.py" = ["S603", "PLR2004"]
-"shared_tests/test_linting/test_check_raw_dicts.py" = ["S603", "PLR2004"]
+# Catalog sync is a typed Result cascade: each load/validate/prune/write boundary
+# returns early, which is clearer than nesting the guards (same rationale as config.py).
+"tools/catalog/habr.py" = ["PLR0911"]
+"test/tools/linting/conftest.py" = ["S603"]
+"test/tools/linting/test_check_frozen_dataclasses.py" = ["PLR2004"]
+"test/tools/linting/test_check_module_mutables.py" = ["S603", "PLR2004"]
+"test/tools/linting/test_check_object_annotations.py" = ["S603", "PLR2004"]
+"test/tools/linting/test_check_raw_dicts.py" = ["S603", "PLR2004"]
 # scripts/ runs `poe` tasks via subprocess (fixed argv, sys.executable — S603);
 # trailing `lint-ignore[…]` markers on the enforced line overflow E501.
 "scripts/check_intersections.py" = ["E501", "S603"]
-"shared_tests/test_linting/test_check_type_ignore.py" = ["S603", "PLR2004"]
+"test/tools/linting/test_check_type_ignore.py" = ["S603", "PLR2004"]
 
 [tool.ruff.lint.pylint]
 max-args = 5
@@ -207,7 +206,7 @@ max-args = 5
 
 [tool.pytest.ini_options]
 # `test/` is the app's test dir (already has fixtures); add it once tests exist.
-testpaths = ["shared_tests", "test"]
+testpaths = ["test"]
 # A test stuck past this dumps all thread stacks to stderr — turns a silent CI
 # hang (e.g. a Windows-only deadlock) into a readable log right before the job
 # timeout kills it.
@@ -246,8 +245,6 @@ source = ["src"]
 omit = [
     "test/*",
     "test/**/*",
-    "shared_tests/*",
-    "shared_tests/**/*",
     "*/tests/*",
     "*/tests/**/*",
 ]
@@ -276,13 +273,16 @@ app = { cmd = "python -m jobfucker", use_exec = true }
 # through, e.g. `poe parallel score 3 10 100`, `poe intersections`.
 parallel = "python scripts/parallel.py"
 intersections = "python scripts/check_intersections.py"
+# Habr Career aux id catalogs (docs/habr/aux): prefix-crawl refresh, pass-through args,
+# e.g. `poe catalog_habr sync --kind in-use --write`.
+catalog_habr = "python -m tools.catalog.habr"
 
-lint_objects = "python -m tools.linting.check_object_annotations src shared_tests test tools"
-lint_frozen = "python -m tools.linting.check_frozen_dataclasses src shared_tests test tools"
-lint_mutables = "python -m tools.linting.check_module_mutables src shared_tests test tools"
-lint_type_ignore = "python -m tools.linting.check_type_ignore src shared_tests test tools"
-lint_raw_dicts = "python -m tools.linting.check_raw_dicts src shared_tests test tools"
-lint_ignored_results = "python -m tools.linting.check_ignored_results src shared_tests test tools"
+lint_objects = "python -m tools.linting.check_object_annotations src test tools"
+lint_frozen = "python -m tools.linting.check_frozen_dataclasses src test tools"
+lint_mutables = "python -m tools.linting.check_module_mutables src test tools"
+lint_type_ignore = "python -m tools.linting.check_type_ignore src test tools"
+lint_raw_dicts = "python -m tools.linting.check_raw_dicts src test tools"
+lint_ignored_results = "python -m tools.linting.check_ignored_results src test tools"
 lint_custom_linters.sequence = ["lint_objects", "lint_frozen", "lint_mutables", "lint_type_ignore", "lint_raw_dicts", "lint_ignored_results"]
 
 lint_types = "basedpyright ."

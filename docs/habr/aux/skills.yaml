@@ -1,6 +1,6 @@
 # Generated auxiliary catalog of Habr Career skill ids.
 # Source: /api/frontend/suggestions/skills?term=<prefix> (full prefix-crawl).
-# Used by the search filter: skills[]=<id>. See aux/README.md.
+# Refresh: `uv run poe catalog_habr sync --kind skills --write`. See aux/README.md.
 
 skills:
   1: {name: "Redis", alias: "redis"}

@@ -1,8 +1,9 @@
 """Root pytest configuration for the jobfucker suite.
 
 This conftest lives at the repo root so its hooks apply to every collected test
-— the ``shared_tests`` building-block suite and the app's own ``test/`` suites
-alike. It owns the cross-cutting marker gate (see test/AGENTS.md §7):
+in ``test/`` — the app suites, the copyable shared building blocks
+(``test/shared/``) and the repository tooling (``test/tools/``) alike. It owns
+the cross-cutting marker gate (see test/AGENTS.md §7):
 
 - ``--run-e2e``: an **opt-in** flag. ``e2e``-marked tests are skipped unless it
   is passed, so the live-board gate never runs by default.
@@ -18,8 +19,8 @@ import pytest
 
 
 # Options are registered on the root conftest so they apply to the whole session
-# (both ``shared_tests`` and ``test``), regardless of which conftest file a test
-# happens to live under.
+# (every suite under ``test/``), regardless of which conftest file a test happens
+# to live under.
 def pytest_addoption(parser: pytest.Parser) -> None:
     """Register the ``--run-e2e`` opt-in flag used to gate the e2e family."""
     parser.addoption(

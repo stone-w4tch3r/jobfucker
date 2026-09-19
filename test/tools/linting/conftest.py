@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-FIXTURES: Path = Path(__file__).resolve().parent.parent / "fixtures" / "linting"
+FIXTURES: Path = Path(__file__).resolve().parents[2] / "fixtures" / "linting"
 
 type RunLinter = Callable[[str, str], subprocess.CompletedProcess[str]]
 type RunLinterPath = Callable[[str, Path], subprocess.CompletedProcess[str]]

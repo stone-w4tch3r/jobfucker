@@ -426,7 +426,7 @@ Markers (declared in `[tool.pytest.ini_options].markers`):
 
 (The `qt` marker was removed with the UI; the rewrite will re-register it.)
 
-The **root `conftest.py`** (repo root — applies to `shared_tests` and `test`)
+The **root `conftest.py`** (repo root — applies to every suite under `test/`)
 owns the cross-cutting gate:
 
 - `pytest_addoption` adds `--run-e2e` (store_true, default False).
@@ -457,9 +457,8 @@ uv run pytest -m unit         # unit family only
 
 - `addopts` adds `--cov --cov-report=term-missing`.
 - `[tool.coverage.run] source = ["src"]`; `omit` covers `test/*`,
-  `test/**/*`, `shared_tests/*`, `shared_tests/**/*`, and `tests/*`. Coverage
-  measures the **app package (`src/`), including the folded-in
-  `src/jobfucker/shared/` building blocks**.
+  `test/**/*`, and `tests/*`. Coverage measures the **app package (`src/`),
+  including the folded-in `src/jobfucker/shared/` building blocks**.
 - `[tool.coverage.report] show_missing = true`, `skip_covered = true`,
   `fail_under = 0` (coverage is a **guideline, not a gate** — engineering-
   principles §5). CI can read the `.coverage`/htmlcov artifacts.
@@ -512,6 +511,8 @@ whose behavior is expressed in Gherkin add a `bdd/` subdir beside the collector:
 | `bootstrap/`   | `test_bootstrap`                                                                                                                                                                                                                                                                                                                              |
 | `ai/`          | `test_ai`                                                                                                                                                                                                                                                                                                                                     |
 | `runtime/`     | `test_runtime`                                                                                                                                                                                                                                                                                                                                |
+| `shared/`      | `test_logging_reusable` — the copyable `src/jobfucker/shared/logging` building block                                                                                                                                                                                                                                                           |
+| `tools/`       | `catalog/test_habr_catalog` (Habr aux-catalog sync), `linting/` (the custom AST linters in `tools/linting`; their fixtures live in `test/fixtures/linting/`)                                                                                                                                                                                  |
 
 ---
 

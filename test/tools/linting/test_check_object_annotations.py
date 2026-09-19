@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from shared_tests.test_linting.conftest import RunLinter
+from test.tools.linting.conftest import RunLinter
 from tools.linting.check_object_annotations import check_file
 
 MODULE = "tools.linting.check_object_annotations"

@@ -48,6 +48,7 @@ Response:
 | `currency` | salary currency | `RUR` (default) \| `EUR` \| `USD` \| `UAH` \| `KZT` |
 | `skills[]` | required skills | skill ids, repeatable arg; ids from `/api/frontend_v1/suggestions/skills?q=` |
 | `city_id` | city filter | numeric id from a listing item's `locations[].href` (`/vacancies?city_id=678`) |
+| `locations[]` | region/city/country filter | prefixed entity ids: `c_<id>`, `r_<id>`, `ct_<id>` (repeatable); **bare numbers are ignored** |
 | `employment_type` | employment | `full_time` \| `part_time` |
 | `company_ids[]` | company filter | **unverified** (see below) |
 | `divisions` | specialization | **unverified** (see below) |
@@ -62,6 +63,11 @@ Verified effects (examples): `qid=5`, `remote=true`, `with_salary=true`, `salary
 `skills[]=446`, `city_id=678`, `employment_type=part_time`, `sort=date`/`salary_desc` all change
 `totalResults` or ordering. `sort` values outside the enum are ignored (no `400`).
 
+Location granularity is selectable: `city_id=678` / `locations[]=c_678` (Москва) → 597,
+`locations[]=r_14068` (Москва и Московская область) → 599, `locations[]=ct_444` (Россия) → 808,
+against a 1217 baseline. Region and country filtering therefore work without a city id, which is
+why the [aux catalog](../aux/README.md) only mirrors countries + Russian regions + Russian cities.
+
 ### Unverified filter params
 
 - `company_ids[]=<numeric id>` returned `0` results even for a company that exists, and the scalar
@@ -69,8 +75,8 @@ Verified effects (examples): `qid=5`, `remote=true`, `with_salary=true`, `salary
   established.
 - `divisions` did not change results with a slug value; the specialization picker's `filters.s`
   serialization was not captured. Treat specialization filtering as unverified.
-- `locations`/`locations[]` did not filter reliably (`locations[]=678` returned the cap, i.e. was
-  ignored); use `city_id`.
+
+(Location filtering is verified — see `locations[]` above.)
 
 ## `type=suitable`
 
@@ -132,6 +138,7 @@ client.
 | Cap | A page at offset ≥ 1000 returns `200` with an empty `list` |
 | Over-page | A page beyond `meta.totalPages` returns `404 {"error":"Not found"}` |
 | Filters | `qid=5`, `remote=true`, `with_salary=true`, `skills[]=<id>`, `city_id=<id>` change `totalResults` |
+| Location granularity | `locations[]=c_678` / `r_14068` / `ct_444` all filter; a bare `locations[]=678` is ignored |
 | Sort | `sort=date` reorders by `publishedDate`; `sort=salary_desc` puts salaried items first |
 | Anonymous | Listing works without a session; anonymous `type=suitable` is ignored |
 | RSS | `/vacancies/rss` still returns 50 items and ignores `page`/`per_page`/`q` |

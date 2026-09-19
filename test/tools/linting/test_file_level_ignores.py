@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from shared_tests.test_linting.conftest import RunLinterPath
+from test.tools.linting.conftest import RunLinterPath
 
 
 @pytest.mark.parametrize(

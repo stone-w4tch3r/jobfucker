@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from textwrap import dedent
 
-from shared_tests.test_linting.conftest import RunLinter, RunLinterPath
+from test.tools.linting.conftest import RunLinter, RunLinterPath
 
 MODULE = "tools.linting.check_ignored_results"
 EXPECTED_VIOLATION_COUNT = 2
