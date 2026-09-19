@@ -45,8 +45,8 @@ Content-Disposition: form-data; name="body"
 - **CSRF:** required. The `X-CSRF-Token` header was used by the site and verified; the
   `authenticity_token` form field is also accepted (verified). Missing token → `422`.
 - **Resume:** no resume parameter was observed and there is no resume picker in the UI. The account's
-  single profile resume is used implicitly. The `resume_id` question (alias vs an undocumented id)
-  stays open because the request never carries one.
+  single profile resume is used implicitly; **one account = one resume** on Habr Career, so no resume
+  selection parameter is needed. The observable `resume_id` is the account alias.
 - No `Accept: text/html` variant and no `Referer` requirement were observed.
 
 ### Attach / edit the cover letter after applying
@@ -129,15 +129,15 @@ Notes:
 
 - **Minimum interval: ~10 s between responses, enforced per account and globally** (two different
   vacancies posted back-to-back produced the `400` throttle). The observed message states the limit.
-- **Monthly cap: 150 responses per month, per account.** Reaching it answers
+- **Monthly cap: 150 responses per month, per account** (not per IP/subnet). Reaching it answers
   `400 {"message":"Можно оставлять не более 150 откликов в месяц"}`. Verified by draining the
   experiment account to exactly 150 responses created in a day; the next response was refused.
   - **Deleted responses still count.** At the cap the account had `Основные (149)` +
     `Удалённые (1)` = 150 creations, so withdrawing a response does **not** free quota.
   - The cabinet exposes no remaining-count; the board only refuses at the boundary.
-  - Whether the counter resets on a calendar month (Moscow time) or a rolling window is **not
-    established** — the message only says "в месяц". A client must track its own creations and pace
-    the month.
+  - The reset boundary (calendar month vs rolling window) is **not established**. This is treated as
+    a **non-blocking, rare edge case**: a client must track its own creations and pace the month so it
+    never approaches the cap rather than rely on the reset.
 - **Contract mapping:** this board caps **per month**, not per day. For
   `service_info.per_auth_daily_cap`, treat the effective ceiling as `<150 / days-in-month>` (or track
   monthly directly); do not expose a naive 150/day. See the operation-routing note in
@@ -182,7 +182,6 @@ mistake it for a board-client substitute.
 
 ## Not established yet
 
-- Monthly-cap reset boundary (calendar month vs rolling window) and the exact reset time/timezone.
 - External / "отклик на другом сайте" applications: a `response.kind` for them was never observed and
   no external-apply vacancy was found.
 - Archival / closed-vacancy apply signal: not provoked (no archived vacancy appeared in listings).

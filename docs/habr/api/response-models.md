@@ -110,10 +110,11 @@ limits live in [Applications and responses](../applications-and-responses.md). N
   specialist directory, not owned resumes).
 - No numeric resume id appears in the page; the inline `"resume":{...}` object is content-only
   (sections with `edit` links). The observable resume identifier is the **account alias**
-  (`user.alias`, e.g. `<account-alias>`), which is also the public URL slug. Treat `resume_id` as the alias
-  until the apply request proves otherwise (Session 3).
-- Whether an account can hold more than one resume is not established; the UI observed exposes a
-  single profile-resume.
+  (`user.alias`, e.g. `<account-alias>`), which is also the public URL slug. Treat `resume_id` as the
+  alias; the apply request carries no resume id (see
+  [Applications and responses](../applications-and-responses.md#apply-request)).
+- **One account = one resume.** Habr Career exposes a single profile-resume per account; a
+  multi-resume account is not a thing, and the apply request needs no resume parameter.
 
 ## RSS item
 

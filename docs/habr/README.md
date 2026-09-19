@@ -100,9 +100,10 @@ path fully covers apply and the rest of the challenge handling is not establishe
   (`~10 s` min interval, no `Retry-After`), anonymous → `401`. Full map and reconciled reads:
   [Applications and responses](applications-and-responses.md).
 - Limits: **~10 s minimum interval** between responses (global, no `Retry-After`) and a
-  **150 responses/month** cap per account (`400 {"message":"Можно оставлять не более 150 откликов в
-  месяц"}`); deleted responses still count. There is no *daily* cap — `service_info.per_auth_daily_cap`
-  must be derived from the monthly quota.
+  **150 responses/month per-account** cap (not per IP; `400 {"message":"Можно оставлять не более 150
+  откликов в месяц"}`); deleted responses still count. There is no *daily* cap —
+  `service_info.per_auth_daily_cap` must be derived from the monthly quota. The reset boundary is
+  unestablished but accepted as non-blocking: track own creations and stay clear of the cap.
 - Habr documents an **OAuth 2.0 employer API** (`/info/api`, `/api/v1/integrations/...`) for pulling
   inbound responses into a CRM. It is company-side; it is not a seeker search/apply API.
 - **Anonymous reads work**: listing (JSON), detail (with inline JSON / JSON-LD), and RSS all return

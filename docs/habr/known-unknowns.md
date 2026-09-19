@@ -51,12 +51,9 @@ the full `description`, and the fallback `JobPosting` JSON-LD. Still unknown:
 
 Mapped (see [Response models](api/response-models.md#owned-resume)): the owned resume is the profile
 page `/profile` (public `/<alias>`); no numeric resume id was found; `/api/frontend_v1/resumes` is
-the public specialist directory. Still unknown:
+the public specialist directory. **One account = one resume** (single profile-resume); the apply
+request carries no resume id and the observable identifier is the alias. Still unknown:
 
-- Whether an account can hold more than one resume, and if so how they are listed.
-- The apply request carries **no** resume id — the single profile resume is used implicitly; the
-  observable identifier stays the alias. Whether a multi-resume account would need a parameter is not
-  established (see [Applications and responses](applications-and-responses.md#apply-request)).
 - Resume `updated_at` and any structured resume endpoint not yet found.
 
 ## Apply and responses
@@ -67,10 +64,11 @@ attach/edit (`PATCH …/responses/<rid>`), withdrawal (`DELETE …/responses/<ri
 `ApplyResult` map (applied / duplicate / anonymous / throttle / not-found / CSRF), the response
 object, the global ~10 s minimum interval between responses, and the seeker reconciliation surfaces
 (`/responses` HTML + `/api/frontend_v1/chat/conversations`) and the **150 responses/month** cap (not
-daily; deletes still count). Still unknown:
+daily; per account, not per IP; deletes still count). Still unknown:
 
-- Monthly-cap reset boundary (calendar month vs rolling window) and reset time/timezone.
-- Whether the cap is per account only or also per IP/subnet.
+- Monthly-cap reset boundary (calendar month vs rolling window) and reset time/timezone — **accepted
+  as non-blocking**: a rare edge case, handled by a client tracking its own creations and pacing away
+  from the cap rather than relying on the reset.
 - External / "отклик на другом сайте" applications and their `response.kind`.
 - Archival / closed-vacancy apply signal (no archived vacancy provokable from listings).
 - Screening tests / questionnaires at apply, if any.

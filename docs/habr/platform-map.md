@@ -61,7 +61,7 @@ exercised), `Unknown`.
 | `get_resumes` | Own profile `GET /profile` (public `/{alias}`) | Verified | One profile-resume; `resume_id` observed as the account alias; no owned-resume JSON endpoint found |
 | `apply_to_vacancy` | `POST /api/frontend/vacancies/<id>/responses` (multipart, optional `body` letter); `PATCH`/`DELETE` on `…/responses/<rid>` | Verified | Apply + letter + withdraw; `response.kind` `direct`/`applied`; full `ApplyResult` map and limits ([Applications and responses](applications-and-responses.md)) |
 | `aclose` | n/a | n/a | No background resources observed |
-| `service_info.per_auth_daily_cap` | `POST …/responses` monthly quota | Verified | **150 responses/month** per account (not daily); 151st → `400 {"message":"Можно оставлять не более 150 откликов в месяц"}`; deletes still count; reset boundary unknown ([Applications and responses](applications-and-responses.md#limits-and-pacing)) |
+| `service_info.per_auth_daily_cap` | `POST …/responses` monthly quota | Verified | **150 responses/month** per account, not per IP (not daily); 151st → `400 {"message":"Можно оставлять не более 150 откликов в месяц"}`; deletes still count; reset boundary unestablished and accepted as non-blocking ([Applications and responses](applications-and-responses.md#limits-and-pacing)) |
 | `service_info.max_search_items` | `/api/frontend/vacancies` accessible-position cap | Verified | Windows at offset ≥ ~1000 return an empty list; declare `1000` ([Search](api/search.md#pagination-page-size-and-caps)) |
 
 ## Media and detail enrichment

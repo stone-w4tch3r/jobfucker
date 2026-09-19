@@ -152,4 +152,5 @@ retry the single mutation once; do not loop.
 - Which `/api/frontend_v1/` controllers use the `{"httpCode","errorCode",…}` envelope (observed only
   under `/responses*`).
 - Rate-limit and captcha behavior at real (fetch/apply) volume.
-- The reset boundary of the 150/month response cap (see [Applications and responses](../applications-and-responses.md#limits-and-pacing)).
+- The reset boundary of the 150/month response cap — accepted as non-blocking (see
+  [Applications and responses](../applications-and-responses.md#limits-and-pacing)).
