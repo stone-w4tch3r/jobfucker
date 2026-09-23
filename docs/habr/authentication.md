@@ -6,7 +6,7 @@ SmartCaptcha (see [CAPTCHA](captcha.md)) that is **enforced on every fresh crede
 full login, including the captcha, was completed **browserlessly over pure HTTP**.
 
 > Freshness: chain and browserless login observed 2026-09-18 against live `account.habr.com` /
-> `career.habr.com`.
+> `career.habr.com`. Consolidated 2026-09-23.
 
 ## Outcome
 
@@ -85,10 +85,8 @@ path).
 - No `authenticity_token` on this form — it is a Habr Account form, not the Rails career app.
 - The page also offers external IdP buttons: GitHub, VK, Google, Facebook, Twitter, Yandex
   (`POST /ru/extidp/<provider>/prompt` with a hidden `token`).
-- A Yandex SmartCaptcha placeholder is embedded in the form
-  (`<div data-captcha="yandex" data-sitekey="<sitekey>">`, widget injected by JS) and must pass
-  before submit; see [CAPTCHA](captcha.md). On success the hidden `smart-token` is filled with the
-  widget `spravka`, the form POSTs as an XHR and returns JSON, then the page navigates client-side.
+- A Yandex SmartCaptcha placeholder is embedded in the form and must pass before submit; see
+  [CAPTCHA](captcha.md) for the widget contract and the solve path.
 
 ### Captcha enforcement
 
@@ -177,7 +175,8 @@ Notes:
   so the cookie's presence is not an authentication signal. The identity call's payload is.
 - The `s<hex>` cookies on `.habr.com` are the SSO/account session carriers; they are HttpOnly and
   have shorter lifetimes.
-- `qrator_msid2` is a Qrator WAF cookie (see below), not a login credential.
+- `qrator_msid2` is a Qrator WAF cookie ([Transport](api/transport-and-errors.md)), not a login
+  credential.
 - Analytics cookies are not required for authentication.
 
 ## Session lifecycle (refresh and logout)
@@ -211,31 +210,19 @@ Conclusions:
   `X-CSRF-Token` **header** (no form field) → `302`. Both carriers are accepted.
 - `meta.logoutToken` from `GET /api/frontend_v1/users/me` is **not** part of the HTML logout — the
   page contains no `logoutToken`, and a form-token logout succeeded without it. Its use (if any) is
-  unestablished.
+  unestablished ([Known unknowns](known-unknowns.md#authentication-and-session)).
 - After logout the career cookies are cleared in the response and `remember_user_token` no longer
   refreshes a session; the pre-logout `_career_session` value remained replayable (cookie store).
 
-## Infrastructure
-
-- `qrator_msid2` (HttpOnly, ~15 min) indicates Habr/Habr Career traffic passes through **Qrator**, a
-  WAF/DDoS-protection layer. Expect a possible interstitial or cookie refresh under suspicion; this
-  is separate from the Yandex SmartCaptcha login gate.
-- `account.habr.com` login loads Yandex SmartCaptcha; `career.habr.com` did not show a challenge for
-  ordinary navigation in this session.
-
-## Career-side session and CSRF
+## Career-side CSRF
 
 - Career HTML pages expose `<meta name="csrf-token">` and `<meta name="csrf-param"
   content="authenticity_token">`; Rails forms include a hidden `authenticity_token`.
-- State-changing requests require the token and answer `422 {"status":422,"error":"Unprocessable
-  Entity"}` without it. Both the form field and the `X-CSRF-Token` header are accepted
-  ([Transport and errors](api/transport-and-errors.md#csrf)).
-- Logout is a Rails form: `POST /users/sign_out` with `_method=delete` and `authenticity_token`
-  (see [Logout contract](#logout-contract)).
-- Same-origin JSON API calls (e.g. `GET /api/frontend_v1/users/me`) authenticate with the session
-  cookie and require no token for reads; an anonymous call returns `200 {}`.
-- The cookie set above was observed after a successful login; a browserless cookie jar established
-  by the same chain also authenticated `GET /api/frontend_v1/users/me` (200).
+- Mutations require the token; both the form field and the `X-CSRF-Token` header are accepted. The
+  full CSRF contract and error mapping live in
+  [Transport and errors](api/transport-and-errors.md#csrf).
+- Same-origin JSON API reads (e.g. `GET /api/frontend_v1/users/me`) authenticate with the session
+  cookie and require no token; an anonymous call returns `200 {}`.
 
 ## Authenticated identity
 
@@ -263,22 +250,13 @@ Conclusions:
 Anonymous callers receive `200 {}` (empty object), not `401` — authentication must be detected from
 the payload (`user` present), never from the status code.
 
-## Verification status
+## Change canaries
 
-| Item | Status |
+| Area | Canary |
 | --- | --- |
-| Unauthenticated redirect to `/users/auth_required` | Verified |
-| SSO authorize URL and parameters | Verified |
-| Login form fields and POST target | Verified |
-| SmartCaptcha gate on login | Verified (enforced; `errors.smart-token` without a token) |
-| Login POST shape (XHR, JSON `success`/`rurl`) | Verified |
-| Post-login callback and cookie set | Verified |
-| Cookie inventory and lifetimes | Verified (values redacted) |
-| Browserless (pure-HTTP) full login | Verified (captcha solved via vision OCR + `pow`) |
-| Existing account session skips login/captcha | Verified |
-| Session refresh via `remember_user_token` | Verified (re-issues `_career_session`) |
-| SSO `.habr.com` cookies authenticate career | Verified negative (no session from SSO alone) |
-| Logout contract (`POST /users/sign_out`, CSRF) | Verified (form field and header both accepted; `logoutToken` not needed) |
-| CSRF enforcement on mutations | Verified (`422` without a token) |
-| Anonymous `GET /api/frontend_v1/users/me` → `200 {}` | Verified |
-| Session expiry durations / remember-token TTL | Unknown |
+| Identity | `GET /api/frontend_v1/users/me` returns `user.alias` |
+| SSO | Login still routes through `/users/auth/tmid` and `account.habr.com/oauth/authorize`; the login form POSTs `email`/`password`/`smart-token`; a valid login answers JSON `{"success":true,"rurl":".../oauth/authorize/done/<hash>"}` |
+| Session | A logged-in session still sets `_career_session` (career) and `.habr.com` `s<hex>` SSO cookies |
+| Session refresh | Dropping `_career_session` but keeping `remember_user_token` still returns the identity and re-issues `_career_session` |
+| Anonymous identity | `GET /api/frontend_v1/users/me` anonymous still `200 {}` |
+| Protected redirect | `GET /responses` anonymous still `302` to `/users/auth_required` |

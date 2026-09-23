@@ -11,7 +11,7 @@ because the challenge is risk-based and the block threshold is unknown
 (see [the research playbook](research-playbook.md#captcha-handling-rule)).
 
 > Freshness: captured 2026-09-18 from fresh unauthenticated browser sessions and browserless HTTP
-> against `career.habr.com/users/auth/tmid` / `account.habr.com`.
+> against `career.habr.com/users/auth/tmid` / `account.habr.com`. Consolidated 2026-09-23.
 
 ## Where it appears
 
@@ -22,10 +22,11 @@ because the challenge is risk-based and the block threshold is unknown
 | Login page (challenge lives here) | `GET https://account.habr.com/ru/ident/<state-token>` |
 | Login submit | `POST https://account.habr.com/ru/ident/in/<state-token>` |
 
-The challenge is part of the **Habr Account login form**, not a separate interstitial. Whether a
-valid Habr Account session (e.g. the `habr-exp` scope) bypasses it entirely is observed: yes, the
-authenticated `habr-exp` session reaches `career.habr.com` without any career-side challenge. The
-question is whether a **fresh login** always requires it.
+The challenge is part of the **Habr Account login form**, not a separate interstitial. The login
+form fields and submit contract live in [Authentication](authentication.md#login-form); this page
+owns the captcha widget and solve protocol. A valid Habr Account session (e.g. the `habr-exp`
+scope) reaches `career.habr.com` without any career-side challenge, but a **fresh credential login
+always requires it** (server-enforced).
 
 ## Engine
 
@@ -61,17 +62,6 @@ login page URL in `href`/`page-url`.
 
 Observed state at capture time: checkbox `checked=false`, `input[name=smart-token]` empty, overlay
 spinner still present after 11 s. The widget rendered but did not self-pass in the agent browser.
-
-## Login form contract
-
-| Field | Type | Value |
-| --- | --- | --- |
-| `email` | email | account email |
-| `password` | password | account password |
-| `smart-token` | hidden | SmartCaptcha token (empty until solved) |
-
-Form action `POST /ru/ident/in/<state-token>`. No `authenticity_token` field on this form (it is a
-Habr Account form, not the Rails career app).
 
 ## Solve flow (observed 2026-09-18)
 
@@ -224,12 +214,6 @@ widget's `rdata` (encrypted telemetry), `picasso` (canvas proof), or `tdata` (po
 telemetry) — those fields are present in a real browser submission but were not required by the
 server for a minimal `key + rep + pdata` POST.
 
-Captcha presence: on every fresh credential login observed, the login page carried the captcha
-placeholder and the server rejected a token-less POST with
-`{"success":false,"errors":{"smart-token":"Необходимо пройти капчу"}}`. A fresh login therefore
-always costs a captcha round (checkbox type for a bare client, image type for a detectable one).
-An existing Habr Account session skips the login form and the captcha entirely.
-
 Notes on the solve path:
 
 - **OCR quality is the limiting factor, not the protocol.** The vision model read the distorted text
@@ -260,14 +244,14 @@ attempt the widget also issued an autonomous background `POST /check` on page lo
 
 Conclusion: on this account and browser, an automated **click-only** pass is sufficient in 2/2
 attempts, and a fully automated headless login worked end-to-end. This does not imply a browserless
-(pure-HTTP) solve exists.
+(pure-HTTP) solve exists — that path is separately verified above.
 
 Caveats — do not over-read this result:
 
 - SmartCaptcha is **risk-based**. Two successes do not establish that a challenge will never
   escalate to an image/advanced challenge on repeated or faster logins, a different IP, or a
   different fingerprint.
-- Only checkbox mode was seen; escalation behavior (image puzzle, blocked) is untested.
+- Only checkbox mode was seen here; escalation behavior is covered by the ladder above.
 - Qrator is a second, independent gate.
 - Use sparingly: low-frequency logins on an owned account only. Treat `status != "ok"` or a missing
   token as escalation and hand off to a human.
@@ -333,19 +317,6 @@ Escalation handling: if `/check` returns `status != "ok"` (e.g. an image captcha
 loop. Treat it as escalation and hand off per the playbook; a UA/fingerprint mismatch is the likely
 cause.
 
-## What is not documented yet
-
-- Whether the captcha can ever be skipped on a fresh login for a very trusted client; every observed
-  fresh credential login required it (server-enforced).
-- Whether the checkbox ever auto-passes with no click (not observed; a click was always needed).
-- The block/escalation threshold: how many failed attempts (per IP, per account) trigger a block or
-  a harder challenge, and whether Qrator blocks first.
-- Whether `pow.complexity` ever rises above `10`, and whether the audio task type is OCR-equivalent
-  in difficulty.
-- The token TTL and whether a token can be reused for a retry of the same login.
-- Whether the same challenge ever appears on `career.habr.com` itself (e.g. on search/apply at
-  volume) rather than only on the Habr Account login step.
-
 ## Handling rule
 
 Follow the [CAPTCHA rule](research-playbook.md#captcha-handling-rule): stop, capture, then either
@@ -355,11 +326,11 @@ while observing the full flow. The escalation trigger and completion contracts a
 experiment account at low volume; treat repeated failures or a new `captcha.type` as a stop signal
 and hand off to a human.
 
-## Recommendation: captcha strategy for the client (not final)
+## Captcha strategy for the client (recommendation, not final)
 
-> Status: **recommendation, not a decision.** This is the proposed approach for the future
+> Status: **recommendation, not a decision.** Proposed approach for the future
 > `jobfucker.clients.habr` package, derived from the observations above. It is not implemented and
-> not a spec; revisit it when the client is built (Session 4).
+> not a spec; the client specification is deferred to a separate interactive session.
 
 Proposed strategy: **browser-first checkbox, vision fallback, session reuse as the main defense.**
 
@@ -396,7 +367,15 @@ Why hybrid rather than either alone:
   relies on the server tolerating a minimal `rdata`/`picasso`-less POST.
 - The two compose: the browser path's failure mode is exactly the fallback path's input.
 
-Open risks for the eventual implementation (all unresolved, see
-[What is not documented yet](#what-is-not-documented-yet)): block/rate thresholds, whether
+Open risks (unresolved; tracked in
+[Known unknowns](known-unknowns.md#challenges-and-infrastructure)): block/rate thresholds, whether
 `pow.complexity` rises, image legibility drift, the audio task type (would need STT), and Qrator as
 a separate gate.
+
+## Change canaries
+
+| Area | Canary |
+| --- | --- |
+| CAPTCHA | `account.habr.com` login still loads Yandex SmartCaptcha with sitekey `ysc1_zgWuDVpgrG9kwB8QEfIkuWseZyEnRzHLCAPF2dwh1db6e985` |
+| CAPTCHA enforcement | A token-less login POST still answers `{"success":false,"errors":{"smart-token":"..."}}` |
+| CAPTCHA escalation | `POST smartcaptcha.cloud.yandex.ru/check` still answers `{status:"failed",captcha:{type:"checkbox"\|"image"},pow:{complexity:10}}`; `pow` still verifies as `sha256(prefix ++ nonce)` with `complexity` leading zero bits |

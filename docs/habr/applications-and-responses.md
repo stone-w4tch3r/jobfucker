@@ -179,16 +179,4 @@ mistake it for a board-client substitute.
 | Monthly cap | A 150th response is accepted; the 151st answers `400 {"message":"…не более 150 откликов в месяц"}`; deleted responses count toward the 150 |
 | Apply mode | Listing/detail item still carries `response.kind` ∈ `direct`/`applied` |
 | Conversations | `GET /api/frontend_v1/chat/conversations` still returns `{conversations, meta}` |
-
-## Not established yet
-
-- External / "отклик на другом сайте" applications: a `response.kind` for them was never observed and
-  no external-apply vacancy was found.
-- Archival / closed-vacancy apply signal: not provoked (no archived vacancy appeared in listings).
-- Screening tests / questionnaires at apply: no test field was seen on listing/detail.
-- Full `response.kind` enum (`guest` appears for non-XHR profiles; see
-  [Response models](api/response-models.md#listing-item)) and the meaning of `isQuick`, `result`,
-  `vacancyRecommendationAccuracyPercent`.
-- Response status vocabulary beyond `Не прочитано` (invited / declined / read states), which needs an
-  employer-side action to observe.
-- `/conversations` item shape (no dialog existed on the experiment account).
+| Employer API docs | `/info/api` still documents OAuth 2.0 CRM integration at `/integrations/oauth/*` and `/api/v1/integrations/vacancies` |

@@ -161,10 +161,3 @@ be silently merged into `salary`.
 | JSON-LD | The page still has one `JobPosting` `ld+json` block with `identifier.value` = the id |
 | Resume | `/profile` still renders the resume; `user.alias` still equals the public slug |
 | RSS | An item still has `guid` (id), `link`, `author`, `pubDate` |
-
-## Not established yet
-
-- Whether `updated_at` is available for the resume.
-- Archived/hidden items: whether they appear in listings and their detail/apply representation.
-- The full `response.kind` enum and the meaning of the apply-response fields `isQuick`, `result`,
-  `vacancyRecommendationAccuracyPercent`.

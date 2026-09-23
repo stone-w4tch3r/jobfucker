@@ -61,12 +61,8 @@ over pure HTTP and how it maps onto the [client contract](../../specs/client-con
 | `GET /api/frontend_v1/<unknown>` (JSON accept) | 404 | `{"error":"Not found"}` |
 | `GET /vacancies/<unknown-id>` (JSON accept) | 404 | `{"error":"Not found"}` |
 | `GET /<unknown-non-api>` (HTML accept) | 404 | Rails HTML error page |
-| `POST`/`DELETE` on `/api/frontend_v1/*` without CSRF | 422 | `{"status":422,"error":"Unprocessable Entity"}` |
-| `POST /api/frontend/vacancies/<id>/responses` without CSRF | 422 | same `{"status":422,"error":"Unprocessable Entity"}` |
-| Applied / lettered response | 200 | `{"response":{"id":…,…}}` |
-| Duplicate response | 401 | `{"error":{"message":"Вы уже откликнулись на эту вакансию"}}` |
-| Anonymous apply | 401 | `{"error":"Войдите, прежде чем продолжить."}` |
-| Response throttle (<10 s) | 400 | `{"message":"Вы не можете откликаться чаще, чем раз в 10 секунд"}` |
+| `POST`/`DELETE` mutation on a JSON route without CSRF | 422 | `{"status":422,"error":"Unprocessable Entity"}` |
+| Apply / letter / withdraw outcomes | — | Owned by [Applications and responses](../applications-and-responses.md#applyresult-mapping-verified); not repeated here |
 | `GET /responses` (anonymous) | 302 → 200 | `/users/auth_required` HTML |
 | `GET /vacancies` (anonymous or authenticated) | 200 | HTML listing; `.vacancy-card` items |
 | `GET /vacancies/rss?page=1&per_page=25` | 200 | RSS 2.0 (50 `<item>` on page 1) |
@@ -119,11 +115,9 @@ retry the single mutation once; do not loop.
 - No rate-limit headers and no `429`/`403` in a 10-request sequence (page 1..10, ~0.3 s apart,
   authenticated), and no UA-based block (Chrome / python-urllib / curl). Thresholds are unknown —
   keep HH-like pacing (≥0.3 s between requests, larger gaps before mutations).
-- **Mutations have their own limits:** two vacancy responses less than ~10 s apart answer
-  `400 {"message":"Вы не можете откликаться чаще, чем раз в 10 секунд"}`, and beyond **150 responses
-  per month** the board answers `400 {"message":"Можно оставлять не более 150 откликов в месяц"}`.
-  Both are globally per account and carry **no `Retry-After` / `X-RateLimit-*`** headers; the
-  discriminator is the message text ([Applications and responses](../applications-and-responses.md#limits-and-pacing)).
+- **Mutations have their own limits:** a ~10 s minimum interval between responses and a 150/month
+  per-account quota, both with no `Retry-After` / `X-RateLimit-*` headers. The full contract is owned
+  by [Applications and responses](../applications-and-responses.md#limits-and-pacing).
 - `Server: QRATOR` confirms a WAF in front of everything. A `qrator_msid2` cookie appears in a real
   browser session; no interstitial or cookie-refresh challenge was observed. Any
   interstitial/challenge must be handled per the [CAPTCHA rule](../research-playbook.md#captcha-handling-rule).
@@ -139,18 +133,7 @@ retry the single mutation once; do not loop.
 | API 404 | `GET /api/frontend_v1/<unknown>` (JSON accept) returns `404 {"error":"Not found"}` |
 | CSRF | A `POST` without a token returns `422 {"status":422,...}` |
 | CSRF carriers | `X-CSRF-Token` header and `authenticity_token` form field both accepted |
-| Apply error shapes | Duplicate → `401 {"error":{"message":…}}`, anonymous → `401 {"error":"Войдите…"}`, throttle → `400 {"message":"…10 секунд"}`, monthly cap → `400 {"message":"…150 откликов в месяц"}` |
 | Error envelope | `/api/frontend_v1/responses*` still returns `{"httpCode":404,"errorCode":"NOT_FOUND",…}`; unknown other paths still `{"error":"Not found"}` |
 | Anonymous reads | `/vacancies`, `/vacancies/<id>`, `/vacancies/rss` return `200` with content |
 | Anonymous protected | `GET /responses` redirects to `/users/auth_required` |
 | Rate limits | No `X-RateLimit-*`/`Retry-After` on ordinary reads |
-
-## Not established yet
-
-- `5xx` body shapes and whether `Retry-After` ever appears; whether a `429` exists at all.
-- The Qrator interstitial / block page shape and its trigger.
-- Which `/api/frontend_v1/` controllers use the `{"httpCode","errorCode",…}` envelope (observed only
-  under `/responses*`).
-- Rate-limit and captcha behavior at real (fetch/apply) volume.
-- The reset boundary of the 150/month response cap — accepted as non-blocking (see
-  [Applications and responses](../applications-and-responses.md#limits-and-pacing)).

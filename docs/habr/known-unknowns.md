@@ -1,6 +1,7 @@
 # Known Unknowns
 
-Integration boundaries that are not established well enough to implement as facts. Not a backlog or
+Integration boundaries that are not established well enough to implement as facts. **Single home for
+open questions** — canonical pages carry only verified behavior and link here. Not a backlog or
 research diary. A feature depending on one of these items requires focused verification first, then
 the item moves to a canonical page and is removed from here.
 
@@ -11,16 +12,14 @@ parameters, login form fields and POST target, the JSON `success`/`rurl` login r
 post-login callback chain, the cookie inventory (`_career_session`, `remember_user_token`,
 `.habr.com` `s<hex>` SSO cookies), session refresh via `remember_user_token`, the logout contract
 (`POST /users/sign_out`, form-field and `X-CSRF-Token` carriers), and CSRF enforcement. The **full
-login was completed browserlessly over pure HTTP**, including the captcha (see
-[Auto-solve feasibility](captcha.md#auto-solve-feasibility-verified)), and the captcha was observed
-to be **enforced on every fresh credential login**. Still unknown:
+login was completed browserlessly over pure HTTP**, including the captcha, and the captcha is
+enforced on every fresh credential login. Still unknown:
 
 - Session expiry durations and the exact TTL of `_career_session` / `remember_user_token`.
 - Purpose of `meta.logoutToken` (not used by the HTML logout form); whether any endpoint consumes it.
 - Whether mutating requests ever return a distinguishable expired-session signal instead of a plain
   redirect / `{}` identity.
 - Whether a captcha can ever be skipped on a fresh login for a very trusted client (never observed).
-- Whether Qrator issues an interstitial/cookie-refresh challenge under load, and its trigger.
 - Anonymous request behavior at volume (no challenge observed in single requests).
 
 ## Search and listings
@@ -86,18 +85,18 @@ daily; per account, not per IP; deletes still count). Still unknown:
   verified **pure-HTTP solve** (OCR + `pow` → `spravka`, accepted by the login form) — see
   [CAPTCHA](captcha.md#challenge-ladder-how-complexity-rises). Still unknown: the block/rate
   threshold for repeated failures, whether `pow.complexity` ever rises above `10`, whether the audio
-  task type is as solvable, and the `spravka` TTL.
+  task type is as solvable, whether the checkbox ever auto-passes with no click, the `spravka` TTL and
+  whether it can be reused for a retry, and whether a challenge ever appears on `career.habr.com`
+  itself (search/apply at volume) rather than only on the Habr Account login step.
   Follow the [CAPTCHA rule](research-playbook.md#captcha-handling-rule).
-- Whether a challenge ever appears on `career.habr.com` itself (search/apply at volume) rather than
-  only on the Habr Account login step.
 - Qrator WAF behavior under load: whether it issues an interstitial or cookie-refresh challenge, and
   its trigger.
 - Rate-limit behavior and retry headers: none observed at low volume; thresholds, `429`, and
   `Retry-After` are unestablished (see [Transport and errors](api/transport-and-errors.md)).
 - Error taxonomy: core shapes are mapped in
-  [Transport and errors](api/transport-and-errors.md), but `5xx` bodies, any `429`/`Retry-After`, the
-  Qrator block page, and whether the `{"httpCode":...,"errorCode":...}` envelope exists on any route
-  are unestablished.
+  [Transport and errors](api/transport-and-errors.md), but `5xx` bodies, any `429`/`Retry-After`, and
+  the Qrator block page are unestablished. The `{"httpCode":…,"errorCode":…}` envelope is verified
+  only under `/api/frontend_v1/responses*`; which other controllers use it is unmapped.
 
 ## Resolving an unknown
 

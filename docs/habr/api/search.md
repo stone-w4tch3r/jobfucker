@@ -142,11 +142,3 @@ client.
 | Sort | `sort=date` reorders by `publishedDate`; `sort=salary_desc` puts salaried items first |
 | Anonymous | Listing works without a session; anonymous `type=suitable` is ignored |
 | RSS | `/vacancies/rss` still returns 50 items and ignores `page`/`per_page`/`q` |
-
-## Not established yet
-
-- `company_ids[]` and specialization (`divisions`/`s`) value shapes.
-- Archived/hidden vacancy visibility and their effect on totals.
-- The exact cap boundary (observed 995 last accessible position; declared 1000).
-- Whether `type=suitable` requires an owned resume, and how many resumes an account can have.
-- Rate/captcha behavior at fetch volume (see [transport](transport-and-errors.md)).

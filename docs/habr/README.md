@@ -1,33 +1,29 @@
 # Habr Career Integration Wiki
 
-Technical reference for building and maintaining a `career.habr.com` client for jobfucker. Early
-stage: this wiki starts as a high-level playbook and is deepened one topic per research session per
-[the research plan](research-plan.md). It describes Habr Career as it behaves, not how it was
-researched.
+Technical reference for building and maintaining a `career.habr.com` client for jobfucker. Habr
+Career is an external system and can change without notice; revalidate the canaries in each page when
+behavior drifts. The wiki describes Habr Career as it behaves, not how it was researched.
 
-> Freshness: surface discovery performed against live `career.habr.com` on 2026-09-18 with the
-> authenticated `habr-exp` account; the apply/letter/withdraw surface was added 2026-09-19. Habr
-> Career is an external system and can change without notice. Revalidate the canaries in each page
-> when behavior drifts.
+> Freshness: surface discovery against live `career.habr.com` on 2026-09-18 with the authenticated
+> `habr-exp` account; apply/letter/withdraw surface added 2026-09-19; consolidated 2026-09-23.
 
 ## Start here
 
 | Need | Read |
 | --- | --- |
-| Understand the plan and method for this wiki | [Research plan](research-plan.md) |
-| Method every research session follows | [Research playbook](research-playbook.md) |
 | Understand which Habr Career surface owns which operation | [Platform map](platform-map.md) |
 | Search, list, and page vacancies | [Search and listings](api/search.md) |
 | Decode listing/detail/resume payloads | [Response models](api/response-models.md) |
 | Look up filter ids (cities, regions, skills) | [Auxiliary id catalogs](aux/README.md) |
 | Log in through Habr Account SSO | [Authentication and session](authentication.md) |
+| Understand the login challenge | [CAPTCHA](captcha.md) |
 | Apply, add a letter, withdraw, read responses back | [Applications and responses](applications-and-responses.md) |
 | Understand transport, statuses, and error mapping | [Transport and errors](api/transport-and-errors.md) |
-| Understand the login challenge | [CAPTCHA](captcha.md) |
 | See what is not yet established | [Known unknowns](known-unknowns.md) |
+| Understand the research method for this wiki | [Research playbook](research-playbook.md) |
 | Reuse the HH wiki as the target shape | [HH.ru wiki](../hh/README.md) |
 
-## Core model (discovered, not yet verified)
+## Core model
 
 ```text
 credentials
@@ -51,75 +47,46 @@ Applied list    ──► GET /responses (HTML) · dialogs GET /api/frontend_v1/
 Owned resume    ──► GET /profile (public /<alias>)
 ```
 
-The website is the primary surface; the **listing data is JSON** (`/api/frontend/vacancies`) and the
-vacancy detail page embeds structured JSON, so scraping is not needed. Login is established as fully
-browserless (see [Authentication](authentication.md#browserless-login-verified)); whether a pure-HTTP
-path fully covers apply and the rest of the challenge handling is not established.
+The website is the primary surface; listing data is JSON (`/api/frontend/vacancies`) and the vacancy
+detail page embeds structured JSON, so scraping is not needed. Every `Client` method in the
+[client contract](../specs/client-contract.md) has a verified Habr surface
+([Platform map](platform-map.md#operation-routing-candidate-surface-per-contract-method)).
 
-## Facts observed so far
+## Facts observed
 
-- Habr Career is a **Rails app**. Mutations require the form field `authenticity_token`
-  (`<meta name="csrf-token">` also present).
-- Login is **Habr Account SSO**, reached at `/users/auth/tmid`; there is no local career password
-  form on the entry URLs observed.
-- A fresh login goes through `account.habr.com` and is gated by a **Yandex SmartCaptcha that is
-  enforced on every fresh credential login** (a token-less POST returns
-  `errors.smart-token`). It is risk-based: a trusted browser passes the checkbox, while a detectable
-  fingerprint (e.g. the `HeadlessChrome` UA) escalates to an **image (distorted-text) challenge**
-  protected by a proof-of-work. Both the escalation contract and a **fully browserless login** (pure
-  HTTP: vision OCR + `pow` → `spravka` → login POST → `rurl`) were verified. An existing Habr
-  Account session skips the login form and captcha. See [CAPTCHA](captcha.md) and
-  [Authentication](authentication.md).
-- A logged-in session sets the Rails career session `_career_session`, the persistent
-  `remember_user_token`, and `.habr.com` `s<hex>` SSO cookies; traffic passes through **Qrator**
-  (`qrator_msid2`). Cookie inventory is in [Authentication](authentication.md#session-cookies).
-- **Vacancy listings are JSON**: `GET /api/frontend/vacancies?<filters>` (note `/api/frontend/`, not
-  `/api/frontend_v1/`) returns `{list, meta}` with `meta.totalResults`. `/vacancies` is the same data
-  server-rendered. See [Search and listings](api/search.md).
-- Listing filters: `q`, `type=all|suitable`, `qid`, `remote`, `with_salary`, `salary`+`currency`,
-  `skills[]`, `city_id`, `employment_type`, `sort=relevance|date|salary_desc|salary_asc`, `page`,
-  `per_page`. `type=suitable` is resume-scoped when authenticated and **ignored when anonymous**.
-- Listing caps: effective page size is **50** (even when `per_page` is larger); positions at/after
-  offset ~1000 return an empty list; a page beyond `meta.totalPages` is `404 {"error":"Not found"}`.
-  Declare `max_search_items = 1000`.
-- **Vacancy detail** (`/vacancies/<id>`) embeds the listing item shape plus the full `description`
-  HTML under `"vacancy":{...}`; a `schema.org/JobPosting` `ld+json` block is also present. Prefer the
-  inline JSON. No description/snippet is in the listing.
-- The authenticated identity endpoint is `GET /api/frontend_v1/users/me`, returning
-  `{user: {alias, fullName, email, ...}}`.
-- **Owned resume** is the profile page `GET /profile` (public `/<alias>`); no owned-resume JSON
-  endpoint was found (`/api/frontend_v1/resumes` is the public specialist directory). The observable
-  resume identifier is the account alias.
-- **RSS is not a search surface**: `/vacancies/rss` returns a fixed latest 50 and ignores
-  `page`/`per_page`/`q`; use it only as a canary.
-- Vacancy identifiers are numeric, e.g. `/vacancies/1000167594`.
-- **Apply is `POST /api/frontend/vacancies/<id>/responses`** (`multipart/form-data`, CSRF required);
-  the cover letter is the `body` field, optionally in the same POST. Letter edit is
-  `PATCH …/responses/<rid>`, withdraw is `DELETE …/responses/<rid>`. `response.kind` in a listing /
-  detail item is `direct` (unresponded) or `applied`. Duplicate → `401`, throttle → `400`
-  (`~10 s` min interval, no `Retry-After`), anonymous → `401`. Full map and reconciled reads:
-  [Applications and responses](applications-and-responses.md).
-- Limits: **~10 s minimum interval** between responses (global, no `Retry-After`) and a
-  **150 responses/month per-account** cap (not per IP; `400 {"message":"Можно оставлять не более 150
-  откликов в месяц"}`); deleted responses still count. There is no *daily* cap —
-  `service_info.per_auth_daily_cap` must be derived from the monthly quota. The reset boundary is
-  unestablished but accepted as non-blocking: track own creations and stay clear of the cap.
-- Habr documents an **OAuth 2.0 employer API** (`/info/api`, `/api/v1/integrations/...`) for pulling
-  inbound responses into a CRM. It is company-side; it is not a seeker search/apply API.
-- **Anonymous reads work**: listing (JSON), detail (with inline JSON / JSON-LD), and RSS all return
-  content without a session. Protected pages (`/responses`) answer `302 → /users/auth_required`. The
-  anonymous identity call returns `200 {}` — auth is detected from the payload, never the status.
-  An anonymous request still sets `_career_session`, so cookie presence is not an auth signal.
-- **Session persistence** is `remember_user_token`: dropping `_career_session` but keeping it
-  re-issues a career session; the `.habr.com` SSO cookies alone do **not** authenticate career.
-  `_career_session` is a cookie-store session, so logout does not invalidate a captured cookie value.
-- **CSRF** is required on mutations (`422` without a token); both the `authenticity_token` form field
-  and the `X-CSRF-Token` header are accepted.
-- `/api/frontend_v1/` errors observed are `{"error":"Not found"}` (404) and
-  `{"status":422,"error":"Unprocessable Entity"}` (CSRF/validation), returned as JSON; the same web
-  URL reacts to JSON accept headers. The structured `{"httpCode":...,"errorCode":...}` envelope seen
-  during surface discovery was not reproduced and remains unverified. See
-  [Transport and errors](api/transport-and-errors.md).
+- Habr Career is a **Rails app**. Mutations require `authenticity_token` (form field or
+  `X-CSRF-Token` header); a missing token is `422`
+  ([Transport](api/transport-and-errors.md#csrf)).
+- Login is **Habr Account SSO** via `/users/auth/tmid`; there is no local career password form. A
+  fresh credential login is always gated by Yandex SmartCaptcha, but the full login (including the
+  captcha) has a verified pure-HTTP path ([Authentication](authentication.md#browserless-login-verified),
+  [CAPTCHA](captcha.md#challenge-ladder-how-complexity-rises)).
+- A logged-in session sets `_career_session` plus `remember_user_token` and `.habr.com` SSO
+  cookies; `remember_user_token` re-issues the career session, while the SSO cookies alone do **not**
+  authenticate career ([Authentication](authentication.md#session-cookies)).
+- **Anonymous reads work** for listings, vacancy detail, and RSS. Authentication is detected from the
+  payload, never the status: anonymous `/api/frontend_v1/users/me` is `200 {}`, and an anonymous
+  first request still sets `_career_session`
+  ([Platform map](platform-map.md#anonymous-behavior)).
+- **Vacancy listings are JSON**: `GET /api/frontend/vacancies?<filters>` (`/api/frontend/`, not
+  `/api/frontend_v1/`) returns `{list, meta}`; the detail page embeds the full description
+  ([Search](api/search.md), [Response models](api/response-models.md#detail-page)).
+- Listing caps: effective page size is **50**; offsets ≥ ~1000 return an empty list; a page beyond
+  `meta.totalPages` is `404 {"error":"Not found"}`. Declare `max_search_items = 1000`
+  ([Search](api/search.md#pagination-page-size-and-caps)).
+- **One account = one resume**, identified by the account alias; no resume id is sent at apply
+  ([Response models](api/response-models.md#owned-resume)).
+- **Apply is `POST /api/frontend/vacancies/<id>/responses`** (multipart, optional `body` letter);
+  letter edit is `PATCH …/responses/<rid>`, withdraw is `DELETE …/responses/<rid>`. `response.kind`
+  is `direct` or `applied` ([Applications and responses](applications-and-responses.md)).
+- Limits: **~10 s minimum interval** between responses and a **150 responses/month per-account**
+  cap; deletes still count and there is no daily cap. Derive `service_info.per_auth_daily_cap` from
+  the monthly quota ([Applications and responses](applications-and-responses.md#limits-and-pacing)).
+- The site is fronted by **Qrator** (`Server: QRATOR`) and errors come in two shapes:
+  `{"error":"Not found"}` and, under `/responses*`, a `{"httpCode","errorCode",…}` envelope
+  ([Transport](api/transport-and-errors.md)).
+- Habr documents an **OAuth 2.0 employer API** (`/info/api`) for CRM export; it is company-side and
+  not a seeker search/apply API ([Applications and responses](applications-and-responses.md#official-api-is-employer-side-not-a-seeker-apply-path)).
 
 ## Scope and authority
 
@@ -127,7 +94,8 @@ This wiki is authoritative for observed Habr Career behavior and the integration
 from it. Product behavior and board-neutral interfaces remain authoritative in the parent jobfucker
 specifications: [client contract](../specs/client-contract.md),
 [architecture](../specs/architecture.md). The implementation spec for the future
-`jobfucker.clients.habr` package will be `docs/specs/habr-client.md` (Session 4).
+`jobfucker.clients.habr` package (`docs/specs/habr-client.md`) will be written in a separate
+interactive session; research itself is complete enough to build against.
 
 Raw HARs, cookies, tokens, CSRF values, and challenge captures are deliberately not dependencies
 and live only in `/tmp`. The wiki contains the durable, sanitized contracts.

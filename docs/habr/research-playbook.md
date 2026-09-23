@@ -1,23 +1,11 @@
 # Research Playbook
 
-Method every research session follows. Read this and [the research plan](research-plan.md) before
-starting; update this file only when the method itself changes.
-
-## Goal
-
-Build a canonical, sanitized reference for observed Habr Career behavior, enough to implement a
-board client against the [client contract](../specs/client-contract.md). Thin docs first, deepened
-one topic per session. Not a one-shot map.
-
-## Target: contract coverage
-
-Every session updates the operation-routing table in [platform-map.md](platform-map.md). A topic is
-"researched" when the relevant method has a verified surface and contract:
-
-```text
-authorize · search_vacancies · list_vacancies · get_resumes · get_identity · apply_to_vacancy
-service_info.per_auth_daily_cap · service_info.max_search_items
-```
+Method every research session follows. Read this before starting; update this file only when the
+method itself changes. The research goal was a canonical, sanitized reference for observed Habr
+Career behavior — enough to implement a board client against the
+[client contract](../specs/client-contract.md). Every contract member now has a verified surface;
+the per-method status is the operation-routing table in
+[platform-map.md](platform-map.md#operation-routing-candidate-surface-per-contract-method).
 
 ## Browser session
 
@@ -63,8 +51,8 @@ Use exactly these in every table:
 - `Known-unverified` — the surface was located but its contract was not exercised.
 - `Unknown` — not established.
 
-Each page carries a freshness date. Record small `Change canaries` per page and revalidate when
-behavior drifts.
+Each page carries a freshness date and a small `Change canaries` table; revalidate when behavior
+drifts. Open questions live only in `known-unknowns.md`.
 
 ## Sanitization
 
@@ -98,15 +86,12 @@ If a challenge appears on any endpoint:
    automate; until reliable trigger + completion docs exist, CAPTCHA is human-in-the-loop.
 7. Never commit challenge captures, cookies, or tokens.
 
-Current state for Habr Career: the login SmartCaptcha checkbox was solved first by a human and then
-reproduced automatically by the stealth headless browser — see
-[CAPTCHA](captcha.md#automation-feasibility-stealth-headless). The higher level was then provoked
-and solved: risk-based escalation to an image (distorted-text) challenge, its `pow` proof-of-work,
-and a verified pure-HTTP solve (OCR + `pow` → `spravka`) — see
-[CAPTCHA](captcha.md#challenge-ladder-how-complexity-rises). The **full login was completed
-browserlessly over pure HTTP** (`spravka` → login POST → `rurl` → session), and the captcha was
-observed to be enforced on every fresh credential login — see
-[Authentication](authentication.md#browserless-login-verified). Policy:
+Current state for Habr Career: the login SmartCaptcha checkbox was solved by a human, then
+reproduced by a stealth headless browser
+([Automation feasibility](captcha.md#automation-feasibility-stealth-headless)); the image challenge
+was then provoked and solved fully automatically, including a verified pure-HTTP path
+([Auto-solve feasibility](captcha.md#auto-solve-feasibility-verified)). The full login was completed
+browserlessly and the captcha is enforced on every fresh credential login. Policy:
 
 - The documented solve path may be used at low login frequency on an owned account.
 - Treat a new/unknown `captcha.type`, a rising `pow.complexity`, repeated `status:"failed"`, a block
@@ -121,4 +106,3 @@ At the end of a session:
 
 1. Update the affected canonical pages and the operation-routing table.
 2. Move resolved items out of `known-unknowns.md`; add newly discovered ones.
-3. Note in [research-plan.md](research-plan.md) if the remaining session plan changed.
