@@ -30,6 +30,7 @@ from jobfucker.clients.hh.apireads import get_api_with_recovery, status_error
 from jobfucker.clients.hh.captcha import CaptchaCoordinator, challenge_error, classify_challenge
 from jobfucker.clients.hh.models import HHErrorEnvelope, NegotiationsPage, VacancyDetailResponse
 from jobfucker.clients.hh.transport import FormFields, HHTransport
+from jobfucker.clients.shared.transport import header_value
 
 _HTTP_CREATED: Final = 201
 _HTTP_BAD_REQUEST: Final = 400
@@ -228,7 +229,7 @@ def _classify_submission(  # noqa: PLR0911, PLR0912 - exhaustive observed-contra
                 ApplySkip(
                     reason="external_application",
                     text=f"HH vacancy {vacancy_id} redirected the application",
-                    redirect_url=_header_value(response, "location"),
+                    redirect_url=header_value(response, "location"),
                 )
             )
         )
@@ -291,12 +292,3 @@ def _error_envelope(response: httpx.Response) -> HHErrorEnvelope | None:
         return HHErrorEnvelope.model_validate_json(response.content)
     except ValidationError:
         return None
-
-
-def _header_value(response: httpx.Response, name: str) -> str | None:
-    """Read one case-insensitive response header without leaking httpx's weak typing."""
-    normalized = name.casefold()
-    return next(
-        (value for key, value in response.headers.multi_items() if key.casefold() == normalized),
-        None,
-    )

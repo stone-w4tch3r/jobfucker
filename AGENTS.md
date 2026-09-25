@@ -11,7 +11,7 @@
 | Agent entrypoint, subsystem status, commands, verification | **this file** |
 | Product goal, user-level behavior, stage semantics | [docs/specs/jobfucker.md](docs/specs/jobfucker.md) |
 | System shape: layers, modules, data model, invariants | [docs/specs/architecture.md](docs/specs/architecture.md) |
-| Board-neutral Client interface | [docs/specs/client-contract.md](docs/specs/client-contract.md) |
+| Board-neutral Client interface + shared client mechanics | [docs/specs/client-contract.md](docs/specs/client-contract.md) |
 | HH client requirements | [docs/specs/hh-client.md](docs/specs/hh-client.md) |
 | Observed hh.ru behavior (endpoints, captcha, auth) | [docs/hh/](docs/hh/README.md) |
 | Code standards | [docs/coding_rules.md](docs/coding_rules.md) |
@@ -63,6 +63,7 @@ Vacancy application automation engine for Russian job boards (initially hh.ru). 
 | --- | --- |
 | Engine, stages (fetch/score/generate/apply), storage, config, limits, audit | **real**, BDD-tested |
 | Mock client (offline, scriptable) | **real** |
+| Shared client infra (`clients/shared/`: transport, store, cookies, html text, browser engine) + board registry | **real**, exercised through the HH suite |
 | HH client: transport, auth, captcha (browser engine + login protocol), search + detail enrichment | **real**, BDD-tested vs mock transport + scripted browser double |
 | HH client: apply (preflight, submission, reconciliation) | **real**, BDD-tested vs mock transport |
 | HH client: resumes listing + pre-apply resume validation | **real**, BDD-tested vs mock transport |
@@ -75,9 +76,10 @@ Vacancy application automation engine for Russian job boards (initially hh.ru). 
 
 **Key decisions:**
 
-- **Client contract layer** — engine/stages/storage never depend on a board; `Client` protocol + vendor-neutral models in `clients/base.py`. New board = new client under `clients/<board>/` + factory registration.
+- **Client contract layer** — engine/stages/storage never depend on a board; `Client` protocol + vendor-neutral models in `clients/base.py`. New board = a client package under `clients/<board>/` + one `clients/registry.py` entry ([client-contract.md](docs/specs/client-contract.md)).
+- **Shared client mechanics** — `clients/shared/` (transport, atomic store, cookies, HTML text, patchright browser driver) is board-free and composed by boards; `clients/registry.py` is the only core-side module naming concrete boards.
 - **Own SQLite DB** (`jobfucker.db`) as single source of truth.
-- **Captcha is first-class & generic** (`captcha/`): handler selection, terminal rendering (sixel/kitty), AI vision solving. HH-specific detection stays in the HH client; standalone challenges are cleared by the browser engine (`clients/hh/browser.py`, patchright stealth Chromium — the only working path, see [docs/hh/captcha.md](docs/hh/captcha.md) §5a); the embedded login challenge keeps the browserless multipart replay.
+- **Captcha is first-class & generic** (`captcha/`): handler selection, terminal rendering (sixel/kitty), AI vision solving. HH-specific detection stays in the HH client; standalone challenges are cleared by the shared browser engine (`clients/shared/browser.py`, patchright stealth Chromium — the only working path, see [docs/hh/captcha.md](docs/hh/captcha.md) §5a); the embedded login challenge keeps the browserless multipart replay.
 - **GUI:** PySide6 toolchain removed from deps until the planned rewrite; re-add `pyside6`/`qasync`/`tomli-w`/`pytest-qt` together with `src/jobfucker/shared/shortcuts` (refetch from the original template).
 
 ---

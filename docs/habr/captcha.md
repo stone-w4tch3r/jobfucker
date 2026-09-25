@@ -258,7 +258,7 @@ Caveats — do not over-read this result:
 
 ## Engine comparison: patchright vs CloakBrowser
 
-jobfucker drives browsers with **patchright** (`clients/hh/browser.py`, `PatchrightDriver`). Tested
+jobfucker drives browsers with **patchright** (`clients/shared/browser.py`, `PatchrightDriver`). Tested
 2026-09-18 whether patchright's bundled headless Chromium is enough for the Habr login SmartCaptcha,
 or whether CloakBrowser is required, using one probe script (`/tmp/kilo/habr_captcha_probe.py`,
 patchright async API, same `locale="ru-RU"` + `navigator.webdriver` spoof as jobfucker):
@@ -340,7 +340,7 @@ Proposed strategy: **browser-first checkbox, vision fallback, session reuse as t
    login. This is the cheapest and most reliable option and should be the normal path.
 2. **Primary solver — browser click.** Drive patchright headless with a normal desktop Chrome UA and
    click the checkbox; jobfucker already owns this browser stack
-   ([`PatchrightDriver`](../../src/jobfucker/clients/hh/browser.py)). No AI cost, fastest when it
+   ([`PatchrightDriver`](../../src/jobfucker/clients/shared/browser.py)). No AI cost, fastest when it
    works. CloakBrowser is an optional robustness upgrade, not required.
 3. **Detect escalation, don't guess.** Treat a non-`ok` `/check`, an empty `smart-token` past a short
    timeout, or a present `iframe[title="SmartCaptcha advanced"]` as escalation

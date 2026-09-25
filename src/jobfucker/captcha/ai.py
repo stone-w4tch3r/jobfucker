@@ -74,31 +74,55 @@ class CaptchaVisionRequest:
     from the passed ``openai_captcha`` config (never the main ``openai`` one).
 
     ``reasoning_effort`` is a free-form passthrough (values are
-    provider-dependent); ``None`` omits the parameter.
+    provider-dependent); ``None`` omits the parameter. ``media_type`` is sniffed
+    from the image bytes so a board whose captcha is JPEG (not PNG) is labelled
+    correctly in the data URL.
     """
 
     model: str
     reasoning_effort: str | None
     max_tokens: int
+    media_type: str
     image_b64: str
 
 
+def _image_media_type(image: bytes) -> str:
+    """Detect the image media type from magic bytes (no decode).
+
+    Boards hand the handler raw bytes with no media type, so the format is
+    inferred here. Defaults to ``image/png`` for an unrecognised payload; the
+    follow-up vision call is what actually validates the image.
+    """
+    if image.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if image.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if image.startswith((b"GIF87a", b"GIF89a")):
+        return "image/gif"
+    if image.startswith(b"RIFF") and image[8:12] == b"WEBP":
+        return "image/webp"
+    if image.startswith(b"BM"):
+        return "image/bmp"
+    return "image/png"
+
+
 def build_captcha_vision_request(config: OpenAIConfig, image: bytes) -> CaptchaVisionRequest:
-    """Build a captcha vision request from an ``openai_captcha`` config + PNG bytes.
+    """Build a captcha vision request from an ``openai_captcha`` config + image bytes.
 
     Args:
         config: the ``openai_captcha`` pipeline section (model/base_url/api_key).
-        image: the raw PNG bytes of the captcha.
+        image: the raw image bytes of the captcha (PNG or JPEG).
 
     Returns:
-        The typed request with the PNG base64-encoded, ``max_tokens`` pinned to
-        the captcha default, and the section's optional ``reasoning_effort``
-        forwarded (``None`` = omittable).
+        The typed request with the image base64-encoded, its media type sniffed
+        from the bytes, ``max_tokens`` pinned to the captcha default, and the
+        section's optional ``reasoning_effort`` forwarded (``None`` = omittable).
     """
     return CaptchaVisionRequest(
         model=config.model,
         reasoning_effort=config.reasoning_effort,
         max_tokens=_CAPTCHA_MAX_TOKENS,
+        media_type=_image_media_type(image),
         image_b64=base64.b64encode(image).decode("ascii"),
     )
 
@@ -160,7 +184,7 @@ def _default_vision(_config: OpenAIConfig) -> CaptchaVisionFn:
                         role="user",
                         content=(
                             _CAPTCHA_INSTRUCT,
-                            ImageUrl(url=f"data:image/png;base64,{request.image_b64}"),
+                            ImageUrl(url=f"data:{request.media_type};base64,{request.image_b64}"),
                         ),
                     ),
                 ),

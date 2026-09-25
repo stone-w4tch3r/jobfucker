@@ -54,9 +54,11 @@ HHClient
     └── test-removed fallback to the plain API apply
 ```
 
-Only `HHTransport` sends raw HTTP. Coordinators own multi-request workflows and bounded replay.
-Services consume validated HH DTOs. `HHClient` maps service results into board-neutral contract
-types. The client has no Playwright dependency and never launches a browser.
+Only `HHTransport` sends raw HTTP (over the board-neutral transport core in `clients/shared/`).
+Coordinators own multi-request workflows and bounded replay. Services consume validated HH DTOs.
+`HHClient` maps service results into board-neutral contract types. Standalone-challenge recovery is
+the one browser path: it composes the shared patchright engine (`clients/shared/browser.py`) from
+`clients/hh/browser.py`; all other traffic is HTTP-only.
 
 A suitable package shape is:
 
@@ -64,15 +66,20 @@ A suitable package shape is:
 clients/hh/
 ├── client.py          # Client implementation and contract mapping
 ├── config.py          # HHServiceConfig, HHFilterConfig (contract), HHSearchFilters (wire)
-├── transport.py       # HTTP lifecycle, decoding, pacing, retry, errors
+├── transport.py       # HH endpoints/headers over the shared Transport
 ├── models.py          # validated HH transport DTOs and internal outcomes
-├── auth.py            # login, OAuth, refresh, TokenStore
+├── auth.py            # login, OAuth, refresh, TokenStore (shared AtomicJsonStore)
 ├── captcha.py         # classifier and standalone CAPTCHA protocol
+├── browser.py         # HH standalone-challenge flow over the shared BrowserDriver
 ├── search.py          # both search modes and detail enrichment
 ├── resumes.py         # owned/published resume listing
 ├── applications.py    # preflight, submit, reconciliation
 └── tests.py           # screening-test fetch + website multipart submit (HhTestCapable)
 ```
+
+Board-neutral mechanics — HTTP transport (pacing/retry/cookies), atomic session store, the portable
+cookie type, HTML-to-text parsing, and the patchright driver — live in `clients/shared/` and are
+composed by the board.
 
 ## Configuration and construction
 

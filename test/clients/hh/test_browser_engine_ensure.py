@@ -15,13 +15,14 @@ from typing import Final
 import pytest
 from rusty_results.prelude import Err, Ok, Result
 
-from jobfucker.clients.hh import browser as browser_module
-from jobfucker.clients.hh.browser import ensure_chromium_engine
+from jobfucker.clients.shared import browser as browser_module
+from jobfucker.clients.shared.browser import BrowserConfig, ensure_chromium_engine
 from jobfucker.reporting import EventLevel, Reporter, RunEvent
 from jobfucker.subprocess_utils import SubprocessRun
 from test.conftest import LogCapture
 
 _INSTALL_ARGV: Final = (sys.executable, "-m", "patchright", "install", "chromium")
+_TEST_BROWSER_CONFIG: Final = BrowserConfig(origin="https://hh.ru", challenge_post_path="/account/captcha")
 
 
 class RecordingReporter:
@@ -172,7 +173,7 @@ async def test_driver_ensure_engine_runs_once(monkeypatch: pytest.MonkeyPatch) -
         return Err("engine broken")
 
     monkeypatch.setattr(browser_module, "ensure_chromium_engine", fake_ensure)
-    driver = browser_module.PatchrightDriver()
+    driver = browser_module.PatchrightDriver(_TEST_BROWSER_CONFIG)
     first = await driver.ensure_engine()
     second = await driver.ensure_engine()
     assert len(ensured) == 1
@@ -192,7 +193,7 @@ async def test_driver_ensure_engine_passes_success_through(monkeypatch: pytest.M
         return Ok(None)
 
     monkeypatch.setattr(browser_module, "ensure_chromium_engine", fake_ensure)
-    driver = browser_module.PatchrightDriver()
+    driver = browser_module.PatchrightDriver(_TEST_BROWSER_CONFIG)
     result = await driver.ensure_engine()
     assert result.is_ok
     assert len(ensured) == 1

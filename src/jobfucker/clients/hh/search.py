@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from html.parser import HTMLParser
 from typing import Final
 
 import httpx
@@ -10,11 +9,9 @@ from pydantic import ValidationError
 from rusty_results.prelude import Err, Ok, Result
 
 from jobfucker.clients.base import (
-    AuthError,
     BadRequestError,
     ClientError,
     ConfigurationError,
-    NotFoundError,
     ProtocolError,
     Salary,
     SearchListing,
@@ -23,7 +20,8 @@ from jobfucker.clients.base import (
     Vacancy,
     VacancyShort,
 )
-from jobfucker.clients.hh.captcha import CaptchaCoordinator, challenge_error, classify_challenge
+from jobfucker.clients.hh.apireads import get_api_with_recovery, status_error
+from jobfucker.clients.hh.captcha import CaptchaCoordinator
 from jobfucker.clients.hh.config import HHSearchFilters, HHSearchMode, HHServiceConfig
 from jobfucker.clients.hh.models import (
     HHErrorEnvelope,
@@ -33,54 +31,9 @@ from jobfucker.clients.hh.models import (
 )
 from jobfucker.clients.hh.transport import FormFields, HHTransport
 from jobfucker.clients.paging import FetchedListingPage, FetchedPage, scan_listing, scan_slice
+from jobfucker.clients.shared.html_text import DescriptionParser
 
-_HTTP_OK: Final = 200
-_HTTP_BAD_REQUEST: Final = 400
-_HTTP_UNAUTHORIZED: Final = frozenset({401, 403})
-_HTTP_NOT_FOUND: Final = 404
 _MAX_PER_PAGE: Final = 100
-_BLOCK_ELEMENTS: Final = frozenset(
-    {
-        "br",
-        "dd",
-        "div",
-        "dt",
-        "h1",
-        "h2",
-        "h3",
-        "h4",
-        "h5",
-        "h6",
-        "li",
-        "p",
-        "tr",
-    }
-)
-
-
-class DescriptionParser(HTMLParser):
-    """Convert trusted-as-text HH description HTML into normalized plaintext."""
-
-    def __init__(self) -> None:
-        super().__init__(convert_charrefs=True)
-        self.fragments: list[str] = []
-
-    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        del attrs
-        if tag.casefold() in _BLOCK_ELEMENTS:
-            self.fragments.append("\n")
-
-    def handle_endtag(self, tag: str) -> None:
-        if tag.casefold() in _BLOCK_ELEMENTS:
-            self.fragments.append("\n")
-
-    def handle_data(self, data: str) -> None:
-        self.fragments.append(data)
-
-    def text(self) -> str:
-        """Collapse inline whitespace while retaining meaningful block boundaries."""
-        lines = (" ".join(line.split()) for line in "".join(self.fragments).splitlines())
-        return "\n".join(line for line in lines if line)
 
 
 class SearchService:
@@ -121,7 +74,9 @@ class SearchService:
             if params_result.is_err:
                 return Err(params_result.unwrap_err())
             path = _search_path(self._section)
-            response_result = await self._get_api(path, access_token, params=params_result.unwrap())
+            response_result = await get_api_with_recovery(
+                self._transport, self._captcha, path, access_token, params=params_result.unwrap()
+            )
             if response_result.is_err:
                 return Err(response_result.unwrap_err())
             page_result = _decode_search_page(response_result.unwrap(), expected_page=page, expected_per_page=page_size)
@@ -172,7 +127,9 @@ class SearchService:
             if params_result.is_err:
                 return Err(params_result.unwrap_err())
             path = _search_path(self._section)
-            response_result = await self._get_api(path, access_token, params=params_result.unwrap())
+            response_result = await get_api_with_recovery(
+                self._transport, self._captcha, path, access_token, params=params_result.unwrap()
+            )
             if response_result.is_err:
                 return Err(response_result.unwrap_err())
             page_result = _decode_search_page(response_result.unwrap(), expected_page=page, expected_per_page=page_size)
@@ -201,13 +158,15 @@ class SearchService:
         return await scan_listing(fetch_page, offset=offset, limit=limit, page_size=page_size)
 
     async def _detail(self, access_token: str, vacancy_id: str) -> Result[VacancyDetailResponse, ClientError]:
-        response_result = await self._get_api(f"/vacancies/{vacancy_id}", access_token, params=())
+        response_result = await get_api_with_recovery(
+            self._transport, self._captcha, f"/vacancies/{vacancy_id}", access_token, params=()
+        )
         if response_result.is_err:
             return Err(response_result.unwrap_err())
         response = response_result.unwrap()
-        status_error = _status_error(response, operation="vacancy detail")
-        if status_error is not None:
-            return Err(status_error)
+        failure = status_error(response, operation="vacancy detail")
+        if failure is not None:
+            return Err(failure)
         try:
             detail = VacancyDetailResponse.model_validate_json(response.content)
         except ValidationError:
@@ -215,34 +174,6 @@ class SearchService:
         if detail.id != vacancy_id:
             return Err(ProtocolError(message="HH vacancy detail id does not match the requested vacancy"))
         return Ok(detail)
-
-    async def _get_api(
-        self,
-        path: str,
-        access_token: str,
-        *,
-        params: FormFields,
-        allow_captcha_recovery: bool = True,
-    ) -> Result[httpx.Response, ClientError]:
-        """Classify API CAPTCHA globally, solve once, and replay one safe GET."""
-        response_result = await self._transport.get_api(path, access_token, params=params)
-        if response_result.is_err:
-            return Err(response_result.unwrap_err())
-        response = response_result.unwrap()
-        challenge = classify_challenge(response, context="api")
-        if challenge is None:
-            return Ok(response)
-        if not allow_captcha_recovery:
-            return Err(challenge_error(challenge))
-        solved = await self._captcha.solve(challenge)
-        if solved.is_err:
-            return Err(solved.unwrap_err())
-        return await self._get_api(
-            path,
-            access_token,
-            params=params,
-            allow_captcha_recovery=False,
-        )
 
 
 def _search_path(section: HHServiceConfig) -> str:
@@ -397,9 +328,9 @@ def _decode_search_page(
     expected_per_page: int,
 ) -> Result[VacancySearchResponse, ClientError]:
     """Decode one successful page and reject 200-level HH error envelopes."""
-    status_error = _status_error(response, operation="vacancy search")
-    if status_error is not None:
-        return Err(status_error)
+    failure = status_error(response, operation="vacancy search")
+    if failure is not None:
+        return Err(failure)
     try:
         error_envelope = HHErrorEnvelope.model_validate_json(response.content)
     except ValidationError:
@@ -413,19 +344,6 @@ def _decode_search_page(
     if page.page != expected_page or page.per_page != expected_per_page:
         return Err(ProtocolError(message="HH vacancy search returned unexpected paging metadata"))
     return Ok(page)
-
-
-def _status_error(response: httpx.Response, *, operation: str) -> ClientError | None:
-    """Map endpoint status without exposing an untrusted upstream response body."""
-    if response.status_code == _HTTP_OK:
-        return None
-    if response.status_code in _HTTP_UNAUTHORIZED:
-        return AuthError(message=f"HH rejected authorization during {operation}")
-    if response.status_code == _HTTP_BAD_REQUEST:
-        return BadRequestError(message=f"HH rejected {operation}")
-    if response.status_code == _HTTP_NOT_FOUND:
-        return NotFoundError(message=f"HH {operation} resource was not found")
-    return ProtocolError(message=f"Unexpected HH {operation} status", status=response.status_code)
 
 
 def _to_vacancy_short(item: VacancySearchItem) -> VacancyShort:

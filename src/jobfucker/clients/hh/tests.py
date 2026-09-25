@@ -45,8 +45,8 @@ from jobfucker.clients.base import (
     ProtocolError,
     ServiceVacancyId,
 )
-from jobfucker.clients.hh.search import DescriptionParser
 from jobfucker.clients.hh.transport import FormFields, HHTransport
+from jobfucker.clients.shared.html_text import DescriptionParser
 from jobfucker.hh_tests.contract import (
     HhTestOption,
     HhTestProblem,

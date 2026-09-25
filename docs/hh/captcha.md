@@ -54,7 +54,8 @@ are in [Login CAPTCHA](captcha-login.md).
 ## Standalone solve protocol (browser engine)
 
 Standalone challenges are cleared by the browser engine
-(`src/jobfucker/clients/hh/browser.py`): patchright stealth Chromium, headless,
+(`src/jobfucker/clients/shared/browser.py` engine; HH flow in `clients/hh/browser.py`):
+patchright stealth Chromium, headless,
 opened for the challenge window only. The HTTP client keeps doing all other work.
 
 1. The coordinator validates the `captcha_url` (same-origin

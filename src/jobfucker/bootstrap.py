@@ -50,8 +50,7 @@ from jobfucker.captcha.terminal import detect_terminal_protocol
 from jobfucker.captcha.terminal_handlers import TerminalCaptchaHandler
 from jobfucker.clients.base import CaptchaHandler, Client, ClientCredentials, ClientDeps, ServiceConfigSection
 from jobfucker.clients.factory import Factory
-from jobfucker.clients.hh.client import HHClient
-from jobfucker.clients.mock.client import MockClient
+from jobfucker.clients.registry import register_clients
 from jobfucker.config import with_overrides
 from jobfucker.engine import Engine
 from jobfucker.reporting import NullReporter, Reporter
@@ -150,8 +149,7 @@ def _build_factory(
         reporter=reporter if reporter is not None else NullReporter(),
     )
     factory = Factory(deps, section=section)
-    factory.register("hh", HHClient)
-    factory.register("mock", MockClient)
+    register_clients(factory)
     return factory
 
 

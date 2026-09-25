@@ -502,6 +502,41 @@ class Factory:
   pipeline produces a one-element `searches` tuple.
 - Board-specific filters are typed models, not a shared `SearchParams` abstraction or raw mapping.
 
+## Shared client infrastructure
+
+Board implementations share a board-neutral mechanics tier (`clients/shared/`) so a second
+board composes it instead of re-implementing transport, persistence, text parsing, or browser
+driving. The tier imports only board-free project modules (`clients/base`, `reporting`,
+`subprocess_utils`) and third-party libraries — never a board. Boards compose it; core never
+imports it.
+
+- HTTP `Transport` — persistent client, pacing, safe-GET retry, pre-send connect retry, cookie
+  snapshot/restore behind a per-board `TransportConfig`.
+- `AtomicJsonStore` — atomic, user-permissioned session persistence below
+  `<data_dir>/<service>/<profile_id>/`.
+- `PersistedCookie` — the portable cookie value type; the domain allow-list is per-board.
+- `DescriptionParser` — board description HTML → full normalized plaintext.
+- Browser driver/session seam — patchright stealth Chromium + one-time engine install; the board
+  supplies origin, challenge-POST path, locale, user-agent, and launch args.
+
+Board-specific policy stays on the board: endpoints, headers, auth state machines, filter
+vocabularies, challenge flows, and status→`ClientError` maps. `clients/registry.py` owns board
+registration — `SERVICE_SECTION_MODELS` (validated by the config loader) and `register_clients`
+(called by the composition roots). The pipeline schema twin (`app/pipeline_schema_source.py`)
+lists the same section models; the registry-parity test keeps the pair in sync.
+
+### Adding a board
+
+1. Add a `service.<board>` section model implementing `ServiceConfigSection`.
+2. Add a client package under `clients/<board>/` implementing `Client`, composing `clients/shared/`
+   for generic mechanics.
+3. Register the section model in `SERVICE_SECTION_MODELS` and the client class in
+   `register_clients` (`clients/registry.py`).
+4. Add the authored schema field to `PipelineServiceYaml` (`app/pipeline_schema_source.py`) — the
+   service-registry parity test guards the pair.
+
+No engine, stage, storage, or CLI change is required to add a board.
+
 ## CAPTCHA and interaction boundary
 
 The generic contract owns only two presentation-neutral seams:

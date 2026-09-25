@@ -15,7 +15,8 @@ APPLICATION       engine.py · stages/ · app/ · table_documents/ · hh_tests/
                   config.py · ai.py · reporting · limits · runtime · bootstrap
                                    ↓
 CLIENT CONTRACT   clients/base.py (protocol + models) · factory · paging
-CLIENTS          clients/hh/ · clients/mock/
+SHARED CLIENT     clients/shared/ (transport · store · cookies · html_text · browser)
+CLIENTS           clients/registry.py · clients/hh/ · clients/mock/
                                    ↓
 INFRASTRUCTURE    storage/ (SQLAlchemy + alembic) · captcha/ (board-agnostic)
                   src/jobfucker/shared/ (logging; shortcuts — GUI residue)
@@ -24,6 +25,7 @@ INFRASTRUCTURE    storage/ (SQLAlchemy + alembic) · captcha/ (board-agnostic)
 
 - Dependencies flow downward only. SQLAlchemy is confined to `storage/` (ruff `TID251` ban).
 - Core never imports a board in generic code; generic names (`external_id`, `service`) everywhere for features.
+- Board packages (`clients/hh/`, `clients/mock/`, future `clients/habr/`) compose the board-neutral mechanics in `clients/shared/`; that package imports no board. `clients/registry.py` is the board registration point consumed by `config.py`, `bootstrap.py`, and the app composition root (`app/services.py`); the pipeline schema twin (`app/pipeline_schema_source.py`) lists the same section models and a parity test keeps the pair in sync ([client-contract.md](client-contract.md)).
 - If a feature is board-specific, it should be hidden behind a capability and special code flow, not behind random if-s. The only case when board specific naming can reach the core is when there is a dedicated capability associated. Example:  `Vacancy.has_hh_test` (`vacancies.has_hh_test` + `apply --has-hh-tests`); board-only
   behavior rises into core through a board-named capability module gated by `isinstance`
   ([client-contract.md § Board-scoped capabilities](client-contract.md#board-scoped-capabilities)).
@@ -40,8 +42,10 @@ INFRASTRUCTURE    storage/ (SQLAlchemy + alembic) · captcha/ (board-agnostic)
 | `app/` | ~1,100 | `services.py` AppServices (CLI-utility graph; its factory builds no client); `pipeline_service.py` (create/get-or-keep/snapshot/resolve — the lifecycle core); `mapping.py` (config↔DTO); `vacancy_documents.py` + schema (dump/apply policy: 7 editable fields, identity from handle, plain field overwrite). |
 | `table_documents/` | ~310 | Generic YAML/JSON document codec + orchestration; one consumer (vacancies). |
 | `clients/base.py` | 398 | `Client` protocol, vendor-neutral models, 10-member `ClientError` union, handler seams, `ServiceConfigSection`. |
+| `clients/shared/` | ~830 | Board-neutral client mechanics: HTTP `Transport` (pacing/retry/cookies), `AtomicJsonStore`, `PersistedCookie`, `DescriptionParser`, patchright browser driver/session + engine install. Imports no board. |
+| `clients/registry.py` | 47 | The one core-side board registry: `SERVICE_SECTION_MODELS` + `register_clients(factory)`. Consumed by `config.py` and `bootstrap.py`. |
 | `hh_tests/` | ~690 | Board-scoped screening-test capability: `HhTestCapable` protocol + models + validation, prompt rendering, AI + file solvers, selector, dump serializer. `__init__.py` is import-free to break the config↔factory↔hh_tests cycle. |
-| `clients/hh/` | ~2,490 | Real client: transport, auth, captcha, search, resumes, apply, screening-test web flow. Implements `Client` + `HhTestCapable`. |
+| `clients/hh/` | ~4,300 | Real client: HH endpoints, auth, challenge flow, search, resumes, apply, screening-test web flow — composed over `clients/shared/`. Implements `Client` + `HhTestCapable`. |
 | `clients/mock/` | 627 | Scriptable offline client, self-configured from its yaml section. |
 | `clients/paging.py` | — | `plan_pages` (pure math) + `scan_slice` (walk; short page = exhausted; page failure = partial result, never bare Err). |
 | `captcha/` | 658 | Handler selector, sixel/kitty encoders, terminal capability map, terminal + AI handlers. Board-agnostic. |

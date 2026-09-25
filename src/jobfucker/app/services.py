@@ -26,8 +26,7 @@ from jobfucker.app.pipeline_service import PipelineService
 from jobfucker.app.vacancy_documents import VacancyDocumentService
 from jobfucker.clients.base import AuthInteractionProvider, CaptchaHandler, ClientCredentials, ClientDeps
 from jobfucker.clients.factory import Factory
-from jobfucker.clients.hh.client import HHClient
-from jobfucker.clients.mock.client import MockClient
+from jobfucker.clients.registry import register_clients
 from jobfucker.runtime import data_dir, database_path, ensure_runtime_dirs
 from jobfucker.storage.db import Storage, apply_migrations, open_storage
 from jobfucker.storage.vacancy_documents import SqlAlchemyVacancyDocumentStore
@@ -179,8 +178,7 @@ class AppServices:
                     await storage.engine.dispose()
                 return Err(f"Pipeline id {vacancies_pipeline_id} not found.")
         factory = Factory(deps)
-        factory.register("hh", HHClient)
-        factory.register("mock", MockClient)
+        register_clients(factory)
         pipelines = PipelineService(storage, factory)
         vacancy_documents = VacancyDocumentService.create(
             SqlAlchemyVacancyDocumentStore(storage.session_factory), vacancies_pipeline_id

@@ -2,15 +2,10 @@
 
 from __future__ import annotations
 
-import asyncio
 import hashlib
-import os
 import secrets
-import sys
-import tempfile
 import time
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Final
 from urllib.parse import parse_qs, urlparse
 
@@ -22,7 +17,6 @@ from jobfucker.clients.base import (
     AuthError,
     ClientDeps,
     ClientError,
-    InternalError,
     ProtocolError,
     ServiceIdentity,
 )
@@ -36,6 +30,8 @@ from jobfucker.clients.hh.captcha import (
 )
 from jobfucker.clients.hh.models import CurrentUserResponse, LoginResponse, OAuthTokenResponse, PersistedAuthState
 from jobfucker.clients.hh.transport import FormFields, HHTransport
+from jobfucker.clients.shared.store import AtomicJsonStore
+from jobfucker.clients.shared.transport import header_value
 from jobfucker.reporting import RunEvent
 
 _CLIENT_ID: Final = "HIOMIAS39CA9DICTA7JIO64LQKQJF5AGIK74G9ITJKLNEDAOH5FHS5G1JI7FOEGD"
@@ -74,57 +70,33 @@ _Healthcheck = _HealthcheckAuthorized | _HealthcheckRejected | _HealthcheckFaile
 
 
 class TokenStore:
-    """Atomically persist one validated HH authentication snapshot."""
+    """Atomically persist one validated HH authentication snapshot.
+
+    A thin board shell over the shared :class:`AtomicJsonStore`: HH owns the
+    profile-id fallback (a login hash when the composition root supplied none)
+    and the payload model; the atomic/permission mechanics are shared.
+    """
 
     def __init__(self, deps: ClientDeps) -> None:
         profile_id = deps.profile_id
         if profile_id is None or not profile_id.strip():
             profile_id = hashlib.sha256(deps.credentials.login.strip().casefold().encode()).hexdigest()
-        self._directory = deps.data_dir / "hh" / profile_id
-        self._path = self._directory / "auth-state.json"
+        self._store = AtomicJsonStore(
+            data_dir=deps.data_dir,
+            service="hh",
+            profile_id=profile_id,
+            filename="auth-state.json",
+            model=PersistedAuthState,
+            entity="HH authentication state",
+        )
 
     async def load(self) -> PersistedAuthState | None:
         """Load validated state; missing or corrupt state is treated as unusable."""
-        return await asyncio.to_thread(self._load_sync)
+        return await self._store.load()
 
     async def save(self, state: PersistedAuthState) -> Result[None, ClientError]:
         """Write a complete snapshot atomically with user-only permissions."""
-        try:
-            await asyncio.to_thread(self._save_sync, state)
-        except OSError as exc:
-            return Err(InternalError(message=f"Cannot persist HH authentication state: {type(exc).__name__}"))
-        return Ok(None)
-
-    def _load_sync(self) -> PersistedAuthState | None:
-        try:
-            raw = self._path.read_text(encoding="utf-8")
-            return PersistedAuthState.model_validate_json(raw)
-        except FileNotFoundError, OSError, ValidationError:
-            return None
-
-    def _save_sync(self, state: PersistedAuthState) -> None:
-        self._directory.mkdir(parents=True, exist_ok=True, mode=0o700)
-        self._directory.chmod(0o700)
-        descriptor, temporary_name = tempfile.mkstemp(prefix=".auth-state-", dir=self._directory, text=True)
-        temporary_path = Path(temporary_name)
-        try:
-            # os.fchmod is POSIX-only and missing on Windows. The mode-bit calls
-            # are no-ops there and auth-state.json is protected by the default
-            # per-user profile ACLs; accepted deliberately.
-            if sys.platform != "win32":
-                os.fchmod(descriptor, 0o600)
-            with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
-                descriptor = -1
-                stream.write(state.model_dump_json())
-                stream.flush()
-                os.fsync(stream.fileno())
-            os.replace(temporary_path, self._path)
-            self._path.chmod(0o600)
-        finally:
-            if descriptor >= 0:
-                os.close(descriptor)
-            if temporary_path.exists():
-                temporary_path.unlink()
+        return await self._store.save(state)
 
 
 class AuthCoordinator:
@@ -453,10 +425,7 @@ def _is_login_bootstrap_redirect(response: httpx.Response) -> bool:
     """Accept only HH's bounded cookie-handshake redirect back to the same login surface."""
     if response.status_code != _HTTP_FOUND:
         return False
-    location = next(
-        (value for key, value in response.headers.multi_items() if key.casefold() == "location"),
-        None,
-    )
+    location = header_value(response, "location")
     if location is None:
         return False
     parsed = urlparse(location)
@@ -477,10 +446,7 @@ def _authorization_code(response: httpx.Response, expected_state: str) -> Result
                 status=response.status_code,
             )
         )
-    location = next(
-        (value for key, value in response.headers.multi_items() if key.casefold() == "location"),
-        None,
-    )
+    location = header_value(response, "location")
     if location is None:
         return Err(ProtocolError(message="HH OAuth authorize redirect has no Location header", status=_HTTP_FOUND))
     parsed = urlparse(location)

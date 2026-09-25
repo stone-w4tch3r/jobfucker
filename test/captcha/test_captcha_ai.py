@@ -66,6 +66,16 @@ def test_build_request_forwards_configured_reasoning_effort() -> None:
     assert request.reasoning_effort == "true"  # verbatim; no enum validation
 
 
+def test_build_request_sniffs_media_type_from_magic_bytes() -> None:
+    # Boards hand raw bytes with no media type; JPEG (Habr SmartCaptcha) must not
+    # be mislabelled as PNG in the data URL.
+    config = _captcha_config()
+    assert build_captcha_vision_request(config, b"\x89PNG\r\n\x1a\nrest").media_type == "image/png"
+    assert build_captcha_vision_request(config, b"\xff\xd8\xff\xe0rest").media_type == "image/jpeg"
+    assert build_captcha_vision_request(config, b"\xff\xd8\xffrest").media_type == "image/jpeg"
+    assert build_captcha_vision_request(config, b"unstrecognised").media_type == "image/png"
+
+
 async def test_handler_delegates_to_openai_captcha_config_only() -> None:
     received: list[tuple[OpenAIConfig, bytes]] = []
 

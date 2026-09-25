@@ -32,6 +32,7 @@ from jobfucker.clients.hh.models import (
     PersistedCookie,
 )
 from jobfucker.clients.hh.transport import HHTransport, fingerprint
+from jobfucker.clients.shared.transport import header_value
 from jobfucker.reporting import EventLevel, Reporter, RunEvent
 
 _HTTP_OK: Final = 200
@@ -496,7 +497,7 @@ def _login_response(response: httpx.Response) -> LoginResponse | None:
 def _request_id(response: httpx.Response, envelope: HHErrorEnvelope | None) -> str | None:
     if envelope is not None and envelope.request_id:
         return envelope.request_id
-    return _header_value(response, "x-request-id")
+    return header_value(response, "x-request-id")
 
 
 def _standalone_location(challenge: Challenge) -> Result[_StandaloneLocation, ClientError]:
@@ -567,15 +568,6 @@ def _login_submission_outcome(
     return Ok(_SubmissionOutcome.WRONG_ANSWER)
 
 
-def _header_value(response: httpx.Response, name: str) -> str | None:
-    """Read one case-insensitive response header without leaking httpx's weak typing."""
-    normalized = name.casefold()
-    return next(
-        (value for key, value in response.headers.multi_items() if key.casefold() == normalized),
-        None,
-    )
-
-
 def _has_media_type(response: httpx.Response, expected: str) -> bool:
-    raw_content_type = _header_value(response, "content-type") or ""
+    raw_content_type = header_value(response, "content-type") or ""
     return raw_content_type.partition(";")[0].strip().casefold() == expected

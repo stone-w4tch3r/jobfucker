@@ -23,9 +23,8 @@ from jobfucker.clients.hh.applications import ApplicationService, ApplyDelay
 from jobfucker.clients.hh.auth import AuthCoordinator
 from jobfucker.clients.hh.browser import (
     BROWSER_UNAVAILABLE_PREFIX,
+    HH_BROWSER_CONFIG,
     BrowserCaptchaSolver,
-    BrowserDriver,
-    PatchrightDriver,
 )
 from jobfucker.clients.hh.captcha import CaptchaCoordinator
 from jobfucker.clients.hh.config import HHSearchFilters, HHServiceConfig
@@ -33,6 +32,7 @@ from jobfucker.clients.hh.resumes import ResumeService
 from jobfucker.clients.hh.search import SearchService
 from jobfucker.clients.hh.tests import HhTestService
 from jobfucker.clients.hh.transport import HHTransport
+from jobfucker.clients.shared.browser import BrowserDriver, PatchrightDriver
 from jobfucker.hh_tests.contract import HhTestCapable, HhTestProblem, HhTestSolution
 
 _HH_CONSERVATIVE_DAILY_CAP = 200
@@ -81,7 +81,9 @@ class HHClient(Client, HhTestCapable):
         )
         self._transport = HHTransport(transport=http_transport)
         standalone_solver = BrowserCaptchaSolver(
-            browser_driver if browser_driver is not None else PatchrightDriver(reporter=deps.reporter),
+            browser_driver
+            if browser_driver is not None
+            else PatchrightDriver(HH_BROWSER_CONFIG, reporter=deps.reporter),
             deps.captcha_handler,
             max_attempts=section.captcha_max_attempts,
         )

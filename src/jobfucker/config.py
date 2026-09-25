@@ -55,17 +55,12 @@ from rusty_results.prelude import Err, Ok, Result
 
 from jobfucker.clients.base import SearchWindow, ServiceConfigSection
 from jobfucker.clients.factory import Factory
-from jobfucker.clients.hh.config import HHServiceConfig
-from jobfucker.clients.mock.params import MockServiceConfig
 
-# Board name -> concrete ``service.<board>`` section model. The registry
-# includes the available first-party clients. Each model implements
-# ``ServiceConfigSection``.
-SectionModel = type[BaseModel]
-SERVICE_SECTION_MODELS: dict[str, SectionModel] = {  # lint-ignore[module-mutable-state]: m  # lint-ignore[raw-dict]: m
-    "hh": HHServiceConfig,
-    "mock": MockServiceConfig,
-}
+# Board name -> concrete ``service.<board>`` section model. Owned by
+# ``clients.registry`` (the single place a board is registered and a client
+# class wired); re-exported here because ``config.py`` is the public import
+# surface for the loader and the schema builders.
+from jobfucker.clients.registry import SERVICE_SECTION_MODELS
 
 
 # --- Section models ---------------------------------------------------------

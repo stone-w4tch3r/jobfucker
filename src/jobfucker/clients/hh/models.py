@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from jobfucker.clients.shared.cookies import PersistedCookie
+
 
 class HHModel(BaseModel):
     """Additive HH response model with strict field typing."""
@@ -263,19 +265,6 @@ class LoginResponse(HHModel):
     hhcaptcha: LoginCaptchaStatus | None = None
     login_error: LoginErrorStatus | None = Field(default=None, validation_alias="loginError")
     user_type: str | None = Field(default=None, validation_alias="userType")
-
-
-class PersistedCookie(BaseModel):
-    """Portable subset of an HH website cookie."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    name: str = Field(min_length=1)
-    value: str
-    domain: str = Field(min_length=1)
-    path: str = "/"
-    secure: bool = True
-    expires: int | None = None
 
 
 class PersistedAuthState(BaseModel):
