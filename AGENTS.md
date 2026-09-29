@@ -13,6 +13,7 @@
 | System shape: layers, modules, data model, invariants | [docs/specs/architecture.md](docs/specs/architecture.md) |
 | Board-neutral Client interface + shared client mechanics | [docs/specs/client-contract.md](docs/specs/client-contract.md) |
 | HH client requirements | [docs/specs/hh-client.md](docs/specs/hh-client.md) |
+| Habr Career client requirements | [docs/specs/habr-client.md](docs/specs/habr-client.md) |
 | Observed hh.ru behavior (endpoints, captcha, auth) | [docs/hh/](docs/hh/README.md) |
 | Code standards | [docs/coding_rules.md](docs/coding_rules.md) |
 | Feature overviews | [docs/features/](docs/features/) |
@@ -20,7 +21,7 @@
 
 Link to a home doc; never duplicate its facts.
 
-**Reading path:** new to project → this file → product spec → architecture spec. Client work → client-contract → hh-client → docs/hh/.
+**Reading path:** new to project → this file → product spec → architecture spec. HH client work → client-contract → hh-client → docs/hh/. Habr client work → client-contract → habr-client → docs/habr/.
 
 ---
 

@@ -94,9 +94,10 @@ detail page embeds structured JSON, so scraping is not needed. Every `Client` me
 This wiki is authoritative for observed Habr Career behavior and the integration constraints derived
 from it. Product behavior and board-neutral interfaces remain authoritative in the parent jobfucker
 specifications: [client contract](../specs/client-contract.md),
-[architecture](../specs/architecture.md). The implementation spec for the future
-`jobfucker.clients.habr` package (`docs/specs/habr-client.md`) will be written in a separate
-interactive session; research itself is complete enough to build against.
+[architecture](../specs/architecture.md). The implementation spec for the
+`jobfucker.clients.habr` package lives in
+[habr-client.md](../specs/habr-client.md), which is authoritative for how the client uses the facts
+here; research itself is complete enough to build against.
 
 Raw HARs, cookies, tokens, CSRF values, and challenge captures are deliberately not dependencies
 and live only in `/tmp`. The wiki contains the durable, sanitized contracts.
