@@ -10,6 +10,7 @@ ordered by urgency, most urgent at top
 
 ### important
 
+- per pipeline cap: maybe do it per day? or per month? or allow user to decide?
 - check WTF: some LSP noise on AI reading yaml pipelines. In vscode all ok
 - captcha:
   - just a question: why so much captcha code in auth file? is it ok? maybe dedup with captcha file, or they are inherently different? or auth.py is just the consumer of captcha.py and all is ok?
