@@ -28,13 +28,12 @@ from jobfucker.clients.mock.params import (
     MockSearchParams,
     MockServiceConfig,
 )
-from jobfucker.config import PipelineConfig
-from jobfucker.stages.apply import ApplyFilters, ApplyReport, ApplyTargets, run_apply
+from jobfucker.stages.apply import ApplyFilters, ApplyReport, run_apply
 from jobfucker.storage.db import Storage
 from jobfucker.storage.dto import Pipeline
 from jobfucker.storage.models import AuditLog
 from test.fakes.fake_client import FakeApplyBehavior, FakeBehavior, FakeClient, FakeServiceConfig
-from test.pipeline_helpers import build_pipeline_config, create_pipeline, make_factory, snapshot_for
+from test.pipeline_helpers import create_pipeline, make_factory, snapshot_for
 from test.storage.builders import build_vacancy
 
 TODAY = "2026-08-05"
@@ -74,10 +73,6 @@ def _client(factory: Factory) -> Client:
     return factory.get("mock")
 
 
-def _targets(factory: Factory, config: PipelineConfig) -> ApplyTargets:
-    return ApplyTargets(client=_client(factory), resume_id=config.service_section.resume_id)
-
-
 async def _seed_eligible(storage: Storage, pipeline: Pipeline, count: int) -> None:
     """Seed ``count`` scored, cover-lettered, pending vacancies at positions 0..n."""
     for index in range(count):
@@ -97,7 +92,6 @@ async def _apply(
     storage: Storage,
     pipeline: Pipeline,
     factory: Factory,
-    config: PipelineConfig,
     *,
     filters: ApplyFilters = _STRICT_FILTERS,
     now: datetime = NOW,
@@ -112,7 +106,7 @@ async def _apply(
     return await run_apply(
         storage,
         pipeline,
-        _targets(factory, config),
+        _client(factory),
         snapshot_id=snapshot.id,
         min_required_score=snapshot.min_required_score,
         apply_limit=snapshot.apply_limit,
@@ -134,11 +128,10 @@ async def test_apply_applied_outcome_sets_status_and_increments_counter(
 ) -> None:
     """A successful apply sets applied + applied_at and ticks the shared counter."""
     pipeline = await create_pipeline(storage)
-    config = build_pipeline_config()
     snapshot = await snapshot_for(storage, pipeline)
     await _seed_eligible(storage, pipeline, 2)
 
-    result = await _apply(storage, pipeline, make_factory(client_deps), config)
+    result = await _apply(storage, pipeline, make_factory(client_deps))
     assert result.is_ok
     report: ApplyReport = result.unwrap()
     assert report.applied == 2
@@ -166,11 +159,10 @@ async def test_apply_applied_outcome_sets_status_and_increments_counter(
 async def test_apply_redirect_maps_to_skipped(storage: Storage, client_deps: ClientDeps) -> None:
     """A skip/redirect outcome → apply_status 'skipped' (never 'rejected')."""
     pipeline = await create_pipeline(storage)
-    config = build_pipeline_config()
     await _seed_eligible(storage, pipeline, 1)
     behavior = MockBehaviorConfig(default_apply=_outcome("skipped", message="redirect to external form"))
 
-    result = await _apply(storage, pipeline, make_factory(client_deps, section=_section(behavior)), config)
+    result = await _apply(storage, pipeline, make_factory(client_deps, section=_section(behavior)))
     assert result.is_ok
     assert result.unwrap().skipped == 1
 
@@ -185,14 +177,13 @@ async def test_apply_redirect_maps_to_skipped(storage: Storage, client_deps: Cli
 async def test_apply_per_vacancy_error_does_not_abort_batch(storage: Storage, client_deps: ClientDeps) -> None:
     """A per-vacancy ClientError → apply_status 'error' + apply_error; batch continues."""
     pipeline = await create_pipeline(storage)
-    config = build_pipeline_config()
     await _seed_eligible(storage, pipeline, 2)
     behavior = MockBehaviorConfig(
         default_apply=_outcome("applied"),
         per_vacancy={"v0": _outcome("error", message="board rejected")},
     )
 
-    result = await _apply(storage, pipeline, make_factory(client_deps, section=_section(behavior)), config)
+    result = await _apply(storage, pipeline, make_factory(client_deps, section=_section(behavior)))
     assert result.is_ok
     report = result.unwrap()
     assert report.failed == 1
@@ -208,14 +199,13 @@ async def test_apply_per_vacancy_error_does_not_abort_batch(storage: Storage, cl
 async def test_apply_limit_exceeded_stops_ok_and_leaves_rest_pending(storage: Storage, client_deps: ClientDeps) -> None:
     """LimitExceededError → stop; Ok report with limit_reached; remaining pending."""
     pipeline = await create_pipeline(storage)
-    config = build_pipeline_config()
     await _seed_eligible(storage, pipeline, 3)
     behavior = MockBehaviorConfig(
         default_apply=_outcome("applied"),
         per_vacancy={"v1": _outcome("limit_exceeded", message="cap reached")},
     )
 
-    result = await _apply(storage, pipeline, make_factory(client_deps, section=_section(behavior)), config)
+    result = await _apply(storage, pipeline, make_factory(client_deps, section=_section(behavior)))
     assert result.is_ok  # a limit stop is an Ok, never an error
     report = result.unwrap()
     assert report.limit_reached is True
@@ -232,10 +222,9 @@ async def test_apply_limit_exceeded_stops_ok_and_leaves_rest_pending(storage: St
 async def test_apply_per_pipeline_limit_stops_before_next_apply(storage: Storage, client_deps: ClientDeps) -> None:
     """Reaching apply_limit stops applying with limit_reached, Ok."""
     pipeline = await create_pipeline(storage, apply_limit=1)
-    config = build_pipeline_config(apply_limit=1)
     await _seed_eligible(storage, pipeline, 3)
 
-    result = await _apply(storage, pipeline, make_factory(client_deps), config)
+    result = await _apply(storage, pipeline, make_factory(client_deps))
     assert result.is_ok
     report = result.unwrap()
     assert report.applied == 1
@@ -250,12 +239,11 @@ async def test_apply_pipeline_counter_already_at_limit_stops_before_first_apply(
 ) -> None:
     """A pipeline counter already at its cap (a prior run spent it) stops with zero attempts."""
     pipeline = await create_pipeline(storage, apply_limit=1)
-    config = build_pipeline_config(apply_limit=1)
     await _seed_eligible(storage, pipeline, 3)
     # This pipeline's own window slot is already spent.
     await storage.pipeline_apply_limits.increment(pipeline.id, "day", TODAY)
 
-    result = await _apply(storage, pipeline, make_factory(client_deps), config)
+    result = await _apply(storage, pipeline, make_factory(client_deps))
     assert result.is_ok
     report = result.unwrap()
     assert report.applied == 0 and report.skipped == 0 and report.failed == 0
@@ -270,7 +258,6 @@ async def test_apply_pipeline_counter_already_at_limit_stops_before_first_apply(
 async def test_apply_report_buckets_partition_the_selection(storage: Storage, client_deps: ClientDeps) -> None:
     """Every vacancy in the window lands in exactly one bucket; buckets sum to checked."""
     pipeline = await create_pipeline(storage)
-    config = build_pipeline_config()
     await _seed_eligible(storage, pipeline, 4)
     await storage.vacancies.upsert(build_vacancy(pipeline_id=pipeline.id, external_id="noletter", score=5))
     behavior = MockBehaviorConfig(
@@ -278,7 +265,7 @@ async def test_apply_report_buckets_partition_the_selection(storage: Storage, cl
         per_vacancy={"v0": _outcome("error", message="board rejected")},
     )
 
-    result = await _apply(storage, pipeline, make_factory(client_deps, section=_section(behavior)), config)
+    result = await _apply(storage, pipeline, make_factory(client_deps, section=_section(behavior)))
     assert result.is_ok
     report = result.unwrap()
     assert (report.checked, report.total) == (5, 4)
@@ -297,7 +284,6 @@ async def test_apply_mixed_filtered_and_limit_stopped_partition(storage: Storage
     one of them must surface in exactly one bucket.
     """
     pipeline = await create_pipeline(storage, apply_limit=1)
-    config = build_pipeline_config(apply_limit=1)
     await _seed_eligible(storage, pipeline, 2)
     await storage.vacancies.upsert(
         build_vacancy(pipeline_id=pipeline.id, external_id="decided", score=5, cover_letter="l", apply_status="applied")
@@ -315,7 +301,7 @@ async def test_apply_mixed_filtered_and_limit_stopped_partition(storage: Storage
     # This pipeline's one slot is already spent.
     await storage.pipeline_apply_limits.increment(pipeline.id, "day", TODAY)
 
-    result = await _apply(storage, pipeline, make_factory(client_deps), config)
+    result = await _apply(storage, pipeline, make_factory(client_deps))
     assert result.is_ok
     report = result.unwrap()
     assert (report.checked, report.total) == (4, 2)
@@ -329,14 +315,13 @@ async def test_apply_mixed_filtered_and_limit_stopped_partition(storage: Storage
 async def test_apply_is_idempotent_no_double_apply(storage: Storage, client_deps: ClientDeps) -> None:
     """An already-applied vacancy is not re-applied to on a subsequent run."""
     pipeline = await create_pipeline(storage)
-    config = build_pipeline_config()
     await _seed_eligible(storage, pipeline, 2)
     factory = make_factory(client_deps)
     # First run applies to everything.
-    assert (await _apply(storage, pipeline, factory, config)).is_ok
+    assert (await _apply(storage, pipeline, factory)).is_ok
 
     # Second run must not re-apply to the now-applied vacancies.
-    result = await _apply(storage, pipeline, factory, config)
+    result = await _apply(storage, pipeline, factory)
     assert result.is_ok
     assert result.unwrap().applied == 0
     limit_row = await storage.auth_apply_limits.get(_SERVICE, _AUTH, "day", TODAY)
@@ -346,7 +331,6 @@ async def test_apply_is_idempotent_no_double_apply(storage: Storage, client_deps
 async def test_apply_skips_ineligible_vacancies(storage: Storage, client_deps: ClientDeps) -> None:
     """No cover letter / below threshold / manual_skip / unscored / decided — each reported with its reason."""
     pipeline = await create_pipeline(storage)
-    config = build_pipeline_config()
     await storage.vacancies.upsert(build_vacancy(pipeline_id=pipeline.id, external_id="noletter", score=5))
     await storage.vacancies.upsert(
         build_vacancy(
@@ -396,7 +380,7 @@ async def test_apply_skips_ineligible_vacancies(storage: Storage, client_deps: C
         )
     )
 
-    result = await _apply(storage, pipeline, make_factory(client_deps), config)
+    result = await _apply(storage, pipeline, make_factory(client_deps))
     assert result.is_ok
     report = result.unwrap()
     assert report.total == 0  # no eligible candidates
@@ -423,7 +407,6 @@ async def test_apply_ignore_reason_reports_root_cause_not_downstream_status(
     and the apply stage names the real gate: the score.
     """
     pipeline = await create_pipeline(storage)
-    config = build_pipeline_config()
     await storage.vacancies.upsert(
         build_vacancy(
             pipeline_id=pipeline.id,
@@ -433,7 +416,7 @@ async def test_apply_ignore_reason_reports_root_cause_not_downstream_status(
         )
     )
 
-    result = await _apply(storage, pipeline, make_factory(client_deps), config)
+    result = await _apply(storage, pipeline, make_factory(client_deps))
     assert result.is_ok
     ignored = result.unwrap().ignored
     assert len(ignored) == 1
@@ -443,7 +426,6 @@ async def test_apply_ignore_reason_reports_root_cause_not_downstream_status(
 async def test_apply_error_reason_carries_board_message(storage: Storage, client_deps: ClientDeps) -> None:
     """A previously-errored vacancy is ignored with the stored apply_error."""
     pipeline = await create_pipeline(storage)
-    config = build_pipeline_config()
     await storage.vacancies.upsert(
         build_vacancy(
             pipeline_id=pipeline.id,
@@ -455,7 +437,7 @@ async def test_apply_error_reason_carries_board_message(storage: Storage, client
         )
     )
 
-    result = await _apply(storage, pipeline, make_factory(client_deps), config)
+    result = await _apply(storage, pipeline, make_factory(client_deps))
     assert result.is_ok
     ignored = result.unwrap().ignored
     assert len(ignored) == 1
@@ -465,17 +447,16 @@ async def test_apply_error_reason_carries_board_message(storage: Storage, client
 async def test_apply_include_unscored_makes_unscored_eligible(storage: Storage, client_deps: ClientDeps) -> None:
     """``include_unscored`` relaxes the score gate; a lettered unscored vacancy is applied."""
     pipeline = await create_pipeline(storage)
-    config = build_pipeline_config()
     await storage.vacancies.upsert(
         build_vacancy(pipeline_id=pipeline.id, external_id="unscored", cover_letter="letter")
     )
     factory = make_factory(client_deps)
 
-    strict = await _apply(storage, pipeline, factory, config)
+    strict = await _apply(storage, pipeline, factory)
     assert strict.is_ok
     assert strict.unwrap().total == 0
 
-    relaxed = await _apply(storage, pipeline, factory, config, filters=ApplyFilters(include_unscored=True))
+    relaxed = await _apply(storage, pipeline, factory, filters=ApplyFilters(include_unscored=True))
     assert relaxed.is_ok
     report = relaxed.unwrap()
     assert report.applied == 1
@@ -485,12 +466,11 @@ async def test_apply_include_unscored_makes_unscored_eligible(storage: Storage, 
 async def test_apply_min_score_overrides_threshold_for_this_run(storage: Storage, client_deps: ClientDeps) -> None:
     """``min_score`` replaces the config threshold for the run (both directions)."""
     pipeline = await create_pipeline(storage)
-    config = build_pipeline_config()  # config threshold is 3
     await storage.vacancies.upsert(build_vacancy(pipeline_id=pipeline.id, external_id="sub", score=2, cover_letter="l"))
     await storage.vacancies.upsert(build_vacancy(pipeline_id=pipeline.id, external_id="ok", score=4, cover_letter="l"))
     factory = make_factory(client_deps)
 
-    raised = await _apply(storage, pipeline, factory, config, filters=ApplyFilters(min_score=5))
+    raised = await _apply(storage, pipeline, factory, filters=ApplyFilters(min_score=5))
     assert raised.is_ok
     reasons = {v.external_id: v.reason for v in raised.unwrap().ignored}
     assert reasons == {
@@ -498,7 +478,7 @@ async def test_apply_min_score_overrides_threshold_for_this_run(storage: Storage
         ServiceVacancyId("ok"): "score 4 < required 5",
     }
 
-    lowered = await _apply(storage, pipeline, factory, config, filters=ApplyFilters(min_score=2))
+    lowered = await _apply(storage, pipeline, factory, filters=ApplyFilters(min_score=2))
     assert lowered.is_ok
     assert lowered.unwrap().applied == 2
 
@@ -506,15 +486,14 @@ async def test_apply_min_score_overrides_threshold_for_this_run(storage: Storage
 async def test_apply_allow_without_letter_applies_letterless(storage: Storage, client_deps: ClientDeps) -> None:
     """``allow_without_letter`` relaxes the letter gate; the letterless vacancy is applied."""
     pipeline = await create_pipeline(storage)
-    config = build_pipeline_config()
     await storage.vacancies.upsert(build_vacancy(pipeline_id=pipeline.id, external_id="noletter", score=5))
     factory = make_factory(client_deps)
 
-    strict = await _apply(storage, pipeline, factory, config)
+    strict = await _apply(storage, pipeline, factory)
     assert strict.is_ok
     assert strict.unwrap().total == 0
 
-    relaxed = await _apply(storage, pipeline, factory, config, filters=ApplyFilters(allow_without_letter=True))
+    relaxed = await _apply(storage, pipeline, factory, filters=ApplyFilters(allow_without_letter=True))
     assert relaxed.is_ok
     assert relaxed.unwrap().applied == 1
     stored = (await storage.vacancies.list_by_pipeline(pipeline.id))[0]
@@ -527,7 +506,6 @@ async def test_apply_only_ids_restrict_and_bypass_filters(storage: Storage, clie
     manual-skip/score/letter gates for them; the decided gate stays; other
     vacancies are never touched."""
     pipeline = await create_pipeline(storage)
-    config = build_pipeline_config()
     await storage.vacancies.upsert(
         build_vacancy(
             pipeline_id=pipeline.id,
@@ -555,7 +533,7 @@ async def test_apply_only_ids_restrict_and_bypass_filters(storage: Storage, clie
         only_external_ids=frozenset({"forced_manual", "forced_sub", "forced_noletter", "forced_applied"})
     )
 
-    result = await _apply(storage, pipeline, factory, config, filters=filters)
+    result = await _apply(storage, pipeline, factory, filters=filters)
     assert result.is_ok
     report = result.unwrap()
     assert report.applied == 3
@@ -572,7 +550,6 @@ async def test_apply_only_ids_restrict_and_bypass_filters(storage: Storage, clie
 async def test_apply_force_decided_re_attempts_a_decided_vacancy(storage: Storage, client_deps: ClientDeps) -> None:
     """``force_decided`` + ids bypasses the decided gate: a previously-errored vacancy is re-attempted."""
     pipeline = await create_pipeline(storage)
-    config = build_pipeline_config()
     await storage.vacancies.upsert(
         build_vacancy(
             pipeline_id=pipeline.id,
@@ -587,7 +564,7 @@ async def test_apply_force_decided_re_attempts_a_decided_vacancy(storage: Storag
     factory = make_factory(client_deps)
 
     without_force = await _apply(
-        storage, pipeline, factory, config, filters=ApplyFilters(only_external_ids=frozenset({"broken"}))
+        storage, pipeline, factory, filters=ApplyFilters(only_external_ids=frozenset({"broken"}))
     )
     assert without_force.is_ok
     assert without_force.unwrap().total == 0  # decided gate holds by default
@@ -596,7 +573,6 @@ async def test_apply_force_decided_re_attempts_a_decided_vacancy(storage: Storag
         storage,
         pipeline,
         factory,
-        config,
         filters=ApplyFilters(only_external_ids=frozenset({"broken"}), force_decided=True),
     )
     assert with_force.is_ok
@@ -617,10 +593,9 @@ def test_apply_filters_force_decided_requires_ids() -> None:
 async def test_apply_writes_an_audit_entry(storage: Storage, client_deps: ClientDeps) -> None:
     """Apply appends one 'apply' audit_log entry with report counts + snapshot."""
     pipeline = await create_pipeline(storage)
-    config = build_pipeline_config()
     snapshot = await snapshot_for(storage, pipeline)
     await _seed_eligible(storage, pipeline, 1)
-    assert (await _apply(storage, pipeline, make_factory(client_deps), config)).is_ok
+    assert (await _apply(storage, pipeline, make_factory(client_deps))).is_ok
 
     entries = await _audit_entries(storage, pipeline.id)
     assert [entry.action for entry in entries] == ["apply"]
@@ -635,15 +610,14 @@ async def test_apply_shared_counter_across_pipelines_same_login(storage: Storage
     auth key; their applications accumulate on a single shared row while each
     pipeline also tracks its own ``apply_limit`` counter.
     """
-    config = build_pipeline_config()
     factory = make_factory(client_deps)
     pipeline_a = await create_pipeline(storage, name="pipeline-a", login=_AUTH)
     pipeline_b = await create_pipeline(storage, name="pipeline-b", login=_AUTH)
     await _seed_eligible(storage, pipeline_a, 2)
     await _seed_eligible(storage, pipeline_b, 1)
 
-    result_a = await _apply(storage, pipeline_a, factory, config)
-    result_b = await _apply(storage, pipeline_b, factory, config)
+    result_a = await _apply(storage, pipeline_a, factory)
+    result_b = await _apply(storage, pipeline_b, factory)
     assert result_a.is_ok and result_b.is_ok
     assert result_a.unwrap().applied == 2
     assert result_b.unwrap().applied == 1
@@ -681,14 +655,14 @@ async def _run_with_fake_outcome(
     """Run the apply stage against a fake client scripted with one fatal outcome."""
     client = FakeClient(
         client_deps,
-        FakeServiceConfig(resume_id="fake-resume-1"),  # type: ignore[arg-type]  # rationale: unregistered dataclass double, deliberately outside the protocol
+        FakeServiceConfig(),  # type: ignore[arg-type]  # rationale: unregistered dataclass double, deliberately outside the protocol
         behavior=FakeBehavior(default_apply=FakeApplyBehavior(outcome)),
     )
     snapshot = await snapshot_for(storage, pipeline)
     return await run_apply(
         storage,
         pipeline,
-        ApplyTargets(client=client, resume_id="fake-resume-1"),
+        client,
         snapshot_id=snapshot.id,
         min_required_score=snapshot.min_required_score,
         apply_limit=snapshot.apply_limit,

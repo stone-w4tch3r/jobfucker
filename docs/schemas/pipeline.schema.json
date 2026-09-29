@@ -1091,7 +1091,7 @@
       "type": "object"
     },
     "MockServiceConfig": {
-      "description": "Typed ``service.mock`` pipeline.yaml section.\n\nImplements the contract's ``ServiceConfigSection`` (carries ``resume_id``\nplus the ordered ``searches`` pool); the ``behavior`` sub-block is the\nmock's optional manual-testing seam. The canned three-entry dataset used\nacross the test suite is a test fixture (``test/fixtures/mock_vacancies.yaml``),\nnot code.\n\nFields carry title/description/examples so the section's ``model_json_schema()``\ndrives a labeled, per-service typed form in the UI (client-contract.md \u00a76.2).",
+      "description": "Typed ``service.mock`` pipeline.yaml section.\n\nImplements the contract's ``ServiceConfigSection`` (a ``resume_id`` for\nparity with real board sections, plus the ordered ``searches`` pool); the\n``behavior`` sub-block is the mock's optional manual-testing seam. The\ncanned three-entry dataset used across the test suite is a test fixture\n(``test/fixtures/mock_vacancies.yaml``), not code.\n\nFields carry title/description/examples so the section's ``model_json_schema()``\ndrives a labeled, per-service typed form in the UI (client-contract.md \u00a76.2).",
       "properties": {
         "behavior": {
           "anyOf": [
@@ -1107,7 +1107,7 @@
           "title": "Behavior (manual testing)"
         },
         "resume_id": {
-          "description": "Service resume identifier, passed verbatim to ``apply_to_vacancy``.",
+          "description": "Configured resume id (parity with real boards); the mock reports a fixed resume and ignores it.",
           "examples": [
             "mock-resume-1"
           ],
@@ -1999,5 +1999,5 @@
   ],
   "title": "jobfucker pipeline.yaml",
   "type": "object",
-  "x-jobfucker-schema-version": "sha256:da05d9676c1846f60cb0d46a5a8a44a9fb21bc6b35176fbc6df1b97731fec99a"
+  "x-jobfucker-schema-version": "sha256:2fe6e3a79c98c70cb0b28047b1e027a05988f88d9e832fcfe7be8d2045f9ecd4"
 }

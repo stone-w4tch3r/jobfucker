@@ -14,7 +14,7 @@ from datetime import UTC, datetime
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from jobfucker.clients.base import ClientDeps, ServiceInfo
-from jobfucker.stages.apply import ApplyFilters, ApplyReport, ApplyTargets, run_apply
+from jobfucker.stages.apply import ApplyFilters, ApplyReport, run_apply
 from jobfucker.storage.db import Storage
 from jobfucker.storage.dto import Pipeline
 from jobfucker.testing.step_runner import async_run
@@ -71,12 +71,11 @@ def _seed_eligible(storage: Storage, pipeline: Pipeline, count: int) -> None:
 
 def _run_once(storage: Storage, pipeline: Pipeline, client: FakeClient, *, now: datetime = _NOW) -> ApplyReport:
     async def run() -> ApplyReport:
-        config = build_pipeline_config()
         snapshot = await snapshot_for(storage, pipeline)
         result = await run_apply(
             storage,
             pipeline,
-            ApplyTargets(client=client, resume_id=config.service_section.resume_id),
+            client,
             snapshot_id=snapshot.id,
             min_required_score=snapshot.min_required_score,
             apply_limit=snapshot.apply_limit,

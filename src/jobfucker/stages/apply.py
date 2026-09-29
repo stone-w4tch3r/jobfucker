@@ -2,7 +2,7 @@
 
 Applies to each **eligible** vacancy (scored at/above ``min_required_score``,
 holds a generated cover letter, not manual-skip, and not already
-decided) by calling ``client.apply_to_vacancy(resume_id, vacancy_id,
+decided) by calling ``client.apply_to_vacancy(vacancy_id,
 message=cover_letter)``.
 
 Eligibility is relaxable per run through :class:`ApplyFilters`:
@@ -89,7 +89,7 @@ from jobfucker.stages.prompts import PromptInputs, VacancyPromptData
 from jobfucker.storage.db import Storage
 from jobfucker.storage.dto import ApplyStatus, Pipeline, VacancyRecord
 
-__all__ = ["AppliedVacancy", "ApplyFilters", "ApplyReport", "ApplyTargets", "run_apply"]
+__all__ = ["AppliedVacancy", "ApplyFilters", "ApplyReport", "run_apply"]
 
 logger = logging.getLogger(__name__)
 
@@ -144,18 +144,6 @@ class ApplyFilters:
 
 # The shared strict default (never mutated): B008-safe default for ``run_apply``.
 _STRICT_FILTERS: Final[ApplyFilters] = ApplyFilters()
-
-
-@dataclass(frozen=True, slots=True)
-class ApplyTargets:
-    """The client + resolved service resume id the apply stage acts through.
-
-    Both are resolved by the engine controller from the pipeline config +
-    client factory (never hardcoded in core).
-    """
-
-    client: Client
-    resume_id: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -297,11 +285,12 @@ def _ignore_reason(  # noqa: PLR0911 - one return per eligibility gate (distinct
 class _ApplyContext:
     """Shared state threaded through one ``run_apply`` invocation.
 
-    ``service``/``login`` are the auth identity from the resolved config and
-    ``period``/``period_key`` the board's quota window — the keys of the **shared
-    per-auth** counter every pipeline on the account reads and increments (never
-    double-counted). The per-pipeline counter is keyed by ``pipeline.id`` + the
-    same window in the storage layer.
+    ``client`` is the constructed board client the stage applies through (it
+    owns its configured resume); ``service``/``login`` are the auth identity from
+    the resolved config and ``period``/``period_key`` the board's quota window —
+    the keys of the **shared per-auth** counter every pipeline on the account
+    reads and increments (never double-counted). The per-pipeline counter is
+    keyed by ``pipeline.id`` + the same window in the storage layer.
 
     ``hh_test_solver``/``hh_test_prompt`` are the optional HH screening-test
     solving seam: when both the solver and a capable client are present, a
@@ -312,7 +301,7 @@ class _ApplyContext:
 
     storage: Storage
     pipeline: Pipeline
-    targets: ApplyTargets
+    client: Client
     period: QuotaPeriod
     period_key: str
     service: str
@@ -386,13 +375,12 @@ async def _apply_one(
     if not ctx.limits.can_apply(used_per_auth, used_per_pipeline):
         return _ApplyOutcome("pending", None, delta=0, limit_stop=True)
 
-    if isinstance(ctx.targets.client, HhTestCapable) and vacancy.has_hh_test is True:
-        test_outcome = await _apply_hh_test(ctx, vacancy, ctx.targets.client)
+    if isinstance(ctx.client, HhTestCapable) and vacancy.has_hh_test is True:
+        test_outcome = await _apply_hh_test(ctx, vacancy, ctx.client)
         if test_outcome is not None:
             return test_outcome
 
-    result = await ctx.targets.client.apply_to_vacancy(
-        resume_id=ctx.targets.resume_id,
+    result = await ctx.client.apply_to_vacancy(
         vacancy_id=vacancy.external_id,
         message=vacancy.cover_letter,
     )
@@ -453,7 +441,6 @@ async def _apply_hh_test(  # noqa: PLR0911 - one return per distinct test-path o
         return await _persist_skipped_per_vacancy(ctx, vacancy, outcome.comment)
 
     result = await client.apply_to_vacancy_with_test(
-        resume_id=ctx.targets.resume_id,
         vacancy_id=vacancy.external_id,
         message=vacancy.cover_letter,
         solution=outcome,
@@ -583,10 +570,10 @@ async def _classify_apply_result(
             return _ApplyOutcome("error", error.text, delta=0)
 
 
-async def run_apply(  # noqa: PLR0913 - config-heavy stage: identity + targets + provenance + thresholds + auth key
+async def run_apply(  # noqa: PLR0913 - config-heavy stage: client + provenance + thresholds + auth key
     storage: Storage,
     pipeline: Pipeline,
-    targets: ApplyTargets,
+    client: Client,
     *,
     snapshot_id: int,
     min_required_score: int,
@@ -605,7 +592,8 @@ async def run_apply(  # noqa: PLR0913 - config-heavy stage: identity + targets +
     Args:
         storage: the storage facade (repositories + engine + session factory).
         pipeline: the pipeline identity DTO (id for vacancies/audit/counter).
-        targets: the resolved client + service resume id.
+        client: the constructed board client this stage applies through (it
+            owns its configured resume — core never sees a resume id).
         snapshot_id: the :class:`PipelineSnapshot` id whose config produced
             this run — stamped ``applied_snapshot_id`` on every vacancy the
             apply stage decides.
@@ -638,14 +626,14 @@ async def run_apply(  # noqa: PLR0913 - config-heavy stage: identity + targets +
         limit stop is an ``Ok`` outcome, never an error.
     """
     reporter = progress if progress is not None else NullReporter()
-    period = targets.client.service_info.apply_period
+    period = client.service_info.apply_period
     window_key = period_key(period, now=now)
 
     # Two independent counters over the board's window, read once up front: the
     # per-auth counter is shared across every pipeline on the account (so the
     # board cap is never double-counted), the per-pipeline counter is this
     # pipeline's own ``apply_limit`` throttle.
-    per_auth_cap = targets.client.service_info.per_auth_apply_cap
+    per_auth_cap = client.service_info.per_auth_apply_cap
     limits = Limits(period=period, per_auth_cap=per_auth_cap, per_pipeline_limit=apply_limit)
     auth_row = await storage.auth_apply_limits.get(service, login, period, window_key)
     used_per_auth = auth_row.count if auth_row is not None else 0
@@ -669,7 +657,7 @@ async def run_apply(  # noqa: PLR0913 - config-heavy stage: identity + targets +
     ctx = _ApplyContext(
         storage=storage,
         pipeline=pipeline,
-        targets=targets,
+        client=client,
         period=period,
         period_key=window_key,
         service=service,

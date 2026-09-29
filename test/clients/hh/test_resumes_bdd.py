@@ -250,7 +250,6 @@ async def _list_once(client: HHClient) -> Result[list[ResumeInfo], ClientError]:
 async def _apply_once(client: HHClient) -> Result[ApplyResult, ClientError]:
     try:
         return await client.apply_to_vacancy(
-            resume_id=_RESUME_ID,
             vacancy_id=ServiceVacancyId(_VACANCY_ID),
             message=_COVER_LETTER,
         )
@@ -265,7 +264,6 @@ async def _apply_twice_on_client(client: HHClient) -> tuple[Result[ApplyResult, 
         return tuple(
             [
                 await client.apply_to_vacancy(
-                    resume_id=_RESUME_ID,
                     vacancy_id=ServiceVacancyId(_VACANCY_ID),
                     message=_COVER_LETTER,
                 )

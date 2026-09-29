@@ -183,7 +183,12 @@ Model invariants:
 
 - `Vacancy.description` is full normalized text, never a search-result snippet.
 - `key_skills` remains structured.
-- `resume_id` is the board-side identifier passed unchanged to an application.
+- `resume_id` is the board's own identifier for a resume, as reported in the
+  `get_resumes` read model (HH: the resume id). It is display/listing data only.
+  Whether — and how — a client selects a resume for an application is entirely
+  board-internal and optional: HH reads its configured `service.hh.resume_id`,
+  while a board with a single implicit resume (Habr) involves no resume id at all.
+  Core never selects, reads, or passes a resume id.
 - `ApplyResult` is a closed union of deterministic outcomes for one vacancy:
   - `ApplySucceeded` — the board confirms submission;
   - `ApplySkipped` — no submission is needed or supported; its typed `ApplySkip` carries the
@@ -234,7 +239,6 @@ class Client(Protocol):
     async def apply_to_vacancy(
         self,
         *,
-        resume_id: str,
         vacancy_id: ServiceVacancyId,
         message: str | None = None,
     ) -> Result[ApplyResult, ClientError]: ...
@@ -293,7 +297,8 @@ Method semantics:
 - `get_identity()` returns the authenticated account's identity (a board "whoami"). Boards SHOULD
   reuse their auth healthcheck response instead of issuing an extra request (HH decodes `/me`
   once per preflight and caches it). `external_id` is the only required member.
-- `apply_to_vacancy()` receives the explicit service resume ID selected by core.
+- `apply_to_vacancy()` applies with the client's own configured resume; core never selects or
+  passes a resume ID.
 - `aclose()` releases owned transports/resources, is safe after partial initialization, and is
   idempotent.
 
@@ -482,8 +487,6 @@ metadata.
 ```python
 class ServiceConfigSection(Protocol):
     @property
-    def resume_id(self) -> str: ...
-    @property
     def searches(self) -> Sequence[SearchEntryBase]: ...
 
 class Factory:
@@ -498,8 +501,9 @@ class Factory:
   fail fast.
 - `cap(service)` returns the client-declared conservative product safety cap without claiming it
   is the board's exact upstream limit.
-- Core may read only `resume_id` and `searches` through `ServiceConfigSection`; all other fields
-  remain opaque to generic code. `searches` is the ordered **search pool**: one pipeline declares
+- Core may read only `searches` through `ServiceConfigSection`; all other fields —
+  including a board's own resume selector — remain opaque to generic code and are
+  consumed only by the client that owns the section. `searches` is the ordered **search pool**: one pipeline declares
   an ordered list of self-contained search entries (query + board filter + optional per-entry
   fetch `window`); the board filter stays a service-specific typed model held inside the client.
   The board-neutral shell is `SearchEntryBase` (query + optional `window: SearchWindow`); every

@@ -37,7 +37,7 @@ def _make_fake(client_deps: ClientDeps) -> FakeClient:
     """Construct the fake exactly like a real client — ``(deps, section)`` pair."""
     return FakeClient(
         client_deps,
-        FakeServiceConfig(resume_id="fake-resume-1"),  # type: ignore[arg-type]  # rationale: unregistered dataclass double, deliberately outside the protocol
+        FakeServiceConfig(),  # type: ignore[arg-type]  # rationale: unregistered dataclass double, deliberately outside the protocol
     )
 
 

@@ -34,7 +34,7 @@ from rusty_results.prelude import Ok
 from jobfucker.ai import ScoreResult
 from jobfucker.bootstrap import build_engine_from_pipeline
 from jobfucker.clients.base import ClientDeps
-from jobfucker.clients.mock.params import MockApplyBehaviorConfig, MockBehaviorConfig
+from jobfucker.clients.mock.params import MockApplyBehaviorConfig, MockBehaviorConfig, MockServiceConfig
 from jobfucker.config import load_service_section
 from jobfucker.stages.apply import ApplyReport
 from jobfucker.stages.score import ScoreReport
@@ -108,7 +108,7 @@ async def test_init_equivalent_then_stage_runs_by_pipeline_id_no_config(storage:
     section_result = load_service_section(snapshot.service, snapshot.service_section)
     assert section_result.is_ok
     section = section_result.unwrap()
-    assert section is not None
+    assert isinstance(section, MockServiceConfig)
     assert section.resume_id == "mock-resume-1"
 
     # Re-read the identity + head snapshot fresh from the DB by id (simulates a

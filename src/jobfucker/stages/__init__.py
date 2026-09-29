@@ -14,7 +14,7 @@ fetch → score → generate_cv → apply. Phase 5A ships the AI-heavy stages:
 
 from __future__ import annotations
 
-from jobfucker.stages.apply import AppliedVacancy, ApplyReport, ApplyTargets, run_apply
+from jobfucker.stages.apply import AppliedVacancy, ApplyReport, run_apply
 from jobfucker.stages.fetch import FetchedVacancy, FetchInputs, FetchReport, run_fetch
 from jobfucker.stages.generate_cv import GenerateCvReport, GeneratedCv, run_generate_cv
 from jobfucker.stages.prompts import (
@@ -28,7 +28,6 @@ from jobfucker.stages.score import ScoredVacancy, ScoreReport, run_score
 __all__ = [
     "AppliedVacancy",
     "ApplyReport",
-    "ApplyTargets",
     "FetchInputs",
     "FetchReport",
     "FetchedVacancy",

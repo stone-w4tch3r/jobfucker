@@ -254,7 +254,6 @@ class HhTestCapable(Protocol):
     async def apply_to_vacancy_with_test(
         self,
         *,
-        resume_id: str,
         vacancy_id: ServiceVacancyId,
         message: str | None,
         solution: HhTestSolution,

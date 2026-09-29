@@ -10,7 +10,7 @@ protocol from the contract. It carries two things:
   programmable manual-testing seam (``authorize_error``, ``default_apply``,
   ``per_vacancy``). It is part of the mock's own section so tests and manual
   play can exercise every apply outcome and a failing ``authorize``; it is
-   never exposed to core, which only ever reads ``resume_id`` off the section.
+   never exposed to core (core reads only ``searches`` off the section).
 
 Every model below carries ``Field(title/description/examples)`` and ``Literal``
 enums so its ``model_json_schema()`` drives a labeled, per-service typed form in
@@ -282,11 +282,11 @@ class MockSearchEntry(SearchEntryBase):
 class MockServiceConfig(BaseModel):
     """Typed ``service.mock`` pipeline.yaml section.
 
-    Implements the contract's ``ServiceConfigSection`` (carries ``resume_id``
-    plus the ordered ``searches`` pool); the ``behavior`` sub-block is the
-    mock's optional manual-testing seam. The canned three-entry dataset used
-    across the test suite is a test fixture (``test/fixtures/mock_vacancies.yaml``),
-    not code.
+    Implements the contract's ``ServiceConfigSection`` (a ``resume_id`` for
+    parity with real board sections, plus the ordered ``searches`` pool); the
+    ``behavior`` sub-block is the mock's optional manual-testing seam. The
+    canned three-entry dataset used across the test suite is a test fixture
+    (``test/fixtures/mock_vacancies.yaml``), not code.
 
     Fields carry title/description/examples so the section's ``model_json_schema()``
     drives a labeled, per-service typed form in the UI (client-contract.md §6.2).
@@ -294,7 +294,7 @@ class MockServiceConfig(BaseModel):
 
     resume_id: str = Field(
         title="Resume id",
-        description="Service resume identifier, passed verbatim to ``apply_to_vacancy``.",
+        description="Configured resume id (parity with real boards); the mock reports a fixed resume and ignores it.",
         examples=["mock-resume-1"],
     )
     searches: tuple[MockSearchEntry, ...] = Field(

@@ -25,7 +25,7 @@ from jobfucker.hh_tests.contract import (
     HhTestTaskAnswer,
     HhTestUnsolved,
 )
-from jobfucker.stages.apply import ApplyFilters, ApplyReport, ApplyTargets, run_apply
+from jobfucker.stages.apply import ApplyFilters, ApplyReport, run_apply
 from jobfucker.storage.db import Storage
 from jobfucker.storage.dto import Pipeline, VacancyRecord
 from jobfucker.testing.step_runner import async_run
@@ -73,12 +73,11 @@ class HhTestFakeClient(FakeClient):
     async def apply_to_vacancy_with_test(
         self,
         *,
-        resume_id: str,
         vacancy_id: ServiceVacancyId,
         message: str | None,
         solution: HhTestSolution,
     ) -> Result[ApplyResult, ClientError]:
-        del resume_id, vacancy_id, message
+        del vacancy_id, message
         self.submitted.append(solution)
         return Ok(ApplySucceeded())
 
@@ -230,12 +229,11 @@ def _run_stage(
     filters: ApplyFilters | None = None,
 ) -> ApplyOutcome:
     async def run() -> ApplyOutcome:
-        config = build_pipeline_config()
         snapshot = await snapshot_for(storage, seeded.pipeline)
         result = await run_apply(
             storage,
             seeded.pipeline,
-            ApplyTargets(client=client, resume_id=config.service_section.resume_id),
+            client,
             snapshot_id=seeded.snapshot_id,
             min_required_score=snapshot.min_required_score,
             apply_limit=snapshot.apply_limit,

@@ -522,7 +522,6 @@ async def _invoke_actions(client: HHClient) -> tuple[ClientError | None, ClientE
         search = await client.search_vacancies(0)
         resumes = await client.get_resumes()
         apply = await client.apply_to_vacancy(
-            resume_id="resume-1",
             vacancy_id=ServiceVacancyId("vacancy-1"),
         )
     finally:

@@ -77,10 +77,12 @@ def test_mock_section_parses_into_mock_params(runtime_dir: Path) -> None:
 
 
 def test_resume_id_captured(runtime_dir: Path) -> None:
-    """``service.<board>.resume_id`` is captured on the section, not lost."""
+    """A board's own section fields (``mock``'s ``resume_id``) are captured, not lost."""
     path = build_valid_pipeline_yaml(runtime_dir / "config")
     config = load_pipeline_config(path).unwrap()
-    assert config.service_section.resume_id == "mock-resume-1"
+    section = config.service_section
+    assert isinstance(section, MockServiceConfig)
+    assert section.resume_id == "mock-resume-1"
 
 
 # --- ``~`` expansion in user-passed paths ------------------------------------
@@ -798,7 +800,9 @@ def test_config_columns_round_trip_embeds_contents(runtime_dir: Path) -> None:
     assert recon.scoring.scoring_prompt == "score template"
     assert recon.apply.apply_prompt == "apply template"
     # The re-validated section is attached.
-    assert recon.service_section.resume_id == "mock-resume-1"
+    recon_section = recon.service_section
+    assert isinstance(recon_section, MockServiceConfig)
+    assert recon_section.resume_id == "mock-resume-1"
 
 
 def test_config_columns_round_trip_reconstructs_without_files(runtime_dir: Path) -> None:

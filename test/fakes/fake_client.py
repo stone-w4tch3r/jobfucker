@@ -94,15 +94,12 @@ class FakeSearchEntry:
 class FakeServiceConfig:
     """The fake's typed ``service.<board>`` section (implements the protocol).
 
-    ``resume_id`` is the one field every board's section carries
-    (``ServiceConfigSection``) and ``searches`` is the ordered pool core
-    iterates (one :class:`FakeSearchEntry` by default); optional ``behavior``
-    lets the fake self-configure its programmable behaviors straight from the
-    config section, mirroring how a real client derives its construction
-    behavior from its typed section.
+    ``searches`` is the ordered pool core iterates (one :class:`FakeSearchEntry`
+    by default); optional ``behavior`` lets the fake self-configure its
+    programmable behaviors straight from the config section, mirroring how a
+    real client derives its construction behavior from its typed section.
     """
 
-    resume_id: str
     searches: tuple[FakeSearchEntry, ...] = (FakeSearchEntry(),)
     behavior: FakeBehavior | None = None
 
@@ -150,7 +147,7 @@ _DEFAULT_RESUMES: tuple[ResumeInfo, ...] = (
     ResumeInfo(resume_id="fake-resume-1", title="Fake Resume", updated_at=None),
 )
 
-_DEFAULT_SECTION = FakeServiceConfig(resume_id="fake-resume-1")
+_DEFAULT_SECTION = FakeServiceConfig()
 
 
 class FakeClient(Client):
@@ -186,7 +183,7 @@ class FakeClient(Client):
             deps: the standard :class:`ClientDeps` (accepted for signature
                 parity with real clients; the fake does not touch the network).
             section: the typed ``service.<board>`` section the fake
-                self-configures from (resume id, optional scripting behavior).
+                self-configures from (optional scripting behavior).
             vacancies: canned vacancies returned by ``search_vacancies``.
             resumes: canned resumes returned by ``get_resumes``.
             behavior: optional programmable apply/authorize behaviors
@@ -279,12 +276,10 @@ class FakeClient(Client):
     async def apply_to_vacancy(
         self,
         *,
-        resume_id: str,
         vacancy_id: ServiceVacancyId,
         message: str | None = None,
     ) -> Result[ApplyResult, ClientError]:
         """Apply, honouring the programmable per-vacancy/default behavior."""
-        del resume_id
         await self._report(f"apply: sending to vacancy #{vacancy_id}")
         behavior = self._behavior.per_vacancy.get(vacancy_id, self._behavior.default_apply)
         result: Result[ApplyResult, ClientError]
@@ -322,8 +317,9 @@ def _coerce_section(section: ServiceConfigSection) -> FakeServiceConfig:
 
     The factory hands every client its config section as the ``Client``-side
     protocol type; the fake unwraps that to its concrete section so it can read
-    ``resume_id``/``behavior`` with full type safety.
+    ``behavior`` with full type safety. A real board's section carries no fake
+    behavior, so the default section stands in for it.
     """
     if isinstance(section, FakeServiceConfig):
         return section
-    return FakeServiceConfig(resume_id=section.resume_id)
+    return _DEFAULT_SECTION

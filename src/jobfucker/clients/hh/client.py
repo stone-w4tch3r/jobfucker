@@ -101,9 +101,9 @@ class HHClient(Client, HhTestCapable):
         self._resumes = ResumeService(self._transport, captcha)
         self._applications = ApplicationService(self._transport, captcha, delay=apply_delay)
         self._tests = HhTestService(self._transport)
-        # Resume ids already proven owned+published on this client instance;
-        # the walk over /resumes/mine runs once per id, not once per vacancy.
-        self._validated_resume_ids: set[str] = set()
+        # The configured resume is proven owned+published once per client
+        # instance (the walk over /resumes/mine runs once, not per vacancy).
+        self._resume_validated: bool = False
 
     async def authorize(self) -> Result[None, ClientError]:
         """Ensure current persisted or newly-created HH authorization is healthy."""
@@ -231,7 +231,6 @@ class HHClient(Client, HhTestCapable):
     async def apply_to_vacancy(
         self,
         *,
-        resume_id: str,
         vacancy_id: ServiceVacancyId,
         message: str | None = None,
     ) -> Result[ApplyResult, ClientError]:
@@ -244,11 +243,12 @@ class HHClient(Client, HhTestCapable):
         authorized = await self._ensure_authorized()
         if authorized.is_err:
             return Err(authorized.unwrap_err())
-        if resume_id not in self._validated_resume_ids:
+        resume_id = self._section.resume_id
+        if not self._resume_validated:
             validated = await self._resumes.validate_resume(self._auth.authorized_access_token, resume_id)
             if validated.is_err:
                 return Err(validated.unwrap_err())
-            self._validated_resume_ids.add(resume_id)
+            self._resume_validated = True
         return await self._applications.apply(
             access_token=self._auth.authorized_access_token,
             resume_id=resume_id,
@@ -259,7 +259,6 @@ class HHClient(Client, HhTestCapable):
     async def apply_to_vacancy_with_test(
         self,
         *,
-        resume_id: str,
         vacancy_id: ServiceVacancyId,
         message: str | None,
         solution: HhTestSolution,
@@ -274,11 +273,12 @@ class HHClient(Client, HhTestCapable):
         authorized = await self._ensure_authorized()
         if authorized.is_err:
             return Err(authorized.unwrap_err())
-        if resume_id not in self._validated_resume_ids:
+        resume_id = self._section.resume_id
+        if not self._resume_validated:
             validated = await self._resumes.validate_resume(self._auth.authorized_access_token, resume_id)
             if validated.is_err:
                 return Err(validated.unwrap_err())
-            self._validated_resume_ids.add(resume_id)
+            self._resume_validated = True
         outcome = await self._tests.apply_with_test(
             resume_id=resume_id,
             vacancy_id=vacancy_id,
@@ -292,7 +292,7 @@ class HHClient(Client, HhTestCapable):
             return Ok(result)
         # Test removed since solve while the vacancy is still applyable: route
         # once through the standard flow (its preflight re-checks archived/closed).
-        return await self.apply_to_vacancy(resume_id=resume_id, vacancy_id=vacancy_id, message=message)
+        return await self.apply_to_vacancy(vacancy_id=vacancy_id, message=message)
 
     async def get_vacancy_test(self, vacancy_id: ServiceVacancyId) -> Result[HhTestProblem | None, ClientError]:
         """Healthcheck authorization, then fetch the vacancy's web screening test."""

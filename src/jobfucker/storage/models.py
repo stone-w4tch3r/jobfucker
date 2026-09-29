@@ -108,8 +108,9 @@ class PipelineSnapshot(Base):
     source: Mapped[str] = mapped_column(Text, nullable=False, default="manual", server_default="manual")
     note: Mapped[str | None] = mapped_column(Text)
     service: Mapped[str] = mapped_column(Text, nullable=False, default="hh", server_default="hh")
-    # Opaque JSON of the validated `service.<board>` section (resume_id + the
-    # board's filter params). Core stores it as-is and never reads its internals.
+    # Opaque JSON of the validated `service.<board>` section (the board's own
+    # fields: filters, resume selector, search pool). Core stores it as-is and
+    # never reads its internals.
     service_section: Mapped[str | None] = mapped_column(Text)
     # Optional AI-captcha block (model/base_url/api_key CONTENT)
     # stored as opaque JSON; ``None`` when no captcha section is configured.

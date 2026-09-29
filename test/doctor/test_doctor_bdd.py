@@ -72,13 +72,13 @@ def _err_handler(message: str) -> CaptchaHandler:
 @given("a fake client with a working identity", target_fixture="client")
 def working_identity_client_step(client_deps: ClientDeps) -> FakeClient:
     """The all-succeed fake: ``get_identity`` returns the canned identity."""
-    return FakeClient(client_deps, FakeServiceConfig(resume_id="fake-resume-1"))  # type: ignore[arg-type]  # rationale: unregistered dataclass double, deliberately outside the protocol (same as the conformance test)
+    return FakeClient(client_deps, FakeServiceConfig())  # type: ignore[arg-type]  # rationale: unregistered dataclass double, deliberately outside the protocol (same as the conformance test)
 
 
 @given("a fake client whose identity fetch fails", target_fixture="client")
 def failing_identity_client_step(client_deps: ClientDeps) -> _FailingIdentityFake:
     """The scripted-rejection fake for the failure path."""
-    return _FailingIdentityFake(client_deps, FakeServiceConfig(resume_id="fake-resume-1"))  # type: ignore[arg-type]  # rationale: unregistered dataclass double, deliberately outside the protocol (same as the conformance test)
+    return _FailingIdentityFake(client_deps, FakeServiceConfig())  # type: ignore[arg-type]  # rationale: unregistered dataclass double, deliberately outside the protocol (same as the conformance test)
 
 
 @given("a captcha handler that solves", target_fixture="captcha_handler")

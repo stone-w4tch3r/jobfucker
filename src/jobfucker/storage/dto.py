@@ -76,9 +76,9 @@ class PipelineSnapshot:
     source: str  # 'from_file' | 'manual'
     note: str | None
     service: str  # client selector string ("mock", "hh", ...); storage stays board-neutral
-    # Opaque JSON of the validated `service.<board>` section (resume_id + the
-    # ordered search pool: per-entry query/window/board filter). Core stores it
-    # as-is and never reads its internals.
+    # Opaque JSON of the validated `service.<board>` section (the board's own
+    # fields + the ordered search pool: per-entry query/window/board filter).
+    # Core stores it as-is and never reads its internals.
     service_section: str | None
     # Optional AI-captcha block (model/base_url/api_key CONTENT)
     # as opaque JSON; `None` when no captcha section is configured.

@@ -28,7 +28,7 @@ It encapsulates the **batch semantics** the CLI/GUI share:
 - **Per-item failures are field values, not batch aborts** (the stages persist
   per-vacancy errors; the engine never stops the batch for one bad item).
 
-Clients/resume_id are resolved from the pipeline config + client ``Factory``
+The client is resolved from the pipeline config + client ``Factory``
 (never hardcoded), so the CLI (Phase 6) is a thin wrapper: parse
 args → build an :class:`Engine` from the composition root → call ``run``/one of
 the stage methods → format the returned ``Result``. No ``typer`` import anywhere
@@ -52,7 +52,7 @@ from jobfucker.hh_tests.contract import HhTestCapable, HhTestSolver
 from jobfucker.hh_tests.dump import HhTestDumpRecord
 from jobfucker.hh_tests.selector import select_hh_test_solver
 from jobfucker.reporting import NullReporter, Reporter
-from jobfucker.stages.apply import ApplyFilters, ApplyReport, ApplyTargets, run_apply, select_candidates
+from jobfucker.stages.apply import ApplyFilters, ApplyReport, run_apply, select_candidates
 from jobfucker.stages.fetch import FetchInputs, FetchReport, run_fetch
 from jobfucker.stages.generate_cv import GenerateCvReport, run_generate_cv
 from jobfucker.stages.prompts import PromptInputs
@@ -428,7 +428,7 @@ class Engine:
             return await run_apply(
                 self._storage,
                 pipeline,
-                ApplyTargets(client=client, resume_id=self._config.service_section.resume_id),
+                client,
                 positions=positions,
                 snapshot_id=self._snapshot_id,
                 min_required_score=self._config.scoring.min_required_score,

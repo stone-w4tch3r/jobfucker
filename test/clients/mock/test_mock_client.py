@@ -390,7 +390,7 @@ async def test_get_resumes_returns_mock_resume(client_deps: ClientDeps) -> None:
 async def test_apply_default_applied_no_behavior(client_deps: ClientDeps) -> None:
     """With no behavior, apply is ``applied`` (Ok)."""
     client = MockClient(client_deps, section=_section())
-    result = await client.apply_to_vacancy(resume_id="mock-resume-1", vacancy_id=ServiceVacancyId("mock-1"))
+    result = await client.apply_to_vacancy(vacancy_id=ServiceVacancyId("mock-1"))
     assert result.is_ok
     assert isinstance(result.unwrap(), ApplySucceeded)
 
@@ -399,7 +399,7 @@ async def test_apply_default_applied_no_behavior(client_deps: ClientDeps) -> Non
 async def test_apply_default_applied_when_default_apply_is_none(client_deps: ClientDeps) -> None:
     """A behavior block with ``default_apply=None`` still yields ``applied`` (guards the None-able default)."""
     client = MockClient(client_deps, section=_section(MockBehaviorConfig()))
-    result = await client.apply_to_vacancy(resume_id="mock-resume-1", vacancy_id=ServiceVacancyId("mock-1"))
+    result = await client.apply_to_vacancy(vacancy_id=ServiceVacancyId("mock-1"))
     assert result.is_ok
     assert isinstance(result.unwrap(), ApplySucceeded)
 
@@ -409,7 +409,7 @@ async def test_apply_skipped(client_deps: ClientDeps) -> None:
     """A programmed ``skipped`` default maps to an ``ApplyResult`` skip."""
     behavior = MockBehaviorConfig(default_apply=_apply_behavior("skipped", message="below threshold"))
     client = MockClient(client_deps, section=_section(behavior))
-    result = await client.apply_to_vacancy(resume_id="mock-resume-1", vacancy_id=ServiceVacancyId("mock-1"))
+    result = await client.apply_to_vacancy(vacancy_id=ServiceVacancyId("mock-1"))
     assert result.is_ok
     outcome: ApplyResult = result.unwrap()
     assert isinstance(outcome, ApplySkipped)
@@ -421,7 +421,7 @@ async def test_apply_error(client_deps: ClientDeps) -> None:
     """A programmed ``error`` default surfaces as a deterministic ``ApplyFailed``."""
     behavior = MockBehaviorConfig(default_apply=_apply_behavior("error", message="bad request"))
     client = MockClient(client_deps, section=_section(behavior))
-    result = await client.apply_to_vacancy(resume_id="mock-resume-1", vacancy_id=ServiceVacancyId("mock-1"))
+    result = await client.apply_to_vacancy(vacancy_id=ServiceVacancyId("mock-1"))
     assert result.is_ok
     outcome = result.unwrap()
     assert isinstance(outcome, ApplyFailed)
@@ -433,7 +433,7 @@ async def test_apply_limit_exceeded(client_deps: ClientDeps) -> None:
     """``limit_exceeded`` is the stop signal ``Err(LimitExceededError)``."""
     behavior = MockBehaviorConfig(per_vacancy={"mock-2": _apply_behavior("limit_exceeded", message="cap reached")})
     client = MockClient(client_deps, section=_section(behavior))
-    result = await client.apply_to_vacancy(resume_id="mock-resume-1", vacancy_id=ServiceVacancyId("mock-2"))
+    result = await client.apply_to_vacancy(vacancy_id=ServiceVacancyId("mock-2"))
     assert result.is_err
     error = result.unwrap_err()
     assert isinstance(error, LimitExceededError)
@@ -448,9 +448,9 @@ async def test_per_vacancy_override_beats_default(client_deps: ClientDeps) -> No
         default_apply=_apply_behavior("applied"),
     )
     client = MockClient(client_deps, section=_section(behavior))
-    ok = await client.apply_to_vacancy(resume_id="mock-resume-1", vacancy_id=ServiceVacancyId("mock-1"))
+    ok = await client.apply_to_vacancy(vacancy_id=ServiceVacancyId("mock-1"))
     assert ok.is_ok and isinstance(ok.unwrap(), ApplySkipped)
-    other = await client.apply_to_vacancy(resume_id="mock-resume-1", vacancy_id=ServiceVacancyId("mock-9"))
+    other = await client.apply_to_vacancy(vacancy_id=ServiceVacancyId("mock-9"))
     assert other.is_ok and isinstance(other.unwrap(), ApplySucceeded)
 
 
@@ -459,7 +459,6 @@ async def test_applied_returns_closed_success_variant(client_deps: ClientDeps) -
     """A ``applied`` outcome exposes no unrelated optional fields."""
     client = MockClient(client_deps, section=_section())
     result = await client.apply_to_vacancy(
-        resume_id="mock-resume-1",
         vacancy_id=ServiceVacancyId("mock-1"),
         message="cover letter text",
     )
@@ -496,7 +495,7 @@ async def test_apply_captcha_solved_then_proceeds(client_deps: ClientDeps) -> No
     """A solved captcha on ``apply`` still yields the configured apply outcome."""
     handler, images = _counting_handler(solved=True)
     client = MockClient(_deps_with_handler(client_deps, handler), section=_section(_captcha_behavior("apply")))
-    result = await client.apply_to_vacancy(resume_id="mock-resume-1", vacancy_id=ServiceVacancyId("mock-1"))
+    result = await client.apply_to_vacancy(vacancy_id=ServiceVacancyId("mock-1"))
     assert result.is_ok
     assert isinstance(result.unwrap(), ApplySucceeded)
     # The injected captcha handler saw the canned captcha PNG exactly once.
@@ -509,7 +508,7 @@ async def test_apply_captcha_unsolvable_is_captcha_solving_error(client_deps: Cl
     """An unsolvable captcha collapses into ``Err(CaptchaSolvingError)``, never a crash."""
     handler, images = _counting_handler(solved=False)
     client = MockClient(_deps_with_handler(client_deps, handler), section=_section(_captcha_behavior("apply")))
-    result = await client.apply_to_vacancy(resume_id="mock-resume-1", vacancy_id=ServiceVacancyId("mock-1"))
+    result = await client.apply_to_vacancy(vacancy_id=ServiceVacancyId("mock-1"))
     assert result.is_err
     error = result.unwrap_err()
     assert isinstance(error, CaptchaSolvingError)
@@ -525,7 +524,7 @@ async def test_apply_captcha_attempts_loop(client_deps: ClientDeps) -> None:
         _deps_with_handler(client_deps, handler),
         section=_section(_captcha_behavior("apply", attempts=3)),
     )
-    result = await client.apply_to_vacancy(resume_id="mock-resume-1", vacancy_id=ServiceVacancyId("mock-1"))
+    result = await client.apply_to_vacancy(vacancy_id=ServiceVacancyId("mock-1"))
     assert result.is_ok
     assert len(images) == 3
 
@@ -550,7 +549,7 @@ async def test_captcha_not_fired_when_operation_mismatches(client_deps: ClientDe
     """A captcha scripted on one operation never fires on another."""
     handler, images = _counting_handler(solved=True)
     client = MockClient(_deps_with_handler(client_deps, handler), section=_section(_captcha_behavior("search")))
-    result = await client.apply_to_vacancy(resume_id="mock-resume-1", vacancy_id=ServiceVacancyId("mock-1"))
+    result = await client.apply_to_vacancy(vacancy_id=ServiceVacancyId("mock-1"))
     assert result.is_ok
     assert images == []
 

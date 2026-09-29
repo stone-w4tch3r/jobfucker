@@ -34,7 +34,7 @@ from jobfucker.clients.base import ApplySucceeded, ClientDeps, SearchWindow, Ser
 from jobfucker.clients.mock.client import MockClient
 from jobfucker.clients.mock.params import MockSearchEntry, MockSearchParams, MockServiceConfig
 from jobfucker.reporting import EventLevel, NullReporter, RunEvent, verbosity_of
-from jobfucker.stages.apply import ApplyTargets, run_apply
+from jobfucker.stages.apply import run_apply
 from jobfucker.stages.fetch import FetchInputs, run_fetch
 from jobfucker.stages.prompts import PromptInputs
 from jobfucker.stages.score import run_score
@@ -297,7 +297,7 @@ async def test_apply_publishes_applied_events(client_deps: ClientDeps, storage: 
     report = await run_apply(
         storage,
         pipeline,
-        ApplyTargets(client=factory.get("mock"), resume_id="mock-resume-1"),
+        factory.get("mock"),
         snapshot_id=(await snapshot_for(storage, pipeline)).id,
         min_required_score=3,
         apply_limit=50,
@@ -328,7 +328,7 @@ async def test_apply_publishes_ignore_event_per_ineligible_vacancy(client_deps: 
     report = await run_apply(
         storage,
         pipeline,
-        ApplyTargets(client=factory.get("mock"), resume_id="mock-resume-1"),
+        factory.get("mock"),
         snapshot_id=(await snapshot_for(storage, pipeline)).id,
         min_required_score=3,
         apply_limit=50,
@@ -402,7 +402,7 @@ async def test_mock_client_apply_publishes_ok_success(client_deps: ClientDeps) -
     deps = replace(client_deps, reporter=reporter)
     client = MockClient(deps, _mock_section())
 
-    result = await client.apply_to_vacancy(resume_id="mock-resume-1", vacancy_id=ServiceVacancyId("v1"))
+    result = await client.apply_to_vacancy(vacancy_id=ServiceVacancyId("v1"))
 
     assert result.is_ok and isinstance(result.unwrap(), ApplySucceeded)
     ok = [e for e in reporter.events if e.message.startswith("apply: ok")]

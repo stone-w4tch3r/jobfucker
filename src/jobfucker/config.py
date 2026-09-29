@@ -231,7 +231,7 @@ class PipelineConfig(BaseModel):
 
     @property
     def service_section(self) -> ServiceConfigSection:
-        """The validated per-board section (``resume_id`` + board-specific fields)."""
+        """The validated per-board section (board-specific fields + ``searches``)."""
         if self._service_section is None:
             raise RuntimeError("service_section was not populated by the loader")
         return self._service_section
@@ -436,8 +436,8 @@ def _validate_service_section(
     except ValidationError as exc:
         return Err(f"Invalid service.{board_name} section: {exc}")
     # The concrete pydantic model implements ServiceConfigSection by
-    # construction (resume_id + board fields); widen statically at this one
-    # registry boundary.
+    # construction (board-specific fields + searches); widen statically at this
+    # one registry boundary.
     typed_section: ServiceConfigSection = section  # type: ignore[assignment, reportAssignmentType]  # rationale: registered section models implement ServiceConfigSection; static widening at the registry boundary
     return Ok((board_name, typed_section))
 

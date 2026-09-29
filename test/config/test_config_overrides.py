@@ -95,7 +95,6 @@ def test_query_override_lands_and_keeps_the_section() -> None:
     overridden = result.unwrap()
     assert overridden.service_section.searches[0].query == "(python OR fastapi)"
     assert overridden.service_section.searches[1].query == "fastapi"  # sibling entry untouched
-    assert overridden.service_section.resume_id == "mock-resume-1"
 
 
 def test_query_override_on_second_entry() -> None:
@@ -211,9 +210,8 @@ def test_section_without_filter_field_cannot_be_overridden() -> None:
         query: str = "fake query"
 
     class _FilterlessSection(BaseModel):
-        """A BaseModel section shape with only ``resume_id`` + ``searches``."""
+        """A BaseModel section shape with only ``searches``."""
 
-        resume_id: str = "fake-resume-1"
         searches: tuple[_FilterlessEntry, ...] = (_FilterlessEntry(),)
 
     section = _FilterlessSection()
@@ -228,6 +226,6 @@ def test_non_pydantic_entry_is_a_programming_error() -> None:
     from test.fakes.fake_client import FakeServiceConfig
 
     config = _config("fake", _mock_section())  # a valid pydantic config
-    config.set_service_section(FakeServiceConfig(resume_id="fake-resume-1"))  # type: ignore[arg-type]  # rationale: unregistered dataclass double, deliberately outside the protocol
+    config.set_service_section(FakeServiceConfig())  # type: ignore[arg-type]  # rationale: unregistered dataclass double, deliberately outside the protocol
     with pytest.raises(TypeError, match="pydantic BaseModel"):
         with_overrides(config, search_index=0, filter_data={"anything": 1})

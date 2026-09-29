@@ -160,9 +160,14 @@ class Vacancy:
 
 @dataclass(frozen=True, slots=True)
 class ResumeInfo:
-    """A board-side resume, used verbatim in ``apply_to_vacancy``."""
+    """One board-side resume, as listed by ``get_resumes``.
 
-    resume_id: str  # service resume id; passed straight into apply_to_vacancy()
+    A read model for display/selection: ``resume_id`` is the board's own resume
+    identifier (HH's resume id, Habr's account alias). Which resume an
+    application uses is the client's own configured concern, never core's.
+    """
+
+    resume_id: str  # board-side resume identifier
     title: str  # resume headline, for display/selection
     updated_at: str | None  # ISO-8601 date-time if the board reports it
 
@@ -393,10 +398,11 @@ class Client(Protocol):
         """Fetch the authenticated account's identity (a board "whoami")."""
         ...
 
+    # The client applies with its own configured resume: which resume to use is
+    # board-specific config the core never reads or passes.
     async def apply_to_vacancy(
         self,
         *,
-        resume_id: str,  # service resume id (resolved by the core, passed in)
         vacancy_id: ServiceVacancyId,  # external_id from Vacancy
         message: str | None = None,  # cover letter to attach, if the board supports it
     ) -> Result[ApplyResult, ClientError]: ...
@@ -563,20 +569,16 @@ class ServiceConfigSection(Protocol):
     """Typed base for a board's ``service.<board>`` pipeline.yaml section.
 
     Implemented by a per-board pydantic model validated at the config boundary
-    (never a raw dict). ``resume_id`` is the one field every board's section
-    carries (used by ``apply_to_vacancy``); ``searches`` is the ordered search
-    pool core iterates at fetch time — read through this protocol, each entry
-    narrows to :class:`SearchEntryBase` (query + optional window only). The
-    per-entry board ``filter`` and any other board-specific fields live on the
-    concrete section/entry types only, where each client derives its per-entry
-    search behavior at ``(deps, section)`` construction.
+    (never a raw dict). Core reads only ``searches`` through this protocol: the
+    ordered search pool it iterates at fetch time, whose entries narrow to
+    :class:`SearchEntryBase` (query + optional window only). Every other field —
+    including a board's own resume selector — lives on the concrete section/entry
+    types only, where each client derives its per-entry search behavior and its
+    apply target at ``(deps, section)`` construction.
 
     Properties are declared read-only so frozen and mutable section models
     satisfy the protocol.
     """
-
-    @property
-    def resume_id(self) -> str: ...
 
     @property
     def searches(self) -> Sequence[SearchEntryBase]: ...

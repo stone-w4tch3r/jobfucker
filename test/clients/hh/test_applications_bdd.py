@@ -564,7 +564,6 @@ def choice_open_test_step(tmp_path: Path) -> ApplyScenario:
 async def _apply_once(client: HHClient) -> Result[ApplyResult, ClientError]:
     try:
         return await client.apply_to_vacancy(
-            resume_id="resume-1",
             vacancy_id=ServiceVacancyId(_VACANCY_ID),
             message=_COVER_LETTER,
         )
@@ -583,7 +582,6 @@ async def _fetch_test_once(client: HHClient) -> HhTestProblem | None:
 async def _apply_with_test_once(client: HHClient, solution: HhTestSolution) -> Result[ApplyResult, ClientError]:
     try:
         return await client.apply_to_vacancy_with_test(
-            resume_id="resume-1",
             vacancy_id=ServiceVacancyId(_VACANCY_ID),
             message=_COVER_LETTER,
             solution=solution,

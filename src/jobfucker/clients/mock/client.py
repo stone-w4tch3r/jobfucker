@@ -373,7 +373,6 @@ class MockClient(Client):
     async def apply_to_vacancy(
         self,
         *,
-        resume_id: str,
         vacancy_id: ServiceVacancyId,
         message: str | None = None,
     ) -> Result[ApplyResult, ClientError]:
@@ -385,7 +384,6 @@ class MockClient(Client):
         echoing the submitted ``message``.
 
         Args:
-            resume_id: ignored by the mock (accepted, not used).
             vacancy_id: selects the behavior via ``behavior.per_vacancy`` (falls
                 back to ``behavior.default_apply``, then to a default "applied").
             message: cover-letter text echoed back on an ``applied`` outcome.
@@ -399,7 +397,6 @@ class MockClient(Client):
         if captcha.is_err:
             await self._report(f"apply: blocked for vacancy #{vacancy_id} (captcha)", level="error")
             return Err(captcha.unwrap_err())
-        del resume_id
         await self._report(f"apply: sending to vacancy #{vacancy_id}")
         entry = self._behavior.default_apply if self._behavior is not None else None
         if self._behavior is not None and vacancy_id in self._behavior.per_vacancy:
