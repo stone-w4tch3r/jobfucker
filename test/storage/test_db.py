@@ -447,49 +447,69 @@ async def test_audit_log_snapshot_defaults_to_none(storage: Storage) -> None:
     assert entry.pipeline_snapshot_id is None
 
 
-# --- Daily limits (auth-keyed) ----------------------------------------------
+# --- Apply-limit counters (auth + pipeline, window-keyed) --------------------
 @pytest.mark.integration
-async def test_daily_limit_get_absent_is_none(storage: Storage) -> None:
-    assert await storage.daily_limits.get("mock", "user@ex.com", "2026-08-05") is None
+async def test_auth_apply_limit_get_absent_is_none(storage: Storage) -> None:
+    assert await storage.auth_apply_limits.get("mock", "user@ex.com", "day", "2026-08-05") is None
 
 
 @pytest.mark.integration
-async def test_daily_limit_increment_creates_then_increments_atomically(storage: Storage) -> None:
-    limit = await storage.daily_limits.increment("mock", "user@ex.com", "2026-08-05")
+async def test_auth_apply_limit_increment_creates_then_increments_atomically(storage: Storage) -> None:
+    limit = await storage.auth_apply_limits.increment("mock", "user@ex.com", "day", "2026-08-05")
     assert limit.count == 1
 
-    limit = await storage.daily_limits.increment("mock", "user@ex.com", "2026-08-05")
-    limit = await storage.daily_limits.increment("mock", "user@ex.com", "2026-08-05")
+    limit = await storage.auth_apply_limits.increment("mock", "user@ex.com", "day", "2026-08-05")
+    limit = await storage.auth_apply_limits.increment("mock", "user@ex.com", "day", "2026-08-05")
     assert limit.count == 3
     assert limit.service == "mock"
     assert limit.login == "user@ex.com"
+    assert limit.period == "day"
+    assert limit.period_key == "2026-08-05"
 
 
 @pytest.mark.integration
-async def test_daily_limit_unique_per_auth_and_date(storage: Storage) -> None:
-    await storage.daily_limits.increment("mock", "a@ex.com", "2026-08-05")
-    await storage.daily_limits.increment("mock", "a@ex.com", "2026-08-05")
-    # different login / different date / different service are independent rows
-    await storage.daily_limits.increment("mock", "b@ex.com", "2026-08-05")
-    await storage.daily_limits.increment("mock", "a@ex.com", "2026-08-06")
-    await storage.daily_limits.increment("hh", "a@ex.com", "2026-08-05")
+async def test_auth_apply_limit_unique_per_window_key(storage: Storage) -> None:
+    await storage.auth_apply_limits.increment("mock", "a@ex.com", "day", "2026-08-05")
+    await storage.auth_apply_limits.increment("mock", "a@ex.com", "day", "2026-08-05")
+    # different login / different window / different period / different service are independent rows
+    await storage.auth_apply_limits.increment("mock", "b@ex.com", "day", "2026-08-05")
+    await storage.auth_apply_limits.increment("mock", "a@ex.com", "day", "2026-08-06")
+    await storage.auth_apply_limits.increment("mock", "a@ex.com", "month", "2026-08")
+    await storage.auth_apply_limits.increment("hh", "a@ex.com", "day", "2026-08-05")
 
-    assert await storage.daily_limits.get("mock", "a@ex.com", "2026-08-05") is not None
-    assert await storage.daily_limits.get("mock", "b@ex.com", "2026-08-05") is not None
-    assert await storage.daily_limits.get("mock", "a@ex.com", "2026-08-06") is not None
-    assert await storage.daily_limits.get("hh", "a@ex.com", "2026-08-05") is not None
+    assert await storage.auth_apply_limits.get("mock", "a@ex.com", "day", "2026-08-05") is not None
+    assert await storage.auth_apply_limits.get("mock", "b@ex.com", "day", "2026-08-05") is not None
+    assert await storage.auth_apply_limits.get("mock", "a@ex.com", "day", "2026-08-06") is not None
+    assert await storage.auth_apply_limits.get("mock", "a@ex.com", "month", "2026-08") is not None
+    assert await storage.auth_apply_limits.get("hh", "a@ex.com", "day", "2026-08-05") is not None
 
 
 @pytest.mark.integration
-async def test_daily_limit_increment_duplicate_key_is_updated_not_duplicated(storage: Storage) -> None:
-    """The UNIQUE(service, login, date) invariant holds across increments."""
+async def test_auth_apply_limit_increment_duplicate_key_is_updated_not_duplicated(storage: Storage) -> None:
+    """The UNIQUE(service, login, period, period_key) invariant holds across increments."""
     for _ in range(5):
-        await storage.daily_limits.increment("mock", "a@ex.com", "2026-08-05")
-    limit = await storage.daily_limits.get("mock", "a@ex.com", "2026-08-05")
+        await storage.auth_apply_limits.increment("mock", "a@ex.com", "day", "2026-08-05")
+    limit = await storage.auth_apply_limits.get("mock", "a@ex.com", "day", "2026-08-05")
     assert limit is not None
     assert limit.count == 5
-    # only one row for the (service, login, date) key
-    assert len(await storage.daily_limits.list()) == 1
+    assert len(await storage.auth_apply_limits.list()) == 1
+
+
+@pytest.mark.integration
+async def test_pipeline_apply_limit_is_per_pipeline(storage: Storage) -> None:
+    """Each pipeline has its own counter for the same window; they never share ticks."""
+    first = await storage.pipelines.create(make_pipeline(name="first"))
+    second = await storage.pipelines.create(make_pipeline(name="second"))
+
+    await storage.pipeline_apply_limits.increment(first.id, "day", "2026-08-05")
+    await storage.pipeline_apply_limits.increment(first.id, "day", "2026-08-05")
+    await storage.pipeline_apply_limits.increment(second.id, "day", "2026-08-05")
+
+    first_row = await storage.pipeline_apply_limits.get(first.id, "day", "2026-08-05")
+    second_row = await storage.pipeline_apply_limits.get(second.id, "day", "2026-08-05")
+    assert first_row is not None and first_row.count == 2
+    assert second_row is not None and second_row.count == 1
+    assert await storage.pipeline_apply_limits.get(first.id, "day", "2026-08-06") is None
 
 
 # --- Timestamps are real SQLite values, not literal text (F1) ----------------
@@ -506,7 +526,7 @@ def _assert_real_timestamp(value: str) -> None:
 async def test_lifecycle_timestamps_are_real_sqlite_values(storage: Storage) -> None:
     """F1 regression: every *_at column stores a real 'YYYY-MM-DD HH:MM:SS'
     timestamp across pipeline create + repoint, snapshot create, vacancy upsert
-    (update path) and daily_limits increment (update path)."""
+    (update path) and auth_apply_limits increment (update path)."""
     pipeline = await storage.pipelines.create(make_pipeline(name="ts"))
     _assert_real_timestamp(pipeline.created_at)
     _assert_real_timestamp(pipeline.updated_at)
@@ -526,8 +546,8 @@ async def test_lifecycle_timestamps_are_real_sqlite_values(storage: Storage) -> 
     _assert_real_timestamp(vacancy.updated_at)
 
     # The increment *update* path (second call) is where the literal used to be.
-    await storage.daily_limits.increment("mock", "user@ex.com", "2026-08-05")
-    limit = await storage.daily_limits.increment("mock", "user@ex.com", "2026-08-05")
+    await storage.auth_apply_limits.increment("mock", "user@ex.com", "day", "2026-08-05")
+    limit = await storage.auth_apply_limits.increment("mock", "user@ex.com", "day", "2026-08-05")
     _assert_real_timestamp(limit.created_at)
     _assert_real_timestamp(limit.updated_at)
 

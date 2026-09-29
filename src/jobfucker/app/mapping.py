@@ -79,7 +79,7 @@ def to_pipeline_snapshot(config: PipelineConfig) -> PipelineSnapshot:
         min_required_score=config.scoring.min_required_score,
         scoring_prompt=config.scoring.scoring_prompt,
         apply_prompt=config.apply.apply_prompt,
-        daily_apply_limit=config.limits.daily_apply_limit,
+        apply_limit=config.limits.apply_limit,
         created_at="",
     )
 
@@ -125,7 +125,7 @@ def to_persisted_refs(snapshot: PipelineSnapshot) -> PersistedPipelineRefs:
         min_required_score=snapshot.min_required_score,
         scoring_prompt=snapshot.scoring_prompt,
         apply_prompt=snapshot.apply_prompt,
-        daily_apply_limit=snapshot.daily_apply_limit,
+        apply_limit=snapshot.apply_limit,
         service_section=snapshot.service_section,
         openai_captcha=snapshot.openai_captcha,
         hh_test_solving=snapshot.hh_test_solving,

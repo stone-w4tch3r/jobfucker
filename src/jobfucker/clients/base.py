@@ -34,14 +34,21 @@ from rusty_results.prelude import Result
 
 from jobfucker.reporting import NullReporter, Reporter
 
-
 # --- 1. Service identity & limits -----------------------------------------
+# The window a board counts applications in. Boards differ: HH caps per day
+# (200/day per auth), Habr per calendar month (150/month per account). The core
+# stays generic by reading this from the board's ``service_info`` and turning it
+# into a period key (``YYYY-MM-DD`` for a day, ``YYYY-MM`` for a month).
+QuotaPeriod = Literal["day", "month"]
+
+
 @dataclass(frozen=True, slots=True)
 class ServiceInfo:
     """Static, board-provided metadata the core reasons about generically."""
 
     service: str  # config `service` value; selects this client in the factory ("hh", ...)
-    per_auth_daily_cap: int  # board's global per-auth daily application cap (HH -> 200)
+    per_auth_apply_cap: int  # board's global per-auth application cap for `apply_period` (HH -> 200/day)
+    apply_period: QuotaPeriod  # the window `per_auth_apply_cap` counts over
     max_search_items: int | None = None  # board's max searchable listing items (HH -> 2000); None = no known cap
 
 
@@ -459,7 +466,7 @@ class CaptchaSolvingError:
 
 @dataclass(frozen=True, slots=True)
 class LimitExceededError:
-    """STOP signal: the board's per-auth daily cap is reached (HH 400 limit_exceeded)."""
+    """STOP signal: the board's per-auth application cap is reached (HH 400 limit_exceeded)."""
 
     message: str
 

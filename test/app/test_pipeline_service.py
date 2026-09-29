@@ -57,7 +57,7 @@ async def test_new_snapshot_changed_appends_exactly_one_row_id_stable_no_soft_de
     first_id = created.pipeline.id
     assert (await storage.pipelines.get(first_id)).soft_deleted_at is None  # type: ignore[union-attr]  # rationale: repo accessor returns Optional; the row was just written by the assertion's own preceding call
 
-    changed = config.model_copy(update={"limits": LimitsConfig(daily_apply_limit=99)})
+    changed = config.model_copy(update={"limits": LimitsConfig(apply_limit=99)})
     result = await svc.new_snapshot(first_id, changed)
     assert result.is_ok
     m = result.unwrap()
@@ -147,7 +147,7 @@ async def test_snapshots_returns_ordered_history(
     svc: PipelineService, storage: Storage, config: PipelineConfig
 ) -> None:
     created = (await svc.create(config)).unwrap()
-    changed = config.model_copy(update={"limits": LimitsConfig(daily_apply_limit=99)})
+    changed = config.model_copy(update={"limits": LimitsConfig(apply_limit=99)})
     await svc.new_snapshot(created.pipeline.id, changed)
 
     result = await svc.snapshots(created.pipeline.id)
@@ -181,10 +181,10 @@ async def test_resolve_empty_store_returns_exact_cli_message(svc: PipelineServic
 
 @pytest.mark.integration
 async def test_create_cap_violation_returns_err_and_persists_nothing(svc: PipelineService, storage: Storage) -> None:
-    bad = build_pipeline_config(daily_apply_limit=201)  # mock per-auth cap is 200
+    bad = build_pipeline_config(apply_limit=201)  # mock per-auth cap is 200
     result = await svc.create(bad)
     assert result.is_err
-    assert result.unwrap_err() == "daily_apply_limit (201) exceeds the 'mock' per-auth daily cap (200)"
+    assert result.unwrap_err() == "apply_limit (201) exceeds the 'mock' per-auth apply cap (200)"
     assert await storage.pipelines.list() == []
 
 
@@ -197,7 +197,7 @@ async def test_new_snapshot_on_soft_deleted_pipeline_returns_err_and_persists_no
     pipeline_id = created.pipeline.id
     assert await storage.pipelines.soft_delete(pipeline_id) is True
 
-    changed = config.model_copy(update={"limits": LimitsConfig(daily_apply_limit=99)})
+    changed = config.model_copy(update={"limits": LimitsConfig(apply_limit=99)})
     result = await svc.new_snapshot(pipeline_id, changed)
     assert result.is_err
     assert result.unwrap_err() == f"Pipeline id {pipeline_id} not found."

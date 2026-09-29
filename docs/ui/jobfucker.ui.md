@@ -268,7 +268,7 @@ subsystem is introduced).
 | Version history (editor)            | pipeline snapshots for the same identity                 |
 | Workspace vacancy set + selection   | `vacancies` repo filtered by the scoped pipeline         |
 | Workspace run log + stage counts    | stage reports + progress stream                          |
-| Workspace limits strip + status bar | `daily_limits` repo                                      |
+| Workspace limits strip + status bar | `auth_apply_limits` + `pipeline_apply_limits` repos |
 | Audit page                          | `audit_log` repo                                         |
 | Verification modal                  | client interaction provider (mock now, hh later)         |
 

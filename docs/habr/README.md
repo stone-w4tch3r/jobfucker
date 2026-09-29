@@ -80,8 +80,9 @@ detail page embeds structured JSON, so scraping is not needed. Every `Client` me
   letter edit is `PATCH …/responses/<rid>`, withdraw is `DELETE …/responses/<rid>`. `response.kind`
   is `direct` or `applied` ([Applications and responses](applications-and-responses.md)).
 - Limits: **~10 s minimum interval** between responses and a **150 responses/month per-account**
-  cap; deletes still count and there is no daily cap. Derive `service_info.per_auth_daily_cap` from
-  the monthly quota ([Applications and responses](applications-and-responses.md#limits-and-pacing)).
+  cap; deletes still count and there is no daily cap. Declare `service_info.per_auth_apply_cap = 150`
+  with `service_info.apply_period = "month"`
+  ([Applications and responses](applications-and-responses.md#limits-and-pacing)).
 - The site is fronted by **Qrator** (`Server: QRATOR`) and errors come in two shapes:
   `{"error":"Not found"}` and, under `/responses*`, a `{"httpCode","errorCode",…}` envelope
   ([Transport](api/transport-and-errors.md)).

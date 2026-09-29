@@ -53,7 +53,7 @@ from jobfucker.clients.mock.params import (
 from jobfucker.clients.paging import FetchedPage
 from test.pipeline_helpers import mock_vacancies
 
-# The mock client's declared per-auth daily cap (asserted in conformance).
+# The mock client's declared per-auth apply cap (asserted in conformance).
 _MOCK_CAP = 200
 # Minimum full-description length proving enrichment (no stub snippet).
 _MIN_DESCRIPTION_LEN = 200
@@ -163,7 +163,7 @@ async def test_constructible_from_client_deps(client_deps: ClientDeps) -> None:
     client = MockClient(client_deps, section=_section())
     assert isinstance(client, Client)
     assert client.service == "mock"
-    assert client.service_info.per_auth_daily_cap == _MOCK_CAP
+    assert client.service_info.per_auth_apply_cap == _MOCK_CAP
 
 
 @pytest.mark.unit

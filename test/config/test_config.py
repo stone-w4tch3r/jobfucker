@@ -54,13 +54,13 @@ def _bad_yaml(runtime_dir: Path) -> Path:
 
 def test_valid_pipeline_is_ok(runtime_dir: Path) -> None:
     """A well-formed mock pipeline loads as ``Ok`` with files injected."""
-    path = build_valid_pipeline_yaml(runtime_dir / "config", daily_apply_limit=20)
+    path = build_valid_pipeline_yaml(runtime_dir / "config", apply_limit=20)
     result = load_pipeline_config(path)
     assert result.is_ok, f"expected Ok, got {result}"
     config = result.unwrap()
     assert config.name == "mock-demo"
     assert config.service == "mock"
-    assert config.limits.daily_apply_limit == 20
+    assert config.limits.apply_limit == 20
 
 
 def test_mock_section_parses_into_mock_params(runtime_dir: Path) -> None:
@@ -369,7 +369,7 @@ def test_service_not_a_mapping_returns_err(runtime_dir: Path) -> None:
         "openai:\n  model: m\n\n  base_url: u\n"
         "scoring:\n  min_required_score: 1\n"
         "apply: {}\n"
-        "limits:\n  daily_apply_limit: 5\n"
+        "limits:\n  apply_limit: 5\n"
     )
     path = config_dir / "pipeline.yaml"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -404,7 +404,7 @@ def test_relative_refs_resolve_against_yaml_dir(runtime_dir: Path) -> None:
         "  api_key_file: api.txt\n"
         "scoring:\n  min_required_score: 1\n  scoring_prompt: score\n"
         "apply:\n  apply_prompt: apply\n"
-        "limits:\n  daily_apply_limit: 5\n"
+        "limits:\n  apply_limit: 5\n"
     )
     path = config_dir / "pipeline.yaml"
     path.write_text(yaml_text, encoding="utf-8")
@@ -443,7 +443,7 @@ def test_relative_refs_climb_out_with_dotdot(runtime_dir: Path) -> None:
         "  api_key: key\n"
         "scoring:\n  min_required_score: 1\n  scoring_prompt: score\n"
         "apply:\n  apply_prompt: apply\n"
-        "limits:\n  daily_apply_limit: 5\n"
+        "limits:\n  apply_limit: 5\n"
     )
     path = config_dir / "pipeline.yaml"
     path.write_text(yaml_text, encoding="utf-8")
@@ -497,7 +497,7 @@ def test_referenced_file_contents_are_trimmed(runtime_dir: Path) -> None:
         "scoring:\n  min_required_score: 1\n"
         f'  scoring_prompt_file: "{score_prompt.as_posix()}"\n'
         f'apply:\n  apply_prompt_file: "{apply_prompt.as_posix()}"\n'
-        "limits:\n  daily_apply_limit: 5\n"
+        "limits:\n  apply_limit: 5\n"
     )
     path.write_text(yaml_text, encoding="utf-8")
     config = load_pipeline_config(path).unwrap()
@@ -545,7 +545,7 @@ def test_both_file_and_inline_returns_err(runtime_dir: Path) -> None:
         "  api_key: key\n"
         "scoring:\n  min_required_score: 1\n  scoring_prompt: p\n"
         "apply:\n  apply_prompt: r\n"
-        "limits:\n  daily_apply_limit: 5\n"
+        "limits:\n  apply_limit: 5\n"
     )
     path.write_text(yaml_text, encoding="utf-8")
     result = load_pipeline_config(path)
@@ -573,7 +573,7 @@ def test_missing_required_slot_returns_err(runtime_dir: Path) -> None:
         "  api_key: key\n"
         "scoring:\n  min_required_score: 3\n"
         "apply:\n  apply_prompt: r\n"
-        "limits:\n  daily_apply_limit: 5\n"
+        "limits:\n  apply_limit: 5\n"
     )
     path.write_text(yaml_text, encoding="utf-8")
     result = load_pipeline_config(path)
@@ -767,7 +767,7 @@ def _refs_from_config(config: PipelineConfig) -> PersistedPipelineRefs:
         min_required_score=config.scoring.min_required_score,
         scoring_prompt=config.scoring.scoring_prompt,
         apply_prompt=config.apply.apply_prompt,
-        daily_apply_limit=config.limits.daily_apply_limit,
+        apply_limit=config.limits.apply_limit,
         service_section=dump_service_section(config.service_section),
         openai_captcha=dump_openai_captcha(config.openai_captcha),
     )

@@ -15,7 +15,7 @@ from jobfucker.clients.factory import Factory
 from jobfucker.clients.mock.client import MockClient
 from jobfucker.clients.mock.params import MockSearchEntry, MockSearchParams, MockServiceConfig
 
-# The mock client's declared per-auth daily cap (asserted in conformance).
+# The mock client's declared per-auth apply cap (asserted in conformance).
 _MOCK_CAP = 200
 
 
@@ -55,7 +55,7 @@ def test_registered_mock_satisfies_client_protocol(factory: Factory) -> None:
     client = factory.get("mock")
     assert isinstance(client, Client)
     assert client.service == "mock"
-    assert client.service_info.per_auth_daily_cap == _MOCK_CAP
+    assert client.service_info.per_auth_apply_cap == _MOCK_CAP
 
 
 def test_get_returns_a_constructed_client(factory: Factory) -> None:
@@ -87,7 +87,7 @@ def test_cap_returns_client_cap_without_constructing(client_deps: ClientDeps) ->
     """``cap`` reads the client's class-level cap, needing no construction.
 
     ``cap`` must work even on a section-less factory, proving it reads the
-    class-level ``service_info.per_auth_daily_cap`` rather than constructing a
+    class-level ``service_info.per_auth_apply_cap`` rather than constructing a
     client (which a section-less factory could not do).
     """
     f = Factory(client_deps)

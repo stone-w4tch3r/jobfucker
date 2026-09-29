@@ -1,74 +1,98 @@
-"""Generic daily-limit enforcement shared by the apply stage (Phase 5B, task 5.5).
+"""Generic application-quota enforcement shared by the apply stage.
 
-There is **one shared per-auth counter** per ``(service, login, date)`` in
-``daily_limits`` — shared across every pipeline that uses the account, so a cap
-is never double-counted. Before each application the apply stage checks that
-single count against **both** caps:
+The board declares the quota **window** it counts over
+(``service_info.apply_period``: ``"day"`` for HH, ``"month"`` for Habr) and its
+per-auth cap for that window (``service_info.per_auth_apply_cap``). The apply
+stage keeps **two independent counters**, both keyed by that same window:
 
-- **per-auth** — the board's declared per-auth daily cap
-  (``service_info.per_auth_daily_cap``, read from the client, never a constant
-  in core);
-- **per-pipeline** — the pipeline's configured ``daily_apply_limit``.
+- **per-auth** — one counter per ``(service, login)``, shared across every
+  pipeline on the account, so the account's cap is never double-counted;
+- **per-pipeline** — one counter per pipeline, capped by the pipeline's
+  configured ``apply_limit``.
 
-This module holds the generic "can we apply yet?" logic and the date helper. It
-contains **no cap constants** — the caps are injected from the client's
-``service_info`` and the pipeline config. The concrete accounting (reading the
-``daily_limits`` counter and incrementing it on success) lives in
-:mod:`jobfucker.stages.apply`, which composes this helper.
+A window change (a new day / a new month) is a new period key, so a counter
+never needs an explicit reset. The effective stop is the tighter of the two
+caps. This module holds only the generic "can we apply yet?" logic and the
+period-key helper: **no cap constants** (caps are injected from the client's
+``service_info`` and the pipeline config) and no storage accounting (that lives
+in :mod:`jobfucker.stages.apply`, which composes this helper).
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import Final
 
-__all__ = ["Limits", "today_iso"]
+from jobfucker.clients.base import QuotaPeriod
+
+__all__ = ["Limits", "QuotaPeriod", "period_key"]
+
+# Display vocabulary per window: (adjective for the limit line, phrase for "when").
+_PERIOD_NOUN: Final[dict[QuotaPeriod, tuple[str, str]]] = {
+    "day": ("daily", "today"),
+    "month": ("monthly", "this month"),
+}
 
 
 @dataclass(frozen=True, slots=True)
 class Limits:
-    """The two caps the apply stage enforces against the **one shared** auth counter.
+    """The two caps the apply stage enforces over one board-declared window.
 
     Args:
-        per_auth_cap: the board's per-auth daily cap (``service_info``), e.g. 200.
-        per_pipeline_limit: the pipeline's own ``daily_apply_limit``.
+        period: the board's quota window (``ServiceInfo.apply_period``).
+        per_auth_cap: the board's per-auth cap for that window, e.g. 200/day
+            (HH) or 150/month (Habr).
+        per_pipeline_limit: the pipeline's own ``apply_limit``.
 
-    Both caps are checked against the same shared ``(service, login, date)``
-    count, so the effective stop is the tighter of the two.
+    Both caps count over the same window but against two **separate** counters,
+    so a pipeline's own throttle is never mixed with what other pipelines on the
+    account already used.
     """
 
+    period: QuotaPeriod
     per_auth_cap: int
     per_pipeline_limit: int
 
     def can_apply(self, used_per_auth: int, used_per_pipeline: int) -> bool:
-        """Whether another application is allowed given the current usage.
+        """Whether another application is allowed given the two current usages.
 
-        Both caps are applied to the **same shared per-auth count** — the apply
-        stage passes that single value for both parameters (``used_per_auth``
-        and ``used_per_pipeline`` are the one count seen from each cap's
-        perspective). The count must be strictly below both caps; reaching
-        either stops further applications (an ``Ok`` report with ``limit_reached``,
-        never an error).
+        Each count must be strictly below its own cap; reaching either stops
+        further applications (an ``Ok`` report with ``limit_reached``, never an
+        error).
         """
         return used_per_auth < self.per_auth_cap and used_per_pipeline < self.per_pipeline_limit
 
-    def stop_reason(self, used: int) -> str | None:
+    def stop_reason(self, used_per_auth: int, used_per_pipeline: int) -> str | None:
         """Why another application is not allowed; ``None`` while one is.
 
         The tighter of the two caps names itself in the wording, so the printed
         stop line always says which cap bound and how much of it is used. The
         pipeline cap wins when both are bound (it is the more specific one).
         """
-        if used >= self.per_pipeline_limit:
-            return f"daily limit reached — {used} of {self.per_pipeline_limit} applied today (pipeline cap)"
-        if used >= self.per_auth_cap:
-            return f"daily limit reached — {used} of {self.per_auth_cap} applied today (board per-account cap)"
+        adjective, phrase = _PERIOD_NOUN[self.period]
+        if used_per_pipeline >= self.per_pipeline_limit:
+            return (
+                f"{adjective} limit reached — {used_per_pipeline} of "
+                f"{self.per_pipeline_limit} applied {phrase} (pipeline cap)"
+            )
+        if used_per_auth >= self.per_auth_cap:
+            return (
+                f"{adjective} limit reached — {used_per_auth} of "
+                f"{self.per_auth_cap} applied {phrase} (board per-account cap)"
+            )
         return None
 
 
-def today_iso() -> str:
-    """Today's date as ``YYYY-MM-DD`` — the key the daily_limits counters use.
+def period_key(period: QuotaPeriod, *, now: datetime | None = None) -> str:
+    """The counter key for the window containing ``now``.
 
-    Injectable where determinism matters (tests pass an explicit ``today``).
+    ``"YYYY-MM-DD"`` for a day, ``"YYYY-MM"`` for a month — the key the two
+    counters use. Injectable where determinism matters (tests pass an explicit
+    ``now``); the boundary (calendar vs rolling window) is deliberately confined
+    to this one function.
     """
-    return datetime.now(UTC).date().isoformat()
+    moment = now if now is not None else datetime.now(UTC)
+    if period == "month":
+        return moment.strftime("%Y-%m")
+    return moment.strftime("%Y-%m-%d")

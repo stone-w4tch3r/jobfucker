@@ -31,7 +31,16 @@ from jobfucker.storage.dto import VacancyRecord
 from jobfucker.storage.models import Base
 from test.storage.builders import build_vacancy, make_pipeline, make_snapshot
 
-EXPECTED_TABLES = frozenset({"pipelines", "pipeline_snapshot", "vacancies", "audit_log", "daily_limits"})
+EXPECTED_TABLES = frozenset(
+    {
+        "pipelines",
+        "pipeline_snapshot",
+        "vacancies",
+        "audit_log",
+        "auth_apply_limits",
+        "pipeline_apply_limits",
+    }
+)
 
 
 def _insert_vacancy_row(engine: Engine, record: VacancyRecord) -> None:
@@ -160,7 +169,7 @@ async def test_migrated_columns_match_orm_models(tmp_path: Path) -> None:
 
     Guards the post-snapshot contract: ``pipelines`` is identity-only (no config
     columns, no ``is_active``), ``pipeline_snapshot`` carries the config-content
-    columns, ``daily_limits`` is auth-keyed ``(service, login, date)``, and
+    columns, the two apply counters are window-keyed, and
     ``vacancies``/``audit_log`` carry the snapshot-provenance columns — nothing
     may drift from the models.
     """
@@ -202,7 +211,7 @@ async def test_migrated_columns_match_orm_models(tmp_path: Path) -> None:
             "min_required_score",
             "scoring_prompt",
             "apply_prompt",
-            "daily_apply_limit",
+            "apply_limit",
         ):
             assert config_col not in pipeline_cols
 
@@ -211,11 +220,13 @@ async def test_migrated_columns_match_orm_models(tmp_path: Path) -> None:
         for content_col in ("service", "service_section", "openai_captcha", "login", "password", "resume"):
             assert content_col in snapshot_cols
 
-        # daily_limits auth-keyed
-        daily_cols = _column_names(engine, "daily_limits")
-        assert {"service", "login", "date", "count"} <= daily_cols
-        assert "pipeline_id" not in daily_cols
-        assert "auth_identifier" not in daily_cols
+        # the two apply counters are window-keyed
+        auth_cols = _column_names(engine, "auth_apply_limits")
+        assert {"service", "login", "period", "period_key", "count"} <= auth_cols
+        assert "pipeline_id" not in auth_cols
+        assert "date" not in auth_cols
+        pipeline_limit_cols = _column_names(engine, "pipeline_apply_limits")
+        assert {"pipeline_id", "period", "period_key", "count"} <= pipeline_limit_cols
 
         # vacancy/audit snapshot provenance
         vacancy_cols = _column_names(engine, "vacancies")
@@ -399,8 +410,8 @@ def _seed_legacy_rows(db: Path) -> None:
 async def test_migration_backfills_legacy_rows_into_identity_and_snapshots(tmp_path: Path) -> None:
     """Data-shaping: N legacy rows -> N identities + N snapshots + backfilled provenance.
 
-    Counts are summed (never lost) by (service, login, date); every vacancy/audit
-    row is pointed at its pipeline's migrated snapshot.
+    Counts are summed (never lost) by (service, login, window_key); every
+    vacancy/audit row is pointed at its pipeline's migrated snapshot.
     """
     db = tmp_path / "jobfucker.db"
     _alembic_cmd(db, "upgrade", "d4e5f6a7b8c9")  # prior head (legacy shape)
@@ -439,14 +450,15 @@ async def test_migration_backfills_legacy_rows_into_identity_and_snapshots(tmp_p
         for entry in audit:
             assert entry.pipeline_snapshot_id is not None
 
-        # daily counts summed by auth, never lost
-        shared = await storage.daily_limits.get("mock", "shared@ex.com", "2026-08-05")
+        # counts summed by auth (converted to a day window), never lost
+        shared = await storage.auth_apply_limits.get("mock", "shared@ex.com", "day", "2026-08-05")
         assert shared is not None
         assert shared.count == 8  # 3 + 5 from two pipelines summed into one auth counter
-        other = await storage.daily_limits.get("mock", "other@ex.com", "2026-08-06")
+        assert shared.period == "day"
+        other = await storage.auth_apply_limits.get("mock", "other@ex.com", "day", "2026-08-06")
         assert other is not None
         assert other.count == 2
-        assert len(await storage.daily_limits.list()) == 2
+        assert len(await storage.auth_apply_limits.list()) == 2
     finally:
         await storage.engine.dispose()
 

@@ -44,14 +44,16 @@ from jobfucker.clients.base import ServiceVacancyId
 from .dto import (
     ApplyStatus,
     AuditLogEntry,
-    DailyLimit,
+    AuthApplyLimit,
     Pipeline,
+    PipelineApplyLimit,
     PipelineSnapshot,
     VacancyRecord,
 )
 from .models import AuditLog, Base
-from .models import DailyLimit as DailyLimitRow
+from .models import AuthApplyLimit as AuthApplyLimitRow
 from .models import Pipeline as PipelineRow
+from .models import PipelineApplyLimit as PipelineApplyLimitRow
 from .models import PipelineSnapshot as PipelineSnapshotRow
 from .models import Vacancy as VacancyRow
 
@@ -183,7 +185,7 @@ def _snapshot_to_row(snapshot: PipelineSnapshot) -> PipelineSnapshotRow:
         min_required_score=snapshot.min_required_score,
         scoring_prompt=snapshot.scoring_prompt,
         apply_prompt=snapshot.apply_prompt,
-        daily_apply_limit=snapshot.daily_apply_limit,
+        apply_limit=snapshot.apply_limit,
     )
 
 
@@ -208,7 +210,7 @@ def _snapshot_from_row(row: PipelineSnapshotRow) -> PipelineSnapshot:
         min_required_score=row.min_required_score,
         scoring_prompt=row.scoring_prompt,
         apply_prompt=row.apply_prompt,
-        daily_apply_limit=row.daily_apply_limit,
+        apply_limit=row.apply_limit,
         created_at=row.created_at,
     )
 
@@ -311,12 +313,25 @@ def _audit_from_row(row: AuditLog) -> AuditLogEntry:
     )
 
 
-def _daily_from_row(row: DailyLimitRow) -> DailyLimit:
-    return DailyLimit(
+def _auth_apply_limit_from_row(row: AuthApplyLimitRow) -> AuthApplyLimit:
+    return AuthApplyLimit(
         id=row.id,
         service=row.service,
         login=row.login,
-        date=row.date,
+        period=row.period,  # type: ignore[arg-type]  # rationale: column stores the closed QuotaPeriod set
+        period_key=row.period_key,
+        count=row.count,
+        created_at=row.created_at,
+        updated_at=row.updated_at,
+    )
+
+
+def _pipeline_apply_limit_from_row(row: PipelineApplyLimitRow) -> PipelineApplyLimit:
+    return PipelineApplyLimit(
+        id=row.id,
+        pipeline_id=row.pipeline_id,
+        period=row.period,  # type: ignore[arg-type]  # rationale: column stores the closed QuotaPeriod set
+        period_key=row.period_key,
         count=row.count,
         created_at=row.created_at,
         updated_at=row.updated_at,
@@ -813,74 +828,152 @@ class AuditLogRepository(_Repository):
             return [_audit_from_row(row) for row in rows]
 
 
-class DailyLimitRepository(_Repository):
-    """Per-auth, per-day counters over ``daily_limits`` (keyed by service+login+date)."""
+class AuthApplyLimitRepository(_Repository):
+    """Per-auth counters over ``auth_apply_limits`` (keyed by service+login+period+period_key)."""
 
-    async def list(self) -> list[DailyLimit]:
-        """Return every daily-limit counter row, newest first.
-
-        Read-only feed for the GUI's daily-limits surface (Phase 7, task 7.2).
-        """
+    async def list(self) -> list[AuthApplyLimit]:
+        """Return every per-auth counter row, newest first."""
         async with self._session() as session:
-            rows = (await session.execute(select(DailyLimitRow).order_by(DailyLimitRow.id.desc()))).scalars().all()
-            return [_daily_from_row(row) for row in rows]
+            rows = (
+                (await session.execute(select(AuthApplyLimitRow).order_by(AuthApplyLimitRow.id.desc()))).scalars().all()
+            )
+            return [_auth_apply_limit_from_row(row) for row in rows]
 
-    async def get(self, service: str, login: str, date: str) -> DailyLimit | None:
-        """Read the counter row for ``(service, login, date)``, or ``None``."""
+    async def get(self, service: str, login: str, period: str, period_key: str) -> AuthApplyLimit | None:
+        """Read the counter row for ``(service, login, period, period_key)``, or ``None``."""
         async with self._session() as session:
             row = (
                 await session.execute(
-                    select(DailyLimitRow).where(
-                        DailyLimitRow.service == service,
-                        DailyLimitRow.login == login,
-                        DailyLimitRow.date == date,
+                    select(AuthApplyLimitRow).where(
+                        AuthApplyLimitRow.service == service,
+                        AuthApplyLimitRow.login == login,
+                        AuthApplyLimitRow.period == period,
+                        AuthApplyLimitRow.period_key == period_key,
                     )
                 )
             ).scalar_one_or_none()
-            return _daily_from_row(row) if row is not None else None
+            return _auth_apply_limit_from_row(row) if row is not None else None
 
-    async def increment(self, service: str, login: str, date: str) -> DailyLimit:
-        """Atomically increment the per-auth daily counter for ``(service, login, date)``.
+    async def increment(self, service: str, login: str, period: str, period_key: str) -> AuthApplyLimit:
+        """Atomically increment the per-auth counter for ``(service, login, period, period_key)``.
 
         The fresh-key path is **not** check-then-insert: a single
-        ``INSERT ... ON CONFLICT(service, login, date) DO NOTHING`` is atomic at
-        the DB level, so concurrent first increments of the same key can't race
-        into a UNIQUE violation — the loser no-ops and both then run the same
-        atomic ``UPDATE ... SET count = count + 1`` below (one row, both ticks
-        counted). The ORM ``UNIQUE(service, login, date)`` invariant is
-        preserved: one counter per auth, shared across every pipeline that uses
-        the account.
+        ``INSERT ... ON CONFLICT(service, login, period, period_key) DO NOTHING``
+        is atomic at the DB level, so concurrent first increments of the same key
+        can't race into a UNIQUE violation — the loser no-ops and both then run
+        the same atomic ``UPDATE ... SET count = count + 1`` below (one row, both
+        ticks counted). One counter per auth per window, shared across every
+        pipeline that uses the account.
         """
         async with self._session() as session:
             await session.execute(
-                sqlite_insert(DailyLimitRow)
-                .values(service=service, login=login, date=date, count=0, created_at=_NOW, updated_at=_NOW)
-                .on_conflict_do_nothing(index_elements=["service", "login", "date"])
+                sqlite_insert(AuthApplyLimitRow)
+                .values(
+                    service=service,
+                    login=login,
+                    period=period,
+                    period_key=period_key,
+                    count=0,
+                    created_at=_NOW,
+                    updated_at=_NOW,
+                )
+                .on_conflict_do_nothing(index_elements=["service", "login", "period", "period_key"])
             )
             # Atomic at the DB level: `count = count + 1` is a single UPDATE,
             # so concurrent increments never lose a tick.
             await session.execute(
-                update(DailyLimitRow)
+                update(AuthApplyLimitRow)
                 .where(
-                    DailyLimitRow.service == service,
-                    DailyLimitRow.login == login,
-                    DailyLimitRow.date == date,
+                    AuthApplyLimitRow.service == service,
+                    AuthApplyLimitRow.login == login,
+                    AuthApplyLimitRow.period == period,
+                    AuthApplyLimitRow.period_key == period_key,
                 )
-                .values(count=DailyLimitRow.count + 1, updated_at=_NOW)
+                .values(count=AuthApplyLimitRow.count + 1, updated_at=_NOW)
             )
             await session.flush()
             # The Core INSERT/UPDATE bypass the identity map; reload the row so
             # the returned DTO reflects the incremented counter + real stamps.
             row = (
                 await session.execute(
-                    select(DailyLimitRow).where(
-                        DailyLimitRow.service == service,
-                        DailyLimitRow.login == login,
-                        DailyLimitRow.date == date,
+                    select(AuthApplyLimitRow).where(
+                        AuthApplyLimitRow.service == service,
+                        AuthApplyLimitRow.login == login,
+                        AuthApplyLimitRow.period == period,
+                        AuthApplyLimitRow.period_key == period_key,
                     )
                 )
             ).scalar_one()
-            return _daily_from_row(row)
+            return _auth_apply_limit_from_row(row)
+
+
+class PipelineApplyLimitRepository(_Repository):
+    """Per-pipeline counters over ``pipeline_apply_limits`` (keyed by pipeline+period+period_key)."""
+
+    async def list(self) -> list[PipelineApplyLimit]:
+        """Return every per-pipeline counter row, newest first."""
+        async with self._session() as session:
+            rows = (
+                (await session.execute(select(PipelineApplyLimitRow).order_by(PipelineApplyLimitRow.id.desc())))
+                .scalars()
+                .all()
+            )
+            return [_pipeline_apply_limit_from_row(row) for row in rows]
+
+    async def get(self, pipeline_id: int, period: str, period_key: str) -> PipelineApplyLimit | None:
+        """Read the counter row for ``(pipeline_id, period, period_key)``, or ``None``."""
+        async with self._session() as session:
+            row = (
+                await session.execute(
+                    select(PipelineApplyLimitRow).where(
+                        PipelineApplyLimitRow.pipeline_id == pipeline_id,
+                        PipelineApplyLimitRow.period == period,
+                        PipelineApplyLimitRow.period_key == period_key,
+                    )
+                )
+            ).scalar_one_or_none()
+            return _pipeline_apply_limit_from_row(row) if row is not None else None
+
+    async def increment(self, pipeline_id: int, period: str, period_key: str) -> PipelineApplyLimit:
+        """Atomically increment this pipeline's counter for ``(pipeline_id, period, period_key)``.
+
+        Uses the same atomic insert-then-update shape as
+        :class:`AuthApplyLimitRepository` (see there for the concurrency
+        rationale), keyed on this pipeline instead of the account.
+        """
+        async with self._session() as session:
+            await session.execute(
+                sqlite_insert(PipelineApplyLimitRow)
+                .values(
+                    pipeline_id=pipeline_id,
+                    period=period,
+                    period_key=period_key,
+                    count=0,
+                    created_at=_NOW,
+                    updated_at=_NOW,
+                )
+                .on_conflict_do_nothing(index_elements=["pipeline_id", "period", "period_key"])
+            )
+            await session.execute(
+                update(PipelineApplyLimitRow)
+                .where(
+                    PipelineApplyLimitRow.pipeline_id == pipeline_id,
+                    PipelineApplyLimitRow.period == period,
+                    PipelineApplyLimitRow.period_key == period_key,
+                )
+                .values(count=PipelineApplyLimitRow.count + 1, updated_at=_NOW)
+            )
+            await session.flush()
+            row = (
+                await session.execute(
+                    select(PipelineApplyLimitRow).where(
+                        PipelineApplyLimitRow.pipeline_id == pipeline_id,
+                        PipelineApplyLimitRow.period == period,
+                        PipelineApplyLimitRow.period_key == period_key,
+                    )
+                )
+            ).scalar_one()
+            return _pipeline_apply_limit_from_row(row)
 
 
 # --- Storage facade ----------------------------------------------------------
@@ -894,7 +987,8 @@ class Storage:
     snapshots: PipelineSnapshotRepository
     vacancies: VacancyRepository
     audit_log: AuditLogRepository
-    daily_limits: DailyLimitRepository
+    auth_apply_limits: AuthApplyLimitRepository
+    pipeline_apply_limits: PipelineApplyLimitRepository
 
 
 def _storage_from_engine(engine: AsyncEngine) -> Storage:
@@ -906,7 +1000,8 @@ def _storage_from_engine(engine: AsyncEngine) -> Storage:
         snapshots=PipelineSnapshotRepository(session_factory),
         vacancies=VacancyRepository(session_factory),
         audit_log=AuditLogRepository(session_factory),
-        daily_limits=DailyLimitRepository(session_factory),
+        auth_apply_limits=AuthApplyLimitRepository(session_factory),
+        pipeline_apply_limits=PipelineApplyLimitRepository(session_factory),
     )
 
 

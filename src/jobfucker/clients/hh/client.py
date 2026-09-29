@@ -35,7 +35,7 @@ from jobfucker.clients.hh.transport import HHTransport
 from jobfucker.clients.shared.browser import BrowserDriver, PatchrightDriver
 from jobfucker.hh_tests.contract import HhTestCapable, HhTestProblem, HhTestSolution
 
-_HH_CONSERVATIVE_DAILY_CAP = 200
+_HH_CONSERVATIVE_APPLY_CAP = 200
 # HH caps searchable results at 2000 items (maxSearchResult=2000); an offset
 # beyond it is a board-side 400. The fetch stage validates its window against
 # this cap before any request (docs/hh/api/search.md).
@@ -54,7 +54,8 @@ class HHClient(Client, HhTestCapable):
     service = "hh"
     service_info = ServiceInfo(
         service="hh",
-        per_auth_daily_cap=_HH_CONSERVATIVE_DAILY_CAP,
+        per_auth_apply_cap=_HH_CONSERVATIVE_APPLY_CAP,
+        apply_period="day",
         max_search_items=_HH_MAX_SEARCH_ITEMS,
     )
 

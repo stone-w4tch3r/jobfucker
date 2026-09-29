@@ -142,12 +142,12 @@ def assert_processed_set_step(
     target_fixture="incremented_limit",
 )
 def increment_three_times_step(scenario_db: Path, service: str, login: str, date: str) -> int:
-    """Increment the auth-keyed daily counter three times and return the count."""
+    """Increment the auth-keyed counter (day window) three times and return the count."""
 
     async def increment(storage: Storage) -> int:
         for _ in range(3):
-            await storage.daily_limits.increment(service, login, date)
-        limit = await storage.daily_limits.get(service, login, date)
+            await storage.auth_apply_limits.increment(service, login, "day", date)
+        limit = await storage.auth_apply_limits.get(service, login, "day", date)
         assert limit is not None
         return limit.count
 
@@ -160,7 +160,7 @@ def assert_counter_step(scenario_db: Path, incremented_limit: int, expected: int
     assert incremented_limit == expected
 
     async def read_count(storage: Storage) -> int:
-        limit = await storage.daily_limits.get("mock", "a@ex.com", "2026-08-05")
+        limit = await storage.auth_apply_limits.get("mock", "a@ex.com", "day", "2026-08-05")
         assert limit is not None
         return limit.count
 

@@ -41,11 +41,17 @@ from typing import Literal, NewType
 
 ServiceVacancyId = NewType("ServiceVacancyId", str)
 
+# The window a board counts applications over: "day" (HH) or "month" (Habr).
+QuotaPeriod = Literal["day", "month"]
+
 @dataclass(frozen=True, slots=True)
 class ServiceInfo:
     service: str
     # Conservative product safety policy, not necessarily the board's actual cap.
-    per_auth_daily_cap: int
+    per_auth_apply_cap: int
+    # The window `per_auth_apply_cap` counts over; the core keys both apply
+    # counters (per-auth and per-pipeline) by it.
+    apply_period: QuotaPeriod
     # Board's maximum number of searchable listing items (e.g. HH: 2000); None
     # means no known cap. The fetch stage validates its window against it before
     # any request (an offset beyond the cap is a board-side 400).

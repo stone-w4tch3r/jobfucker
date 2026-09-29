@@ -31,7 +31,7 @@ from jobfucker.clients.factory import Factory
 from jobfucker.clients.mock.params import MockSearchEntry, MockServiceConfig
 from jobfucker.config import LimitsConfig, PipelineConfig
 from jobfucker.engine import BatchSelector, Engine, PipelineRunReport
-from jobfucker.limits import today_iso
+from jobfucker.limits import period_key
 from jobfucker.stages.apply import ApplyReport
 from jobfucker.stages.fetch import FetchReport
 from jobfucker.storage.db import Storage
@@ -50,7 +50,7 @@ from test.pipeline_helpers import (
 
 scenarios("bdd/pipeline_flow.feature")
 
-_TODAY = today_iso()
+_TODAY = period_key("day")
 _AUTH = "login@example.com"
 _SERVICE = "mock"
 
@@ -131,8 +131,8 @@ def already_run(storage: Storage, client_deps: ClientDeps) -> EngineCtx:
 def limited_engine(storage: Storage, client_deps: ClientDeps) -> EngineCtx:
     """A fresh engine whose pipeline caps at one apply per day."""
     factory = make_factory(client_deps)
-    pipeline = async_run(create_pipeline(storage, daily_apply_limit=1))
-    engine = _build_engine(storage, factory, pipeline, build_pipeline_config(daily_apply_limit=1, login=_AUTH))
+    pipeline = async_run(create_pipeline(storage, apply_limit=1))
+    engine = _build_engine(storage, factory, pipeline, build_pipeline_config(apply_limit=1, login=_AUTH))
     return EngineCtx(storage=storage, pipeline=pipeline, engine=engine)
 
 
@@ -167,7 +167,7 @@ def assert_all_applied(engine_ctx: EngineCtx, run_report: PipelineRunReport) -> 
 
     stored = async_run(engine_ctx.storage.vacancies.list_by_pipeline(engine_ctx.pipeline.id))
     assert all(v.apply_status == "applied" for v in stored)
-    limit = async_run(engine_ctx.storage.daily_limits.get(_SERVICE, _AUTH, _TODAY))
+    limit = async_run(engine_ctx.storage.auth_apply_limits.get(_SERVICE, _AUTH, "day", _TODAY))
     assert limit is not None and limit.count == 3
 
 
@@ -177,7 +177,7 @@ def assert_no_double_apply(engine_ctx: EngineCtx, run_report: ApplyReport) -> No
     assert run_report.applied == 0
     stored = async_run(engine_ctx.storage.vacancies.list_by_pipeline(engine_ctx.pipeline.id))
     assert all(v.apply_status == "applied" for v in stored)
-    limit = async_run(engine_ctx.storage.daily_limits.get(_SERVICE, _AUTH, _TODAY))
+    limit = async_run(engine_ctx.storage.auth_apply_limits.get(_SERVICE, _AUTH, "day", _TODAY))
     assert limit is not None and limit.count == 3
 
 
@@ -231,21 +231,21 @@ def two_pipelines_shared_login(storage: Storage, client_deps: ClientDeps) -> Sha
     factory = make_factory(client_deps)
     login = "shared@example.com"
     pipelines = (
-        async_run(create_pipeline(storage, name="Shared-A", login=login, daily_apply_limit=100)),
-        async_run(create_pipeline(storage, name="Shared-B", login=login, daily_apply_limit=100)),
+        async_run(create_pipeline(storage, name="Shared-A", login=login, apply_limit=100)),
+        async_run(create_pipeline(storage, name="Shared-B", login=login, apply_limit=100)),
     )
     engines = (
         _build_engine(
             storage,
             factory,
             pipelines[0],
-            build_pipeline_config(name="Shared-A", login=login, daily_apply_limit=100),
+            build_pipeline_config(name="Shared-A", login=login, apply_limit=100),
         ),
         _build_engine(
             storage,
             factory,
             pipelines[1],
-            build_pipeline_config(name="Shared-B", login=login, daily_apply_limit=100),
+            build_pipeline_config(name="Shared-B", login=login, apply_limit=100),
         ),
     )
     return SharedLimitCtx(storage=storage, pipelines=pipelines, engines=engines)
@@ -269,12 +269,16 @@ def assert_shared_counter(shared_ctx: SharedLimitCtx, shared_runs: tuple[Pipelin
         assert all(v.apply_status == "applied" for v in stored)
     auth_rows = [
         row
-        for row in async_run(shared_ctx.storage.daily_limits.list())
-        if row.service == _SERVICE and row.login == "shared@example.com" and row.date == _TODAY
+        for row in async_run(shared_ctx.storage.auth_apply_limits.list())
+        if row.service == _SERVICE and row.login == "shared@example.com" and row.period_key == _TODAY
     ]
     # One shared counter row, counting every application across both pipelines.
     assert len(auth_rows) == 1
     assert auth_rows[0].count == 6
+    # Each pipeline keeps its own counter too.
+    for pipeline in shared_ctx.pipelines:
+        pipeline_row = async_run(shared_ctx.storage.pipeline_apply_limits.get(pipeline.id, "day", _TODAY))
+        assert pipeline_row is not None and pipeline_row.count == 3
 
 
 # --- SC3: a re-fetch under a newer snapshot keeps one row with both stamps ----
@@ -301,7 +305,7 @@ def scored_under_first(storage: Storage, client_deps: ClientDeps) -> ProvenanceC
 @when("a newer snapshot is appended and the pipeline is re-fetched under it", target_fixture="refetch_report")
 def re_fetch_under_newer(prov_ctx: ProvenanceCtx) -> tuple[FetchReport, ...]:
     """Append snapshot #2 with a changed query, then refetch under it (--refresh)."""
-    changed = prov_ctx.config.model_copy(update={"limits": LimitsConfig(daily_apply_limit=99)})
+    changed = prov_ctx.config.model_copy(update={"limits": LimitsConfig(apply_limit=99)})
     m = async_run_result(prov_ctx.svc.new_snapshot(prov_ctx.pipeline.id, changed))
     snap_b = m.snapshot
     assert snap_b.snapshot_no == 2

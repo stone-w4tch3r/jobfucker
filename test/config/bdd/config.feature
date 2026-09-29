@@ -10,8 +10,8 @@ Feature: Pipeline configuration loading and validation
     And the mock section carries resume_id "mock-resume-1" and mock filter params
     And the credential and resume contents are injected
 
-  Scenario: A pipeline whose daily limit exceeds the mock cap is rejected
-    Given a mock pipeline file with daily_apply_limit 300 is written
+  Scenario: A pipeline whose apply limit exceeds the mock cap is rejected
+    Given a mock pipeline file with apply_limit 300 is written
     When the config-time cap validation runs
     Then validation is an Err mentioning the per-auth cap
 

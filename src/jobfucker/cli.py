@@ -436,10 +436,10 @@ def _print_apply(report: ApplyReport) -> None:
             f"{report.skipped} declined, {report.failed} failed"
         )
         if report.pending > 0:
-            # The stop wording is a limit exactly when the stage said so;
-            # fatal stops (config/auth) print their own reason in the stream.
-            limit_stop = report.stop_message is not None and "daily limit" in report.stop_message
-            head += f", {report.pending} not attempted" + (" (limit)" if limit_stop else "")
+            # ``limit_reached`` is the stage's own structured flag (the stop can
+            # be a quota stop or a fatal config/auth stop; only the former is a
+            # limit, and the stage already distinguished them).
+            head += f", {report.pending} not attempted" + (" (limit)" if report.limit_reached else "")
         typer.echo(head + tail)
 
 

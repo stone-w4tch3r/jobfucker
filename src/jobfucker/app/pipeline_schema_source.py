@@ -21,7 +21,7 @@ authored slot models against field drift from the loader models.
 
 The schema is deliberately STRICTER than the loader: these models are closed
 (``extra="forbid"``) and type-exact (no pydantic lax coercion — an unquoted
-``daily_apply_limit: "50"`` string is schema-rejected but loader-accepted),
+``apply_limit: "50"`` string is schema-rejected but loader-accepted),
 and explicit yaml nulls (``login:`` with nothing after it) are rejected even
 though the in-memory ``| None`` annotations would allow them.
 
@@ -203,7 +203,7 @@ class PipelineLimitsYaml(BaseModel):
 
     model_config = ConfigDict(title="Limits", extra="forbid")
 
-    daily_apply_limit: int = 50
+    apply_limit: int = 50
 
 
 # --- Service mapping --------------------------------------------------------

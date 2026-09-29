@@ -58,7 +58,7 @@ def _config(service: str, section: ServiceConfigSection) -> PipelineConfig:
         openai=OpenAIConfig(model="gpt-test", base_url="https://api.openai.com/v1", api_key="key"),
         scoring=ScoringConfig(min_required_score=3, scoring_prompt="score"),
         apply=ApplyConfig(apply_prompt="apply"),
-        limits=LimitsConfig(daily_apply_limit=5),
+        limits=LimitsConfig(apply_limit=5),
     )
     config.set_service_section(section)
     return config

@@ -22,13 +22,17 @@ its dumb-obvious reason (``ApplyReport.checked``/``ignored`` plus an
 ``info``-tier ``not eligible <id> — <reason>`` event) so an empty run explains
 itself.
 
-**Limit enforcement (before every application):** the **one shared per-auth
-counter** for ``(service, login, date)`` (from the resolved config) is checked
-via :class:`jobfucker.limits.Limits` against **both** caps — the board's
-``service_info.per_auth_daily_cap`` and the pipeline's ``daily_apply_limit``.
-Both caps apply to the same shared value, so many pipelines on one account
-exhaust that account's single counter (the cap is never double-counted). On a
-successful apply that counter is incremented once.
+**Limit enforcement (before every application):** two independent counters over
+the board's declared quota window (``service_info.apply_period``) are checked via
+:class:`jobfucker.limits.Limits`:
+
+- the **per-auth** counter for ``(service, login, period, period_key)``, capped by
+  the board's ``service_info.per_auth_apply_cap`` (shared across every pipeline on
+  the account, so the account cap is never double-counted);
+- the **per-pipeline** counter for ``(pipeline_id, period, period_key)``, capped by
+  the pipeline's ``apply_limit``.
+
+On a successful apply both counters are incremented once.
 
 Outcome mapping (respecting the DDL ``apply_status`` CHECK — no ``rejected``):
 
@@ -68,6 +72,7 @@ from jobfucker.clients.base import (
     ClientError,
     ConfigurationError,
     LimitExceededError,
+    QuotaPeriod,
     ServiceVacancyId,
 )
 from jobfucker.hh_tests.contract import (
@@ -78,7 +83,7 @@ from jobfucker.hh_tests.contract import (
     HhTestUnsolved,
 )
 from jobfucker.hh_tests.prompt import render_hh_test_prompt
-from jobfucker.limits import Limits, today_iso
+from jobfucker.limits import Limits, period_key
 from jobfucker.reporting import NullReporter, Reporter, RunEvent
 from jobfucker.stages.prompts import PromptInputs, VacancyPromptData
 from jobfucker.storage.db import Storage
@@ -292,9 +297,11 @@ def _ignore_reason(  # noqa: PLR0911 - one return per eligibility gate (distinct
 class _ApplyContext:
     """Shared state threaded through one ``run_apply`` invocation.
 
-    ``service``/``login`` are the auth identity from the resolved config — the
-    ``(service, login, date)`` key of the **single shared** daily counter every
-    pipeline on the account reads and increments (never double-counted).
+    ``service``/``login`` are the auth identity from the resolved config and
+    ``period``/``period_key`` the board's quota window — the keys of the **shared
+    per-auth** counter every pipeline on the account reads and increments (never
+    double-counted). The per-pipeline counter is keyed by ``pipeline.id`` + the
+    same window in the storage layer.
 
     ``hh_test_solver``/``hh_test_prompt`` are the optional HH screening-test
     solving seam: when both the solver and a capable client are present, a
@@ -306,7 +313,8 @@ class _ApplyContext:
     storage: Storage
     pipeline: Pipeline
     targets: ApplyTargets
-    day: str
+    period: QuotaPeriod
+    period_key: str
     service: str
     login: str
     snapshot_id: int
@@ -317,11 +325,17 @@ class _ApplyContext:
 
 @dataclass(frozen=True, slots=True)
 class _ApplyOutcome:
-    """Result of attempting one application (with the shared-counter delta)."""
+    """Result of attempting one application (with the shared-counter delta).
+
+    ``limit_stop`` is set only for a stop caused by a quota cap (a pre-apply
+    counter check) or the board's own ``LimitExceededError`` — never for the
+    fatal config/auth stops, which halt the batch too but are not a limit.
+    """
 
     status: ApplyStatus
     message: str | None
     delta: int
+    limit_stop: bool = False
 
 
 async def select_candidates(
@@ -352,24 +366,25 @@ async def select_candidates(
     return candidates, ignored
 
 
-async def _apply_one(ctx: _ApplyContext, vacancy: VacancyRecord, used: int) -> _ApplyOutcome:
+async def _apply_one(
+    ctx: _ApplyContext, vacancy: VacancyRecord, used_per_auth: int, used_per_pipeline: int
+) -> _ApplyOutcome:
     """Apply to one vacancy and persist the outcome.
 
-    Both dual caps (per-auth from ``service_info``, per-pipeline from config)
-    are enforced against the ONE shared auth counter ``used`` — the effective
-    stop is the tighter of the two. A ``"pending"`` outcome (with a stop)
-    covers a pre-apply counter check failing, the board returning
-    :class:`LimitExceededError`, and fatal errors the spec says must stop the
-    pipeline (:class:`ConfigurationError`, :class:`AuthError`) — in each case
-    the batch halts.
+    Both caps (per-auth from ``service_info``, per-pipeline from config) are
+    enforced against their **own** counters — the effective stop is the tighter
+    of the two. A ``"pending"`` outcome (with a stop) covers a pre-apply counter
+    check failing, the board returning :class:`LimitExceededError`, and fatal
+    errors the spec says must stop the pipeline (:class:`ConfigurationError`,
+    :class:`AuthError`) — in each case the batch halts.
 
     A test-bearing vacancy under an HH-capable client + a wired solver routes
     through fetch → solve → ``apply_to_vacancy_with_test`` first; the plain
     API apply is used for everything else (and as the fallback when the fresh
     test page no longer carries the test).
     """
-    if not ctx.limits.can_apply(used, used):
-        return _ApplyOutcome("pending", None, delta=0)
+    if not ctx.limits.can_apply(used_per_auth, used_per_pipeline):
+        return _ApplyOutcome("pending", None, delta=0, limit_stop=True)
 
     if isinstance(ctx.targets.client, HhTestCapable) and vacancy.has_hh_test is True:
         test_outcome = await _apply_hh_test(ctx, vacancy, ctx.targets.client)
@@ -409,7 +424,7 @@ async def _apply_hh_test(  # noqa: PLR0911 - one return per distinct test-path o
         # instead of marking every test-bearing vacancy permanently `error`.
         stop = _get_batch_stop_message_if_batch_stop_needed(error)
         if stop is not None:
-            return _ApplyOutcome("pending", stop, delta=0)
+            return _ApplyOutcome("pending", stop, delta=0, limit_stop=isinstance(error, LimitExceededError))
         return await _persist_failed_per_vacancy(ctx, vacancy, f"test fetch failed: {error.message}")
     problem = problem_result.unwrap()
     if problem is None:
@@ -519,7 +534,7 @@ def _get_batch_stop_message_if_batch_stop_needed(error: ClientError) -> str | No
     configuration — retries cannot help) carry their own message.
     """
     if isinstance(error, LimitExceededError):
-        return "board signalled the daily limit"
+        return "board signalled its application limit"
     if isinstance(error, (ConfigurationError, AuthError)):
         return error.message
     return None
@@ -535,13 +550,14 @@ async def _classify_apply_result(
         error = result.unwrap_err()
         stop = _get_batch_stop_message_if_batch_stop_needed(error)
         if stop is not None:
-            return _ApplyOutcome("pending", stop, delta=0)
+            return _ApplyOutcome("pending", stop, delta=0, limit_stop=isinstance(error, LimitExceededError))
         return await _persist_failed_per_vacancy(ctx, vacancy, error.message)
 
     application = result.unwrap()
     match application:
         case ApplySucceeded():
-            await ctx.storage.daily_limits.increment(ctx.service, ctx.login, ctx.day)
+            await ctx.storage.auth_apply_limits.increment(ctx.service, ctx.login, ctx.period, ctx.period_key)
+            await ctx.storage.pipeline_apply_limits.increment(ctx.pipeline.id, ctx.period, ctx.period_key)
             updated = replace(
                 vacancy,
                 apply_status="applied",
@@ -574,37 +590,40 @@ async def run_apply(  # noqa: PLR0913 - config-heavy stage: identity + targets +
     *,
     snapshot_id: int,
     min_required_score: int,
-    daily_apply_limit: int,
+    apply_limit: int,
     login: str,
     service: str,
     filters: ApplyFilters = _STRICT_FILTERS,
     positions: set[int] | None = None,
-    today: str | None = None,
+    now: datetime | None = None,
     progress: Reporter | None = None,
     hh_test_solver: HhTestSolver | None = None,
     hh_test_prompt: PromptInputs | None = None,
 ) -> Result[ApplyReport, str]:
-    """Apply to eligible vacancies, enforcing the shared daily limit.
+    """Apply to eligible vacancies, enforcing both application quotas.
 
     Args:
-        storage: the storage facade (four repositories).
-        pipeline: the pipeline identity DTO (id for vacancies/audit).
+        storage: the storage facade (repositories + engine + session factory).
+        pipeline: the pipeline identity DTO (id for vacancies/audit/counter).
         targets: the resolved client + service resume id.
         snapshot_id: the :class:`PipelineSnapshot` id whose config produced
             this run — stamped ``applied_snapshot_id`` on every vacancy the
             apply stage decides.
         min_required_score: the pass threshold from the resolved config
             (the default ``filters.min_score`` fallback).
-        daily_apply_limit: the pipeline's own cap from the resolved config.
+        apply_limit: the pipeline's own cap from the resolved config (its
+            per-pipeline counter).
         login: the auth login (account identity) from the resolved config.
         service: the client selector from the resolved config — together with
-            ``login`` and ``today`` these key the shared per-auth counter.
+            ``login`` these key the shared per-auth counter.
         filters: per-run eligibility overrides (:class:`ApplyFilters`; the
             default is the strict automatic behavior).
         positions: optional set of 0-based offsets into the id-ordered vacancy
             list to consider; ``None`` = all (ignored in forced-ids mode).
-        today: the ``YYYY-MM-DD`` counter key; defaults to :func:`today_iso`
-            (injectable for deterministic tests).
+        now: the instant the window key is derived from; defaults to the
+            current UTC time (injectable for deterministic tests). The board's
+            ``service_info.apply_period`` decides whether the key is a day
+            (``YYYY-MM-DD``) or a month (``YYYY-MM``).
         progress: the live output sink (:class:`NullReporter` when omitted) —
             one ``stage='apply'`` event per vacancy attempted, an ``info``
             ``not eligible <id> — <reason>`` event per ineligible vacancy, plus
@@ -619,15 +638,19 @@ async def run_apply(  # noqa: PLR0913 - config-heavy stage: identity + targets +
         limit stop is an ``Ok`` outcome, never an error.
     """
     reporter = progress if progress is not None else NullReporter()
-    day = today if today is not None else today_iso()
+    period = targets.client.service_info.apply_period
+    window_key = period_key(period, now=now)
 
-    # One shared counter per (service, login, date), read once up front. Both
-    # dual caps (per-auth from the board, per-pipeline from config) apply to it:
-    # pipelines on the same account share it, so the cap is never double-counted.
-    per_auth_cap = targets.client.service_info.per_auth_daily_cap
-    limits = Limits(per_auth_cap=per_auth_cap, per_pipeline_limit=daily_apply_limit)
-    limit_row = await storage.daily_limits.get(service, login, day)
-    used = limit_row.count if limit_row is not None else 0
+    # Two independent counters over the board's window, read once up front: the
+    # per-auth counter is shared across every pipeline on the account (so the
+    # board cap is never double-counted), the per-pipeline counter is this
+    # pipeline's own ``apply_limit`` throttle.
+    per_auth_cap = targets.client.service_info.per_auth_apply_cap
+    limits = Limits(period=period, per_auth_cap=per_auth_cap, per_pipeline_limit=apply_limit)
+    auth_row = await storage.auth_apply_limits.get(service, login, period, window_key)
+    used_per_auth = auth_row.count if auth_row is not None else 0
+    pipeline_row = await storage.pipeline_apply_limits.get(pipeline.id, period, window_key)
+    used_per_pipeline = pipeline_row.count if pipeline_row is not None else 0
 
     candidates, ignored = await select_candidates(
         storage, pipeline, min_required_score, positions=positions, filters=filters
@@ -647,7 +670,8 @@ async def run_apply(  # noqa: PLR0913 - config-heavy stage: identity + targets +
         storage=storage,
         pipeline=pipeline,
         targets=targets,
-        day=day,
+        period=period,
+        period_key=window_key,
         service=service,
         login=login,
         snapshot_id=snapshot_id,
@@ -661,17 +685,23 @@ async def run_apply(  # noqa: PLR0913 - config-heavy stage: identity + targets +
     skipped = 0
     failed = 0
     stopped_early = False
+    limit_reached = False
     stop_message: str | None = None
     total = len(candidates)
 
     for position, vacancy in enumerate(candidates):
-        outcome = await _apply_one(ctx, vacancy, used)
+        outcome = await _apply_one(ctx, vacancy, used_per_auth, used_per_pipeline)
         index = position + 1
         if outcome.status == "pending":
             stopped_early = True
-            # A None message is exactly the shared-counter stop (can_apply just
-            # failed), so the tighter cap's wording is always available there.
-            stop_message = outcome.message if outcome.message is not None else ctx.limits.stop_reason(used)
+            limit_reached = outcome.limit_stop
+            # A None message is exactly a counter stop (can_apply just failed),
+            # so the tighter cap's wording is always available there.
+            stop_message = (
+                outcome.message
+                if outcome.message is not None
+                else ctx.limits.stop_reason(used_per_auth, used_per_pipeline)
+            )
             assert stop_message is not None  # counter stop ⇒ stop_reason() has a bound cap
             await reporter.publish(
                 RunEvent(
@@ -685,7 +715,8 @@ async def run_apply(  # noqa: PLR0913 - config-heavy stage: identity + targets +
                 )
             )
             break
-        used += outcome.delta
+        used_per_auth += outcome.delta
+        used_per_pipeline += outcome.delta
         outcomes.append(AppliedVacancy(vacancy.external_id, outcome.status, outcome.message))
         await reporter.publish(_apply_event(outcome.status, outcome.message, vacancy, index, total))
         if outcome.status == "applied":
@@ -696,7 +727,6 @@ async def run_apply(  # noqa: PLR0913 - config-heavy stage: identity + targets +
             failed += 1
 
     pending = len(candidates) - applied - skipped - failed
-    limit_reached = stopped_early
 
     details = json.dumps(
         {

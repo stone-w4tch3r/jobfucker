@@ -1,7 +1,7 @@
 """Phase 4 (task 4.3): plain pytest tests for config-time cap validation.
 
-Validates that ``daily_apply_limit`` is checked against the client's declared
-``per_auth_daily_cap`` (via ``service_info``) at config time, with no cap
+Validates that ``apply_limit`` is checked against the client's declared
+``per_auth_apply_cap`` (via ``service_info``) at config time, with no cap
 constants in core. The behavioral over-cap scenario lives in
 ``bdd/config.feature``; these unit tests cover the pure logic including the
 happy path. Registered mock cap is 200.
@@ -41,7 +41,7 @@ def _factory(data_dir: Path) -> Factory:
 
 
 def _load(runtime_dir: Path, limit: int) -> PipelineConfig:
-    path = build_valid_pipeline_yaml(runtime_dir / "config", daily_apply_limit=limit)
+    path = build_valid_pipeline_yaml(runtime_dir / "config", apply_limit=limit)
     result = load_pipeline_config(path)
     assert result.is_ok, f"expected Ok, got {result}"
     return result.unwrap()
@@ -67,7 +67,7 @@ def test_limit_above_cap_is_err(runtime_dir: Path) -> None:
     result = validate_cap(config, _factory(runtime_dir / "data"))
     assert result.is_err
     message = result.unwrap_err()
-    assert "per-auth daily cap" in message
+    assert "per-auth apply cap" in message
     assert str(_MOCK_CAP + 1) in message
     assert str(_MOCK_CAP) in message
 

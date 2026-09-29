@@ -1,15 +1,17 @@
 """Phase 5B (task 5.5): apply stage coverage.
 
 Exercises ``run_apply`` with a programmable mock client: outcome mapping to
-``apply_status`` (applied/skipped/error — never ``rejected``), shared-limit
-enforcement (both dual caps apply to the ONE per-auth counter),
+``apply_status`` (applied/skipped/error — never ``rejected``), two independent
+quota counters (shared per-auth + per-pipeline) over the board's window,
 :class:`LimitExceededError` stopping with an ``Ok`` ``limit_reached`` report,
 idempotency (no double apply), provenance stamping (``applied_snapshot_id``),
-and the SC4 rule: two pipelines on one account exhaust a single shared counter.
+and the SC4 rule: two pipelines on one account share a single per-auth counter
+while keeping their own per-pipeline counters.
 """
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Literal
 
 import pytest
@@ -36,6 +38,7 @@ from test.pipeline_helpers import build_pipeline_config, create_pipeline, make_f
 from test.storage.builders import build_vacancy
 
 TODAY = "2026-08-05"
+NOW = datetime(2026, 8, 5, 12, 0, tzinfo=UTC)
 _AUTH = "login@example.com"
 _SERVICE = "mock"
 _STRICT_FILTERS = ApplyFilters()
@@ -97,7 +100,7 @@ async def _apply(
     config: PipelineConfig,
     *,
     filters: ApplyFilters = _STRICT_FILTERS,
-    today: str = TODAY,
+    now: datetime = NOW,
 ):
     """Run ``run_apply`` against the pipeline's head snapshot (config-from-DB).
 
@@ -112,11 +115,11 @@ async def _apply(
         _targets(factory, config),
         snapshot_id=snapshot.id,
         min_required_score=snapshot.min_required_score,
-        daily_apply_limit=snapshot.daily_apply_limit,
+        apply_limit=snapshot.apply_limit,
         login=snapshot.login,
         service=snapshot.service,
         filters=filters,
-        today=today,
+        now=now,
     )
 
 
@@ -151,10 +154,13 @@ async def test_apply_applied_outcome_sets_status_and_increments_counter(
         # The apply row is stamped with the snapshot whose config applied it.
         assert stored[key].applied_snapshot_id == snapshot.id
 
-    # One shared counter per (service, login, date) ticked twice.
-    limit_row = await storage.daily_limits.get(_SERVICE, _AUTH, TODAY)
+    # The shared per-auth counter and this pipeline's own counter both ticked twice.
+    limit_row = await storage.auth_apply_limits.get(_SERVICE, _AUTH, "day", TODAY)
     assert limit_row is not None
     assert limit_row.count == 2
+    pipeline_row = await storage.pipeline_apply_limits.get(pipeline.id, "day", TODAY)
+    assert pipeline_row is not None
+    assert pipeline_row.count == 2
 
 
 async def test_apply_redirect_maps_to_skipped(storage: Storage, client_deps: ClientDeps) -> None:
@@ -217,16 +223,16 @@ async def test_apply_limit_exceeded_stops_ok_and_leaves_rest_pending(storage: St
     assert report.applied == 1  # v0 applied before the stop
     assert report.pending == 2  # v1 + v2 left pending
     # The board's own cap signalled the stop — the report wording says so.
-    assert report.stop_message == "board signalled the daily limit"
+    assert report.stop_message == "board signalled its application limit"
 
     stored = {v.external_id: v for v in await storage.vacancies.list_by_pipeline(pipeline.id)}
     assert stored[ServiceVacancyId("v2")].apply_status is None  # never attempted
 
 
 async def test_apply_per_pipeline_limit_stops_before_next_apply(storage: Storage, client_deps: ClientDeps) -> None:
-    """Reaching daily_apply_limit stops applying with limit_reached, Ok."""
-    pipeline = await create_pipeline(storage, daily_apply_limit=1)
-    config = build_pipeline_config(daily_apply_limit=1)
+    """Reaching apply_limit stops applying with limit_reached, Ok."""
+    pipeline = await create_pipeline(storage, apply_limit=1)
+    config = build_pipeline_config(apply_limit=1)
     await _seed_eligible(storage, pipeline, 3)
 
     result = await _apply(storage, pipeline, make_factory(client_deps), config)
@@ -239,13 +245,15 @@ async def test_apply_per_pipeline_limit_stops_before_next_apply(storage: Storage
     assert report.stop_message == "daily limit reached — 1 of 1 applied today (pipeline cap)"
 
 
-async def test_apply_full_shared_counter_stops_before_first_apply(storage: Storage, client_deps: ClientDeps) -> None:
-    """A counter already at the cap (another pipeline spent it) stops with zero attempts."""
-    pipeline = await create_pipeline(storage, daily_apply_limit=1)
-    config = build_pipeline_config(daily_apply_limit=1)
+async def test_apply_pipeline_counter_already_at_limit_stops_before_first_apply(
+    storage: Storage, client_deps: ClientDeps
+) -> None:
+    """A pipeline counter already at its cap (a prior run spent it) stops with zero attempts."""
+    pipeline = await create_pipeline(storage, apply_limit=1)
+    config = build_pipeline_config(apply_limit=1)
     await _seed_eligible(storage, pipeline, 3)
-    # Another pipeline on the same account already used the single slot today.
-    await storage.daily_limits.increment(_SERVICE, _AUTH, TODAY)
+    # This pipeline's own window slot is already spent.
+    await storage.pipeline_apply_limits.increment(pipeline.id, "day", TODAY)
 
     result = await _apply(storage, pipeline, make_factory(client_deps), config)
     assert result.is_ok
@@ -288,8 +296,8 @@ async def test_apply_mixed_filtered_and_limit_stopped_partition(storage: Storage
     (not eligible) + eligible candidates the full counter stops before — every
     one of them must surface in exactly one bucket.
     """
-    pipeline = await create_pipeline(storage, daily_apply_limit=1)
-    config = build_pipeline_config(daily_apply_limit=1)
+    pipeline = await create_pipeline(storage, apply_limit=1)
+    config = build_pipeline_config(apply_limit=1)
     await _seed_eligible(storage, pipeline, 2)
     await storage.vacancies.upsert(
         build_vacancy(pipeline_id=pipeline.id, external_id="decided", score=5, cover_letter="l", apply_status="applied")
@@ -304,8 +312,8 @@ async def test_apply_mixed_filtered_and_limit_stopped_partition(storage: Storage
             skip_reason="closed",
         )
     )
-    # The account's one slot is already spent today.
-    await storage.daily_limits.increment(_SERVICE, _AUTH, TODAY)
+    # This pipeline's one slot is already spent.
+    await storage.pipeline_apply_limits.increment(pipeline.id, "day", TODAY)
 
     result = await _apply(storage, pipeline, make_factory(client_deps), config)
     assert result.is_ok
@@ -331,7 +339,7 @@ async def test_apply_is_idempotent_no_double_apply(storage: Storage, client_deps
     result = await _apply(storage, pipeline, factory, config)
     assert result.is_ok
     assert result.unwrap().applied == 0
-    limit_row = await storage.daily_limits.get(_SERVICE, _AUTH, TODAY)
+    limit_row = await storage.auth_apply_limits.get(_SERVICE, _AUTH, "day", TODAY)
     assert limit_row is not None and limit_row.count == 2  # unchanged
 
 
@@ -621,11 +629,11 @@ async def test_apply_writes_an_audit_entry(storage: Storage, client_deps: Client
 
 
 async def test_apply_shared_counter_across_pipelines_same_login(storage: Storage, client_deps: ClientDeps) -> None:
-    """SC4: two pipelines on one login exhaust ONE shared daily counter.
+    """SC4: two pipelines on one login share ONE per-auth counter, keep per-pipeline counters.
 
-    Both pipelines run under the same ``(service, login, date)`` key; their
-    applications accumulate on a single row — the account cap is never
-    double-counted per pipeline.
+    Both pipelines run under the same ``(service, login, period, period_key)``
+    auth key; their applications accumulate on a single shared row while each
+    pipeline also tracks its own ``apply_limit`` counter.
     """
     config = build_pipeline_config()
     factory = make_factory(client_deps)
@@ -640,13 +648,20 @@ async def test_apply_shared_counter_across_pipelines_same_login(storage: Storage
     assert result_a.unwrap().applied == 2
     assert result_b.unwrap().applied == 1
 
-    # Exactly ONE shared (service, login, date) row holding the combined count.
-    rows = await storage.daily_limits.list()
+    # Exactly ONE shared per-auth row holding the combined count...
+    rows = await storage.auth_apply_limits.list()
     assert len(rows) == 1
     assert rows[0].service == _SERVICE
     assert rows[0].login == _AUTH
-    assert rows[0].date == TODAY
+    assert rows[0].period == "day"
+    assert rows[0].period_key == TODAY
     assert rows[0].count == 3
+
+    # ...while each pipeline keeps its own counter.
+    row_a = await storage.pipeline_apply_limits.get(pipeline_a.id, "day", TODAY)
+    row_b = await storage.pipeline_apply_limits.get(pipeline_b.id, "day", TODAY)
+    assert row_a is not None and row_a.count == 2
+    assert row_b is not None and row_b.count == 1
 
     # Every applied vacancy is stamped with its own pipeline's snapshot id.
     snap_a = await snapshot_for(storage, pipeline_a)
@@ -676,10 +691,10 @@ async def _run_with_fake_outcome(
         ApplyTargets(client=client, resume_id="fake-resume-1"),
         snapshot_id=snapshot.id,
         min_required_score=snapshot.min_required_score,
-        daily_apply_limit=snapshot.daily_apply_limit,
+        apply_limit=snapshot.apply_limit,
         login=snapshot.login,
         service="fake",
-        today=TODAY,
+        now=NOW,
     )
 
 
@@ -695,6 +710,9 @@ async def _assert_fatal_outcome_stops_batch(
     assert report.failed == 0
     assert report.pending == 3
     assert report.stopped_early is True
+    # A fatal (config/auth) stop halts the batch but is NOT a quota limit: the
+    # report must not flag limit_reached (the CLI prints "(limit)" off it).
+    assert report.limit_reached is False
     stored = {v.external_id: v for v in await storage.vacancies.list_by_pipeline(pipeline.id)}
     assert all(v.apply_status is None for v in stored.values())  # nothing marked error
 

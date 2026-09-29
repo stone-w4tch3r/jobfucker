@@ -19,7 +19,7 @@ from dataclasses import fields
 from jobfucker.clients.base import Client, ClientDeps, ServiceVacancyId, Vacancy
 from test.fakes.fake_client import FakeClient, FakeServiceConfig
 
-# The fake's declared per-auth daily cap (asserted in conformance).
+# The fake's declared per-auth apply cap (asserted in conformance).
 _FAKE_CAP = 200
 
 _REQUIRED_CLIENT_METHODS = (
@@ -46,7 +46,7 @@ async def test_fake_implements_client_protocol(client_deps: ClientDeps) -> None:
     fake = _make_fake(client_deps)
     assert isinstance(fake, Client)
     assert fake.service == "fake"
-    assert fake.service_info.per_auth_daily_cap == _FAKE_CAP
+    assert fake.service_info.per_auth_apply_cap == _FAKE_CAP
 
 
 async def test_fake_exposes_every_required_client_method(client_deps: ClientDeps) -> None:

@@ -19,7 +19,7 @@ def _write(path: Path, content: str) -> None:
 def build_valid_pipeline_yaml(
     config_dir: Path,
     *,
-    daily_apply_limit: int = 5,
+    apply_limit: int = 5,
     behavior_yaml: str = "",
     vacancies_yaml: str = "",
 ) -> Path:
@@ -85,7 +85,7 @@ scoring:
 apply:
   apply_prompt_file: "{apply_prompt.as_posix()}"
 limits:
-  daily_apply_limit: {daily_apply_limit}
+  apply_limit: {apply_limit}
 """
     config_path = config_dir / "pipeline.yaml"
     _write(config_path, yaml_text)
@@ -95,14 +95,14 @@ limits:
 def write_pipeline_files(
     runtime_dir: Path,
     *,
-    daily_apply_limit: int = 5,
+    apply_limit: int = 5,
     behavior_yaml: str = "",
 ) -> Path:
     """Write the pipeline files into ``runtime_dir/config`` (the fixture layout)."""
     config_dir = runtime_dir / "config"
     return build_valid_pipeline_yaml(
         config_dir,
-        daily_apply_limit=daily_apply_limit,
+        apply_limit=apply_limit,
         behavior_yaml=behavior_yaml,
     )
 
@@ -141,7 +141,7 @@ scoring:
 apply:
   apply_prompt: "inline apply template"
 limits:
-  daily_apply_limit: 5
+  apply_limit: 5
 """
     config_path = config_dir / "pipeline.yaml"
     _write(config_path, yaml_text)

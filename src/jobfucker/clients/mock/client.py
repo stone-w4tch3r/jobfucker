@@ -56,8 +56,8 @@ from jobfucker.clients.mock.params import (
 from jobfucker.clients.paging import FetchedListingPage, FetchedPage, scan_listing, scan_slice
 from jobfucker.reporting import EventLevel, RunEvent
 
-# Mock's declared per-auth daily cap, so cap validation (Phase 4) is exercised.
-_MOCK_PER_AUTH_DAILY_CAP = 200
+# Mock's declared per-auth apply cap, so cap validation is exercised.
+_MOCK_PER_AUTH_APPLY_CAP = 200
 
 # Fixed resume the mock reports from get_resumes().
 _MOCK_RESUME = ResumeInfo(
@@ -140,7 +140,8 @@ class MockClient(Client):
     service: str = "mock"
     service_info: ServiceInfo = ServiceInfo(
         service="mock",
-        per_auth_daily_cap=_MOCK_PER_AUTH_DAILY_CAP,
+        per_auth_apply_cap=_MOCK_PER_AUTH_APPLY_CAP,
+        apply_period="day",
         max_search_items=None,  # the canned mock listing has no search cap
     )
 

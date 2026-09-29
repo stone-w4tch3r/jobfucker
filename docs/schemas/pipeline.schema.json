@@ -1506,9 +1506,9 @@
       "additionalProperties": false,
       "description": "Authored ``limits`` section.\n\nSchema twin of ``LimitsConfig`` (``config.py``) \u2014 edit both together.",
       "properties": {
-        "daily_apply_limit": {
+        "apply_limit": {
           "default": 50,
-          "title": "Daily Apply Limit",
+          "title": "Apply Limit",
           "type": "integer"
         }
       },
@@ -1998,5 +1998,5 @@
   ],
   "title": "jobfucker pipeline.yaml",
   "type": "object",
-  "x-jobfucker-schema-version": "sha256:ca4c3f15927b57e529488d53171f26e8be7b77928c15cfaa84bf5e3bc76b309f"
+  "x-jobfucker-schema-version": "sha256:059b17320be3feccd3a9a2b18de2824632a681d8b420354a8027b72ff5460ffb"
 }

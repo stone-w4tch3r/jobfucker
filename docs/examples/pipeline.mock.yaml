@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/stone-w4tch3r/jobfucker/master/docs/schemas/pipeline.schema.json
 #
 # Mock pipeline example — exercise the CLI/GUI end-to-end with NO live board.
-# Service `mock` is the first-party offline client (per_auth_daily_cap = 200).
+# Service `mock` is the first-party offline client (per_auth_apply_cap = 200/day).
 #
 # Run sequence (real CLI, isolated DB optional):
 #   uv run poe app init --config docs/examples/pipeline.mock.yaml
@@ -146,4 +146,4 @@ scoring:
 apply:
   apply_prompt_file: "prompts/apply-mock.xml.j2"
 limits:
-  daily_apply_limit: 5
+  apply_limit: 5

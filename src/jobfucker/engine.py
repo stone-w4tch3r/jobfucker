@@ -432,7 +432,7 @@ class Engine:
                 positions=positions,
                 snapshot_id=self._snapshot_id,
                 min_required_score=self._config.scoring.min_required_score,
-                daily_apply_limit=self._config.limits.daily_apply_limit,
+                apply_limit=self._config.limits.apply_limit,
                 login=self._config.auth.login,
                 service=self._config.service,
                 filters=effective_filters,

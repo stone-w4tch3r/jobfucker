@@ -1,11 +1,10 @@
 """SQLAlchemy 2.0 declarative ORM models — the canonical jobfucker schema.
 
-These ``Mapped`` models mirror the board-neutral tables in
-``docs/specs/jobfucker.pipeline-snapshots.md`` **exactly** (``pipelines``,
-``pipeline_snapshot``, ``vacancies``, ``audit_log``, ``daily_limits``),
-including the ``apply_status`` CHECK (``'pending'|'applied'|'skipped'|'error'``
-— **no** ``rejected``), the unique constraints, and the ``soft_deleted_at``
-soft-delete column.
+These ``Mapped`` models mirror the board-neutral tables in the frozen DDL
+(``pipelines``, ``pipeline_snapshot``, ``vacancies``, ``audit_log``,
+``auth_apply_limits``, ``pipeline_apply_limits``), including the ``apply_status``
+CHECK (``'pending'|'applied'|'skipped'|'error'`` — **no** ``rejected``), the
+unique constraints, and the ``soft_deleted_at`` soft-delete column.
 
 Post-snapshot rewrite, ``pipelines`` is **identity only**: a stable, user-
 recognized pipeline label (``id``/``name``/``description``/``current_snapshot_id``
@@ -14,8 +13,10 @@ plus lifecycle timestamps). Its config lives in the append-only
 snapshot whose config an engine run reconstructs with zero file I/O. Result
 rows (``vacancies``/``audit_log``) carry the pipeline **identity** plus the
 **snapshot** whose config produced the artifact via the ``*_snapshot_id``
-columns. ``daily_limits`` is keyed per auth ``(service, login, date)``, shared
-across every pipeline using the account.
+columns. ``auth_apply_limits`` is keyed per auth
+``(service, login, period, period_key)`` and ``pipeline_apply_limits`` per
+``(pipeline_id, period, period_key)``; the two counters are independent, and the
+period is the board's declared quota window (``"day"`` / ``"month"``).
 
 This module is authoritative: the Alembic migrations in ``migrations/`` generate
 from ``Base.metadata`` and repository tests create schema from it. SQLAlchemy is
@@ -135,7 +136,7 @@ class PipelineSnapshot(Base):
     # Apply prompt template CONTENT.
     apply_prompt: Mapped[str] = mapped_column(Text, nullable=False)
     # Limits
-    daily_apply_limit: Mapped[int] = mapped_column(Integer, nullable=False, default=50, server_default="50")
+    apply_limit: Mapped[int] = mapped_column(Integer, nullable=False, default=50, server_default="50")
     created_at: Mapped[str] = mapped_column(Text, nullable=False, server_default=_NOW)
 
 
@@ -236,22 +237,50 @@ class AuditLog(Base):
     created_at: Mapped[str] = mapped_column(Text, nullable=False, server_default=_NOW)
 
 
-class DailyLimit(Base):
-    """Per-auth daily application counter (§3.1 `daily_limits`).
+class AuthApplyLimit(Base):
+    """Per-auth application counter over the board's quota window (§3.1).
 
-    Keyed by ``(service, login, date)`` — shared across every pipeline using the
-    account (no ``pipeline_id``, so a cap is never double-counted per pipeline).
+    Keyed by ``(service, login, period, period_key)`` — shared across every
+    pipeline using the account (no ``pipeline_id``, so the board's cap is never
+    double-counted per pipeline). ``period`` is ``"day"`` or ``"month"``;
+    ``period_key`` is ``"YYYY-MM-DD"`` for a day window and ``"YYYY-MM"`` for a
+    month window, so a window change is simply a new row.
     """
 
-    __tablename__ = "daily_limits"
+    __tablename__ = "auth_apply_limits"
     __table_args__: tuple[Constraint, ...] = (
-        UniqueConstraint("service", "login", "date", name="uq_daily_limits_service_login_date"),
+        UniqueConstraint(
+            "service", "login", "period", "period_key", name="uq_auth_apply_limits_service_login_period_key"
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     service: Mapped[str] = mapped_column(Text, nullable=False, default="hh", server_default="hh")
     login: Mapped[str] = mapped_column(Text, nullable=False)  # auth login identifying the account
-    date: Mapped[str] = mapped_column(Text, nullable=False)  # "YYYY-MM-DD"
+    period: Mapped[str] = mapped_column(Text, nullable=False, default="day", server_default="day")  # "day"|"month"
+    period_key: Mapped[str] = mapped_column(Text, nullable=False)  # "YYYY-MM-DD" (day) | "YYYY-MM" (month)
+    count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    created_at: Mapped[str] = mapped_column(Text, nullable=False, server_default=_NOW)
+    updated_at: Mapped[str] = mapped_column(Text, nullable=False, server_default=_NOW)
+
+
+class PipelineApplyLimit(Base):
+    """Per-pipeline application counter over the board's quota window.
+
+    Keyed by ``(pipeline_id, period, period_key)`` — this pipeline's own
+    ``apply_limit`` throttle, independent of the shared per-auth counter. Same
+    window vocabulary as :class:`AuthApplyLimit`.
+    """
+
+    __tablename__ = "pipeline_apply_limits"
+    __table_args__: tuple[Constraint, ...] = (
+        UniqueConstraint("pipeline_id", "period", "period_key", name="uq_pipeline_apply_limits_pipeline_period_key"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    pipeline_id: Mapped[int] = mapped_column(ForeignKey("pipelines.id"), nullable=False, index=True)
+    period: Mapped[str] = mapped_column(Text, nullable=False, default="day", server_default="day")  # "day"|"month"
+    period_key: Mapped[str] = mapped_column(Text, nullable=False)  # "YYYY-MM-DD" (day) | "YYYY-MM" (month)
     count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     created_at: Mapped[str] = mapped_column(Text, nullable=False, server_default=_NOW)
     updated_at: Mapped[str] = mapped_column(Text, nullable=False, server_default=_NOW)

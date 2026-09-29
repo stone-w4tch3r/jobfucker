@@ -77,18 +77,18 @@ class Factory:
         return client(self._deps, self._section)
 
     def cap(self, service: str) -> int:
-        """Return ``service``'s per-auth daily cap without constructing a client.
+        """Return ``service``'s per-auth application cap without constructing a client.
 
         Args:
             service: the config ``service`` value.
 
         Returns:
-            The client class's class-level ``per_auth_daily_cap``.
+            The client class's class-level ``per_auth_apply_cap``.
 
         Raises:
             KeyError: when ``service`` was never registered.
         """
-        return self._client(service).service_info.per_auth_daily_cap
+        return self._client(service).service_info.per_auth_apply_cap
 
     def max_search_items(self, service: str) -> int | None:
         """Return ``service``'s searchable-listing cap without constructing a client.

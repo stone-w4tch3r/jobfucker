@@ -138,9 +138,10 @@ Notes:
   - The reset boundary (calendar month vs rolling window) is **not established**. This is treated as
     a **non-blocking, rare edge case**: a client must track its own creations and pace the month so it
     never approaches the cap rather than rely on the reset.
-- **Contract mapping:** this board caps **per month**, not per day. For
-  `service_info.per_auth_daily_cap`, treat the effective ceiling as `<150 / days-in-month>` (or track
-  monthly directly); do not expose a naive 150/day. See the operation-routing note in
+- **Contract mapping:** this board caps **per month**, not per day. Declare
+  `service_info.per_auth_apply_cap = 150` with `service_info.apply_period = "month"`; the core keys
+  its per-auth counter by the month (`YYYY-MM`) and stops at 150 without relying on the board's
+  `400`. Do not expose a naive 150/day. See the operation-routing note in
   [Platform map](../platform-map.md#operation-routing-candidate-surface-per-contract-method).
 - Deletes are not throttled by the same interval in the observed flow (delete → immediate re-apply
   succeeded, while quota was still available).

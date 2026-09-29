@@ -45,7 +45,7 @@ def _build_mock_factory(data_dir: Path) -> Factory:
 @given("a valid mock pipeline file is written into the runtime config dir", target_fixture="config_path")
 def write_valid_pipeline(runtime_dir: Path) -> Path:
     """Write a valid mock pipeline.yaml plus all referenced files."""
-    return write_pipeline_files(runtime_dir, daily_apply_limit=5)
+    return write_pipeline_files(runtime_dir, apply_limit=5)
 
 
 @given("an inline pipeline file is written into the runtime config dir", target_fixture="config_path")
@@ -55,12 +55,12 @@ def write_inline_pipeline(runtime_dir: Path) -> Path:
 
 
 @given(
-    parsers.parse("a mock pipeline file with daily_apply_limit {limit:d} is written"),
+    parsers.parse("a mock pipeline file with apply_limit {limit:d} is written"),
     target_fixture="config_path",
 )
 def write_over_cap_pipeline(runtime_dir: Path, limit: int) -> Path:
     """Write a mock pipeline whose limit exceeds the mock cap (200)."""
-    return write_pipeline_files(runtime_dir, daily_apply_limit=limit)
+    return write_pipeline_files(runtime_dir, apply_limit=limit)
 
 
 @when("the pipeline config is loaded", target_fixture="load_result")
@@ -126,7 +126,7 @@ def assert_inline_contents(load_result: Result[PipelineConfig, str]) -> None:
 def assert_cap_err(cap_result: Result[None, str]) -> None:
     """Assert an over-cap limit surfaces an Err naming the per-auth cap."""
     assert cap_result.is_err, cap_result.unwrap()
-    assert "per-auth daily cap" in cap_result.unwrap_err()
+    assert "per-auth apply cap" in cap_result.unwrap_err()
 
 
 # --- minimal interaction/captcha stubs for building a mock Factory ----------

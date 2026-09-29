@@ -129,16 +129,23 @@ init/update, stored in the snapshot, and never re-read later.
 
 ## Limits
 
-**TBD — the semantics are not settled.** The current implementation is corrupted by design drift:
-the `Limits` API models two counters (per-auth, per-pipeline) but the DB and callers have **one**
-shared count per `(service, login, date)`, checked against both caps (client safety cap + pipeline
-`daily_apply_limit`); effective stop = tighter cap. Proper per-pipeline semantics — if wanted — is
-a future decision. Not documented as final until settled.
+Each board declares a quota **window** (`service_info.apply_period`: `day` for HH,
+`month` for Habr) and its per-account cap for that window (`service_info.per_auth_apply_cap`;
+HH 200/day, Habr 150/month). The engine keeps **two independent counters**, both keyed by that
+window (`period` + `period_key`, where the key is `YYYY-MM-DD` or `YYYY-MM`):
 
-Unchanged regardless of resolution: each `apply` increments today's count on `ApplySucceeded`; the
-count stops the batch before the cap; an upstream `limit_exceeded` response is authoritative and
-stops the run even below local caps. Counters are shared across all pipelines on the same login —
-a breakage if the user also applies via the website (known limitation).
+- **per-auth** (`auth_apply_limits`, keyed `(service, login, period, period_key)`) — shared across
+  every pipeline on the account, capped by the board's `per_auth_apply_cap`;
+- **per-pipeline** (`pipeline_apply_limits`, keyed `(pipeline_id, period, period_key)`) — this
+  pipeline's own `limits.apply_limit` throttle.
+
+Effective stop = the tighter of the two caps; the printed reason names which cap bound. A new
+window is a new `period_key`, so a counter needs no explicit reset (the reset boundary is a
+calendar day / calendar month — `period_key()` is the one place it is decided). Each `apply`
+increments **both** counters on `ApplySucceeded`; a counter stop leaves the remaining eligible
+vacancies pending (an `Ok` report with `limit_reached`); an upstream `limit_exceeded` response is
+authoritative and stops the run even below local caps. The two counters only see applications this
+engine performs, so applying through the board's website is invisible to them (known limitation).
 
 ## Captcha behavior
 

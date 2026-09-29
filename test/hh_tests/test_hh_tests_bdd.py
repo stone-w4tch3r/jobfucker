@@ -136,7 +136,7 @@ def _config(*, hh_test_solving: HhTestSolvingConfig | None) -> PipelineConfig:
         openai=OpenAIConfig(model="gpt-test", base_url="https://api.example.com/v1", api_key="key"),
         scoring=ScoringConfig(min_required_score=3, scoring_prompt="Score {{ vacancy_formatted }}"),
         apply=ApplyConfig(apply_prompt="Apply {{ vacancy_formatted }}"),
-        limits=LimitsConfig(daily_apply_limit=50),
+        limits=LimitsConfig(apply_limit=50),
         hh_test_solving=hh_test_solving,
     )
 

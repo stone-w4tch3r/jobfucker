@@ -1,8 +1,8 @@
 """Frozen domain DTOs for the persistence layer.
 
-These are the **only** types engine / CLI / UI ever see from storage's five
-tables (``pipelines``, ``pipeline_snapshot``, ``vacancies``, ``audit_log``,
-``daily_limits``). They are deliberately:
+These are the **only** types engine / CLI / UI ever see from storage's tables
+(``pipelines``, ``pipeline_snapshot``, ``vacancies``, ``audit_log``,
+``auth_apply_limits``, ``pipeline_apply_limits``). They are deliberately:
 
 - **frozen** dataclasses (immutable value objects), so callers cannot corrupt a
   row in place and forget to persist it;
@@ -15,13 +15,15 @@ tables (``pipelines``, ``pipeline_snapshot``, ``vacancies``, ``audit_log``,
 Post-snapshot rewrite, :class:`Pipeline` is **identity only** and its config
 lives in :class:`PipelineSnapshot`. Result rows (`vacancies`/`audit_log`) carry
 the pipeline **identity** plus the **snapshot** whose config produced the
-artifact via the ``*_snapshot_id`` fields. :class:`DailyLimit` is keyed per auth
-``(service, login, date)``, shared across pipelines.
+artifact via the ``*_snapshot_id`` fields. :class:`AuthApplyLimit` is keyed per
+auth ``(service, login, period, period_key)``; :class:`PipelineApplyLimit` per
+``(pipeline_id, period, period_key)``.
 
 Dates mirror the DDL's storage: SQLite stores them as ``TEXT`` via
-``datetime('now')`` (e.g. ``"2026-08-05 12:00:00"``) and the daily-limit ``date``
-as ``"YYYY-MM-DD"``. All date-ish fields are therefore ``str`` here so nothing is
-re-parsed or forced into a ``timezone``-aware object at the persistence boundary.
+``datetime('now')`` (e.g. ``"2026-08-05 12:00:00"``); a quota ``period_key`` is
+``"YYYY-MM-DD"`` (day) or ``"YYYY-MM"`` (month). All date-ish fields are therefore
+``str`` here so nothing is re-parsed or forced into a ``timezone``-aware object at
+the persistence boundary.
 """
 
 from __future__ import annotations
@@ -29,7 +31,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-from jobfucker.clients.base import ServiceVacancyId
+from jobfucker.clients.base import QuotaPeriod, ServiceVacancyId
 
 # --- Shared value types ------------------------------------------------------
 # Closed set of apply outcomes. Mirrors the DDL CHECK exactly: `rejected` is
@@ -90,7 +92,7 @@ class PipelineSnapshot:
     min_required_score: int
     scoring_prompt: str  # scoring prompt template CONTENT
     apply_prompt: str  # apply prompt template CONTENT
-    daily_apply_limit: int
+    apply_limit: int
     created_at: str
     # Optional reasoning_effort scalar from the ``openai`` section (None = not
     # configured/omitted). Defaulted so pre-existing construction sites (which
@@ -162,19 +164,37 @@ class AuditLogEntry:
     created_at: str
 
 
-# --- daily_limits ------------------------------------------------------------
+# --- apply_limits ------------------------------------------------------------
 @dataclass(frozen=True, slots=True)
-class DailyLimit:
-    """A per-auth, per-day application counter row (frozen view of `daily_limits`).
+class AuthApplyLimit:
+    """The per-auth counter row (frozen view of ``auth_apply_limits``).
 
-    Keyed by ``(service, login, date)`` — shared across every pipeline using the
-    account, so a cap is never double-counted per pipeline.
+    One counter per ``(service, login, period, period_key)`` — shared across
+    every pipeline using the account, so the board's cap is never double-counted.
     """
 
     id: int
     service: str  # client selector ("mock", "hh", ...)
     login: str  # auth login identifying the account
-    date: str  # "YYYY-MM-DD"
+    period: QuotaPeriod  # board-declared quota window
+    period_key: str  # "YYYY-MM-DD" (day) | "YYYY-MM" (month)
+    count: int
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class PipelineApplyLimit:
+    """A pipeline's own counter row (frozen view of ``pipeline_apply_limits``).
+
+    One counter per ``(pipeline_id, period, period_key)`` — this pipeline's
+    ``apply_limit`` throttle, independent of the shared per-auth counter.
+    """
+
+    id: int
+    pipeline_id: int
+    period: QuotaPeriod  # board-declared quota window
+    period_key: str  # "YYYY-MM-DD" (day) | "YYYY-MM" (month)
     count: int
     created_at: str
     updated_at: str

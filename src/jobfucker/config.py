@@ -186,7 +186,7 @@ class LimitsConfig(BaseModel):
     Schema twin: ``PipelineLimitsYaml`` (``app/pipeline_schema_source.py``)
     """
 
-    daily_apply_limit: int = 50
+    apply_limit: int = 50
 
 
 class PipelineConfig(BaseModel):
@@ -774,7 +774,7 @@ class PersistedPipelineRefs:
     min_required_score: int
     scoring_prompt: str  # scoring prompt template content
     apply_prompt: str  # apply prompt template content
-    daily_apply_limit: int
+    apply_limit: int
     service_section: str | None  # opaque service.<board> JSON
     openai_captcha: str | None  # opaque openai_captcha JSON
     # Optional hh screening-test solving block (enabled + prompt template
@@ -855,7 +855,7 @@ def reconstruct_pipeline_config(refs: PersistedPipelineRefs) -> Result[PipelineC
         openai_captcha=captcha,
         scoring=ScoringConfig(min_required_score=refs.min_required_score, scoring_prompt=refs.scoring_prompt.strip()),
         apply=ApplyConfig(apply_prompt=refs.apply_prompt.strip()),
-        limits=LimitsConfig(daily_apply_limit=refs.daily_apply_limit),
+        limits=LimitsConfig(apply_limit=refs.apply_limit),
         hh_test_solving=hh_test_solving,
     )
     config.set_service_section(section)
@@ -864,13 +864,15 @@ def reconstruct_pipeline_config(refs: PersistedPipelineRefs) -> Result[PipelineC
 
 # --- Config-time cap validation (task 4.3) ----------------------------------
 def validate_cap(pipeline: PipelineConfig, factory: Factory) -> Result[None, str]:
-    """Validate ``limits.daily_apply_limit`` against the client's per-auth cap.
+    """Validate ``limits.apply_limit`` against the client's per-auth cap.
 
     The cap is read via ``Factory.cap``, which looks up the client's
-    class-level ``service_info.per_auth_daily_cap`` without constructing a
+    class-level ``service_info.per_auth_apply_cap`` without constructing a
     client — a cap is static client metadata, never something that needs a live
-    client (and never a constant in core). A violation is a config error surfaced
-    immediately (``jobfucker init`` turns this into a non-zero exit + message).
+    client (and never a constant in core). Both count over the board's declared
+    window, so the comparison is like-for-like. A violation is a config error
+    surfaced immediately (``jobfucker init`` turns this into a non-zero exit +
+    message).
 
     Args:
         pipeline: the validated pipeline config.
@@ -884,9 +886,9 @@ def validate_cap(pipeline: PipelineConfig, factory: Factory) -> Result[None, str
         cap = factory.cap(pipeline.service)
     except KeyError as exc:
         return Err(str(exc))
-    limit = pipeline.limits.daily_apply_limit
+    limit = pipeline.limits.apply_limit
     if limit > cap:
-        return Err(f"daily_apply_limit ({limit}) exceeds the {pipeline.service!r} per-auth daily cap ({cap})")
+        return Err(f"apply_limit ({limit}) exceeds the {pipeline.service!r} per-auth apply cap ({cap})")
     return Ok(None)
 
 

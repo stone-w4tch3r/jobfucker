@@ -237,8 +237,8 @@ def test_hand_copied_constraints_match_loader() -> None:
     assert authored_captcha.metadata == loader_captcha.metadata  # ge/le bounds
     assert authored_captcha.default == loader_captcha.default == 4  # type: ignore[reportAny]  # rationale: FieldInfo.default is typed Any; the equality chain pins the exact value
 
-    assert PipelineLimitsYaml.model_fields["daily_apply_limit"].default == 50  # type: ignore[reportAny]  # rationale: FieldInfo.default is typed Any; pinned to 50
-    assert LimitsConfig.model_fields["daily_apply_limit"].default == 50  # type: ignore[reportAny]  # rationale: FieldInfo.default is typed Any; pinned to 50
+    assert PipelineLimitsYaml.model_fields["apply_limit"].default == 50  # type: ignore[reportAny]  # rationale: FieldInfo.default is typed Any; pinned to 50
+    assert LimitsConfig.model_fields["apply_limit"].default == 50  # type: ignore[reportAny]  # rationale: FieldInfo.default is typed Any; pinned to 50
 
 
 def test_authored_service_keys_match_board_registry() -> None:

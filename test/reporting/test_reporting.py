@@ -24,6 +24,7 @@ from __future__ import annotations
 
 from collections.abc import Coroutine
 from dataclasses import replace
+from datetime import UTC, datetime
 
 import pytest
 from rusty_results.prelude import Err
@@ -47,7 +48,7 @@ from test.pipeline_helpers import (
 )
 from test.storage.builders import build_vacancy
 
-TODAY = "2026-08-05"
+NOW = datetime(2026, 8, 5, 12, 0, tzinfo=UTC)
 
 
 class RecordingReporter:
@@ -299,10 +300,10 @@ async def test_apply_publishes_applied_events(client_deps: ClientDeps, storage: 
         ApplyTargets(client=factory.get("mock"), resume_id="mock-resume-1"),
         snapshot_id=(await snapshot_for(storage, pipeline)).id,
         min_required_score=3,
-        daily_apply_limit=50,
+        apply_limit=50,
         login="login@example.com",
         service="mock",
-        today=TODAY,
+        now=NOW,
         progress=reporter,
     )
 
@@ -330,10 +331,10 @@ async def test_apply_publishes_ignore_event_per_ineligible_vacancy(client_deps: 
         ApplyTargets(client=factory.get("mock"), resume_id="mock-resume-1"),
         snapshot_id=(await snapshot_for(storage, pipeline)).id,
         min_required_score=3,
-        daily_apply_limit=50,
+        apply_limit=50,
         login="login@example.com",
         service="mock",
-        today=TODAY,
+        now=NOW,
         progress=reporter,
     )
 

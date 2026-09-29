@@ -133,7 +133,7 @@ def make_mock_section(
 
 def build_pipeline_config(
     *,
-    daily_apply_limit: int = 50,
+    apply_limit: int = 50,
     min_required_score: int = 3,
     behavior: MockBehaviorConfig | None = None,
     name: str = "test-pipeline",
@@ -161,7 +161,7 @@ def build_pipeline_config(
         openai_captcha=None,
         scoring=ScoringConfig(min_required_score=min_required_score, scoring_prompt="Score {{ vacancy_formatted }}"),
         apply=ApplyConfig(apply_prompt="Apply for {{ vacancy_formatted }}"),
-        limits=LimitsConfig(daily_apply_limit=daily_apply_limit),
+        limits=LimitsConfig(apply_limit=apply_limit),
     )
     config.set_service_section(make_mock_section(mock_vacancies(), behavior=behavior))
     return config
@@ -172,7 +172,7 @@ async def create_pipeline(
     *,
     name: str = "engine-test",
     min_required_score: int = 3,
-    daily_apply_limit: int = 50,
+    apply_limit: int = 50,
     login: str = "login@example.com",
 ) -> Pipeline:
     """Create + store a :class:`Pipeline` identity with the given thresholds.
@@ -183,7 +183,7 @@ async def create_pipeline(
     """
     config = build_pipeline_config(
         name=name,
-        daily_apply_limit=daily_apply_limit,
+        apply_limit=apply_limit,
         min_required_score=min_required_score,
         login=login,
     )

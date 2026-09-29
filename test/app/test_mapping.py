@@ -76,7 +76,7 @@ def _assert_content_scalar_parity(snapshot: PipelineSnapshot, config: PipelineCo
     assert snapshot.min_required_score == config.scoring.min_required_score
     assert snapshot.scoring_prompt == config.scoring.scoring_prompt
     assert snapshot.apply_prompt == config.apply.apply_prompt
-    assert snapshot.daily_apply_limit == config.limits.daily_apply_limit
+    assert snapshot.apply_limit == config.limits.apply_limit
 
 
 @pytest.mark.unit
@@ -151,7 +151,7 @@ def test_to_persisted_refs_maps_snapshot_dto_field_for_field() -> None:
     assert refs.min_required_score == snap.min_required_score
     assert refs.scoring_prompt == snap.scoring_prompt
     assert refs.apply_prompt == snap.apply_prompt
-    assert refs.daily_apply_limit == snap.daily_apply_limit
+    assert refs.apply_limit == snap.apply_limit
     assert refs.service_section == snap.service_section
     assert refs.openai_captcha == snap.openai_captcha
 

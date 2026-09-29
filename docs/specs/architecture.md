@@ -58,15 +58,16 @@ INFRASTRUCTURE    storage/ (SQLAlchemy + alembic) · captcha/ (board-agnostic)
 
 ## Data model (summary — ORM is the authority)
 
-Five tables (`storage/models.py`):
+Six tables (`storage/models.py`):
 
 | Table | Shape |
 | --- | --- |
 | `pipelines` | **Identity only**: `id`, `name` (unique, active), `description`, `current_snapshot_id`, timestamps. No config. |
-| `pipeline_snapshot` | **Append-only**, `snapshot_no` per pipeline. The whole `pipeline.yaml` as **content columns**: service + opaque `service_section` JSON (with the search pool), login/password/resume, openai fields (incl. `openai_captcha` JSON), prompts, `min_required_score`, `daily_apply_limit`. |
+| `pipeline_snapshot` | **Append-only**, `snapshot_no` per pipeline. The whole `pipeline.yaml` as **content columns**: service + opaque `service_section` JSON (with the search pool), login/password/resume, openai fields (incl. `openai_captcha` JSON), prompts, `min_required_score`, `apply_limit`. |
 | `vacancies` | Listing fields + results (`score`, `score_reasoning`, `cover_letter`, `apply_status` CHECK, errors), `has_hh_test` (fetch-time flag), `manual_skip`(+reason), `notes`, `soft_deleted_at`, staleness timestamps (`fetched/scored/generated/user_edited_at`), **four provenance FKs** `*_snapshot_id`. Ordered by `id` (no position column). |
 | `audit_log` | `pipeline_id`, `pipeline_snapshot_id`, `action`, `details` JSON. |
-| `daily_limits` | `count` per **`(service, login, date)`** — UNIQUE, shared across all pipelines on the account. No `pipeline_id`. |
+| `auth_apply_limits` | `count` per **`(service, login, period, period_key)`** — UNIQUE, shared across all pipelines on the account. No `pipeline_id`. |
+| `pipeline_apply_limits` | `count` per **`(pipeline_id, period, period_key)`** — UNIQUE; this pipeline's own `apply_limit` throttle. |
 
 HH auth state lives outside SQL: `$DATA_DIR/hh/<sha256(login)>/auth-state.json` — tokens + cookies, 0600, atomic write (`TokenStore`).
 
@@ -76,7 +77,7 @@ HH auth state lives outside SQL: `$DATA_DIR/hh/<sha256(login)>/auth-state.json` 
 2. **The DB is the config.** After `init`, no command reads `pipeline.yaml` again; each stage run reconstructs a full `PipelineConfig` from the head snapshot with zero file I/O.
 3. **Provenance.** Every artifact column records which snapshot produced it (`fetched/scored/generated/applied_snapshot_id`).
 4. **Fetch is insert-only.** New ids inserted; existing rows untouched unless `--refresh` (listing fields only, dirty-checked). Soft-delete is manual, never set by fetch.
-5. **One shared daily counter.** `daily_limits` counts per `(service, login, date)`; each apply checks that one count against both caps (client `per_auth_daily_cap`, pipeline `daily_apply_limit`). Semantics marked TBD in the product spec — see Limits there.
+5. **Two window-keyed counters.** `auth_apply_limits` counts per `(service, login, period, period_key)` and `pipeline_apply_limits` per `(pipeline_id, period, period_key)`; each apply checks the per-auth count against the client `per_auth_apply_cap` and the per-pipeline count against the pipeline `apply_limit`. `period` comes from the client (`service_info.apply_period`: day for HH, month for Habr). See Limits in the product spec.
 
 ## Composition roots
 

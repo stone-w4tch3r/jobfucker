@@ -656,7 +656,7 @@ def test_apply_limit_stop_ledger_sums_and_stop_line(storage: Storage, monkeypatc
     result = runner.invoke(app, ["run", "--pipeline-id", str(pipeline.id)])
     assert result.exit_code == 0
     assert "[1/3] applied mock-1 — " in result.output
-    assert "stopping: board signalled the daily limit" in result.output
+    assert "stopping: board signalled its application limit" in result.output
     # Partition invariant on printed numbers: 1 + 0 + 0 + 2 = 3 (the window).
     assert "apply: 3 in this run — 1 applied, 0 declined, 0 failed, 2 not attempted (limit)" in result.output
 
@@ -668,7 +668,7 @@ def test_apply_zero_attempt_stop_reports_stop_reason(storage: Storage, monkeypat
     pipeline = async_run(create_pipeline(storage, name="mock-zero-attempt"))
     result = runner.invoke(app, ["run", "--pipeline-id", str(pipeline.id)])
     assert result.exit_code == 0
-    assert "stopping: board signalled the daily limit" in result.output
+    assert "stopping: board signalled its application limit" in result.output
     assert "apply: 3 in this run — 0 applied, 0 declined, 0 failed, 3 not attempted (limit)" in result.output
 
 

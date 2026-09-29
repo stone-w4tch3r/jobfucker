@@ -238,7 +238,7 @@ def _run_stage(
             ApplyTargets(client=client, resume_id=config.service_section.resume_id),
             snapshot_id=seeded.snapshot_id,
             min_required_score=snapshot.min_required_score,
-            daily_apply_limit=snapshot.daily_apply_limit,
+            apply_limit=snapshot.apply_limit,
             login=snapshot.login,
             service=snapshot.service,
             filters=filters if filters is not None else ApplyFilters(),

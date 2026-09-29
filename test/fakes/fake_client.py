@@ -16,7 +16,7 @@ local test-dir convention.
 It reflects the frozen contract: the ``Client`` protocol is **non-generic**
 (there is no ``SearchParams``), every client is constructed from ``(deps,
 section)`` (``ClientDeps`` + the board's typed ``service.<board>`` section), and
-the client's per-auth daily cap is **class-level metadata** read via
+the client's per-auth apply cap is **class-level metadata** read via
 ``Factory.cap`` without constructing a client. Accordingly ``FakeClient`` is
 built from a ``(deps, section)`` pair, self-configures from its section, and
 carries ``service``/``service_info`` as class attributes so ``Factory.cap``
@@ -159,14 +159,15 @@ class FakeClient(Client):
     Construct it exactly like a real client — from a ``(deps, section)`` pair —
     with optional canned data and programmable behaviors; defaults are
     "everything succeeds". ``service``/``service_info`` are **class attributes**
-    so ``Factory.cap`` reads the fake's per-auth daily cap without constructing
+    so ``Factory.cap`` reads the fake's per-auth apply cap without constructing
     one. Used by engine/CLI/UI tests that need a client without a live board.
     """
 
     service: str = "fake"
     service_info: ServiceInfo = ServiceInfo(
         service="fake",
-        per_auth_daily_cap=_FAKE_CAP,
+        per_auth_apply_cap=_FAKE_CAP,
+        apply_period="day",
         max_search_items=None,  # the fake's canned listing has no search cap
     )
 
@@ -302,7 +303,7 @@ class FakeClient(Client):
             case "error":
                 result = Ok(ApplyFailed(ApplyError(text=behavior.message or "fake apply rejected")))
             case "limit_exceeded":
-                result = Err(LimitExceededError(message=behavior.message or "fake per-auth daily cap reached"))
+                result = Err(LimitExceededError(message=behavior.message or "fake per-auth apply cap reached"))
             case "config_error":
                 result = Err(ConfigurationError(message=behavior.message or "fake configured resume rejected"))
             case "auth_error":

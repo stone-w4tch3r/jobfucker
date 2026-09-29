@@ -14,7 +14,7 @@ from __future__ import annotations
 from dataclasses import replace
 
 from jobfucker.clients.base import ServiceVacancyId
-from jobfucker.storage.dto import ApplyStatus, DailyLimit, Pipeline, PipelineSnapshot, VacancyRecord
+from jobfucker.storage.dto import ApplyStatus, Pipeline, PipelineSnapshot, VacancyRecord
 
 # Frozen default DTOs; `make_*` re-derives a copy with overrides applied.
 _BASE_PIPELINE = Pipeline(
@@ -46,7 +46,7 @@ _BASE_SNAPSHOT = PipelineSnapshot(
     min_required_score=3,
     scoring_prompt="Score {{ vacancy_formatted }}",
     apply_prompt="Apply for {{ vacancy_formatted }}",
-    daily_apply_limit=50,
+    apply_limit=50,
     created_at="2026-08-05 09:00:00",
     openai_reasoning_effort=None,
 )
@@ -114,17 +114,4 @@ def build_vacancy(
         external_id=ServiceVacancyId(external_id),
         apply_status=apply_status,
         **overrides,
-    )
-
-
-def make_limit(*, service: str = "mock", login: str, date: str, count: int = 0) -> DailyLimit:
-    """Build an auth-keyed :class:`DailyLimit` DTO with the given identity fields."""
-    return DailyLimit(
-        id=0,
-        service=service,
-        login=login,
-        date=date,
-        count=count,
-        created_at="2026-08-05 09:00:00",
-        updated_at="2026-08-05 09:00:00",
     )

@@ -52,7 +52,7 @@ _SAME_CONFIG_FIELDS: tuple[str, ...] = (
     "scoring_prompt",
     "apply_prompt",
     "hh_test_solving",
-    "daily_apply_limit",
+    "apply_limit",
 )
 
 
