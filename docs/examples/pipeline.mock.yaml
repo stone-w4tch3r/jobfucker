@@ -146,4 +146,5 @@ scoring:
 apply:
   apply_prompt_file: "prompts/apply-mock.xml.j2"
 limits:
+  # Measurement window follows the client: mock/day (like HH = per day; Habr = per month).
   apply_limit: 5

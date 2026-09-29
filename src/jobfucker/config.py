@@ -181,7 +181,11 @@ class HhTestSolvingConfig(BaseModel):
 
 
 class LimitsConfig(BaseModel):
-    """Per-pipeline limit, validated at config time against the client cap.
+    """Per-pipeline application limit, validated at config time against the client cap.
+
+    ``apply_limit``'s measurement window is the **client's declared quota period**
+    (``service_info.apply_period``): per day for HH, per calendar month for Habr —
+    the same window the board's per-auth cap counts over.
 
     Schema twin: ``PipelineLimitsYaml`` (``app/pipeline_schema_source.py``)
     """

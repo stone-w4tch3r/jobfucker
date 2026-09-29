@@ -203,7 +203,15 @@ class PipelineLimitsYaml(BaseModel):
 
     model_config = ConfigDict(title="Limits", extra="forbid")
 
-    apply_limit: int = 50
+    apply_limit: int = Field(
+        default=50,
+        description=(
+            "This pipeline's own application limit. Its measurement window is the "
+            "client's declared quota period (service_info.apply_period): per day for HH, "
+            "per calendar month for Habr — the same window the board's per-auth cap "
+            "counts over. Must not exceed the client's per-auth cap."
+        ),
+    )
 
 
 # --- Service mapping --------------------------------------------------------

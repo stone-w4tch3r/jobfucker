@@ -1508,6 +1508,7 @@
       "properties": {
         "apply_limit": {
           "default": 50,
+          "description": "This pipeline's own application limit. Its measurement window is the client's declared quota period (service_info.apply_period): per day for HH, per calendar month for Habr \u2014 the same window the board's per-auth cap counts over. Must not exceed the client's per-auth cap.",
           "title": "Apply Limit",
           "type": "integer"
         }
@@ -1998,5 +1999,5 @@
   ],
   "title": "jobfucker pipeline.yaml",
   "type": "object",
-  "x-jobfucker-schema-version": "sha256:059b17320be3feccd3a9a2b18de2824632a681d8b420354a8027b72ff5460ffb"
+  "x-jobfucker-schema-version": "sha256:da05d9676c1846f60cb0d46a5a8a44a9fb21bc6b35176fbc6df1b97731fec99a"
 }

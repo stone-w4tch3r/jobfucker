@@ -103,5 +103,7 @@ apply:
 #   test_prompt_file: "prompts/hh-test-java-fullstack.xml.j2"
 
 # --- Limits -------------------------------------------------------------------
+# apply_limit's window follows the client's quota period: HH = per day,
+# Habr = per calendar month (same window as the board's per-auth cap).
 limits:
   apply_limit: 50            # консервативный предохранитель на pipeline
