@@ -99,6 +99,20 @@ class FakeBrowserSession:
         del selector
         return self.url == ERROR_URL
 
+    async def click_in_frame(self, frame_selector: str, selector: str, *, timeout_s: float = 15.0) -> None:
+        """Unused by the HH flow: scripted no-op satisfying the widened protocol."""
+        del frame_selector, selector, timeout_s
+
+    async def wait_for_value(self, selector: str, *, timeout_s: float) -> str | None:
+        """Unused by the HH flow: scripted no-op satisfying the widened protocol."""
+        del selector, timeout_s
+        return None
+
+    async def wait_for_hidden(self, selector: str, *, timeout_s: float) -> bool:
+        """Unused by the HH flow: scripted no-op satisfying the widened protocol."""
+        del selector, timeout_s
+        return True
+
 
 class FakeBrowserDriver:
     """Driver double yielding scripted sessions; records every session opened."""

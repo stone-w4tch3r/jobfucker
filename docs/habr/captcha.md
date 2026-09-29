@@ -11,7 +11,9 @@ because the challenge is risk-based and the block threshold is unknown
 (see [the research playbook](research-playbook.md#captcha-handling-rule)).
 
 > Freshness: captured 2026-09-18 from fresh unauthenticated browser sessions and browserless HTTP
-> against `career.habr.com/users/auth/tmid` / `account.habr.com`. Consolidated 2026-09-23.
+> against `career.habr.com/users/auth/tmid` / `account.habr.com`. Consolidated 2026-09-23. Re-probed
+> 2026-09-29 (dev account): the `/check` request encoding, the image content type, the `spravka`
+> length, and the browser-click mechanics were pinned — see below.
 
 ## Where it appears
 
@@ -77,10 +79,11 @@ A human solved the checkbox in the headed browser while the agent recorded traff
         ?host=account.habr.com&sitekey=<sitekey>&href=<login-page-url>
    ```
 
-   Response: HTTP 200, `{"status":"ok","spravka":"<token>"}`. The `spravka` is a ~400-char
-   base64-ish string whose decoded head looks like `t=<unix-ts>;i=<ip>;D=<digest>...`.
+   Response: HTTP 200, `{"status":"ok","spravka":"<token>"}`. The `spravka` is a ~308-char
+   base64-ish string whose decoded head looks like `t=<unix-ts>;i=<ip>;D=<digest>...` (observed
+   308 on 2026-09-29; an earlier capture saw ~400, so treat the length as ≥300, not a constant).
 4. The widget writes `spravka` into the hidden field `input[name="smart-token"]`
-   (observed length 400).
+   (observed ~308 chars, 2026-09-29).
 5. On form submit, `POST /ru/ident/in/<state-token>` is issued as an **XHR** and returns HTTP 200
    with an empty body; the page then navigates client-side.
 
@@ -136,7 +139,7 @@ Response shape (sanitized):
 
 - `captcha.image` is a **loader**: base64url-decode the query segment (split on `,`) to get the real
   URL `https://img.smartcaptcha.yandexcloud.net/image?key=<...>`. The image fetched from that URL
-  with no cookies and no browser returned `200 image/jpeg` and was solvable, so the image is bound
+  with no cookies and no browser returned `200 image/png` and was solvable, so the image is bound
   to IP + challenge lifetime, not to a cookie jar.
 - A wrong answer returns `status:"failed"` with a **new** `captcha.key` and a new image; the
   challenge refreshes rather than locking. No lockout was reached in ~4 wrong submissions.
@@ -193,7 +196,12 @@ hammering risks an unknown block.
 
 ## Auto-solve feasibility (verified)
 
-The advanced image challenge was solved **fully automatically over pure HTTP** on 2026-09-18:
+The advanced image challenge was solved **fully automatically over pure HTTP** on 2026-09-18 and
+reproduced end-to-end on 2026-09-29:
+
+- **`/check` is POST-only** (a `GET` returns `404`). The query string carries `host`, `sitekey`,
+  `href`; the form-urlencoded body carries `sitekey`, `lang`, `test`, `webview`, plus per-step
+  `key` / `pdata` / `rep` (pinned 2026-09-29).
 
 1. `GET https://career.habr.com/users/auth/tmid` (redirects to the login page; no captcha on GET) to
    obtain the login-page URL used as `href`.
@@ -231,11 +239,37 @@ fingerprint; `navigator.webdriver` not true), fresh transient **headless** sessi
 
 Method: open `career.habr.com/users/auth/tmid`, then programmatically click the checkbox by its
 snapshot ref (agent-browser inlines the cross-origin iframe). No image/advanced challenge appeared.
+Re-probed 2026-09-29 with `patchright`: the checkbox iframe is injected ~8 s after DOMContentLoaded
+and must be waited for; clicking the **iframe element itself fails** — the working flows are a real
+mouse click at the checkbox pixel or a click on the frame's `input` (the frame `button` is only the
+help "?").
 
 | Attempt | Checkbox click | `smart-token` | Full login |
 | --- | --- | --- | --- |
 | 1 | automated | populated (len 400) | Yes — callback chain ran, `/api/frontend_v1/users/me` → 200 |
 | 2 | automated | populated (len 396) | not repeated |
+
+Two click-mechanics gotchas were pinned on 2026-09-29 while hardening the shared seam
+(`clients/shared/browser.py::click_in_frame`); both were observed live:
+
+- **The frame element is visible before its document is interactive.** An `<iframe>` can be inserted
+  and satisfy Playwright's `state="visible"` while its cross-origin document is still loading, and
+  `Locator.bounding_box()` does *not* wait — a click at that moment lands on an inert frame (the
+  widget's own click handshake is bound by the frame's inline script). The seam therefore waits for
+  the **in-frame target element itself** (`frame_locator(...).locator("input").wait_for(state="visible")`)
+  before resolving the box and clicking. A live probe with the old code logged the checkbox frame
+  absent at click time and produced no token; waiting for the target produced a token on the same page.
+- **The first click on a fresh page is routinely dropped.** The in-frame click registers, but the
+  widget issues **no `/check`** for it — the only `/check` before then is the widget's own autonomous
+  precheck (`{status:"failed",captcha:{type:"checkbox"}}`). A subsequent click on the *same* page
+  fires the submit `/check`. Because a re-login opens a fresh page each time, a single click per page
+  never yields a token; the Habr solver now re-clicks within the page (bounded) before giving up.
+
+Escalation note: after a run of automated attempts the server stops granting the click pass. Live
+2026-09-29 after ~a dozen automated solves, the checkbox click returned `{status:"failed",
+captcha:{type:"image"}}` and the `iframe[title="SmartCaptcha advanced"]` appeared — the documented
+image escalation. Once a page escalates, no click produces a token; the vision fallback is the
+correct response (and the reason a long automated session should not be expected to keep passing).
 
 Click mechanics observed: pointer-click telemetry to `mc.yandex.ru` → `POST
 smartcaptcha.cloud.yandex.ru/check?host=...&sitekey=...&href=...` → `{"status":"ok","spravka":"..."}`
@@ -311,7 +345,11 @@ browser = await p.chromium.launch(
 
 Gotcha that caused a false negative in the first probe run: the widget's
 `.SmartCaptcha-Overlay_show_spinner` overlay must clear before clicking the checkbox. Clicking while
-the spinner is present does not produce a token. Wait for the overlay to disappear, then click.
+the spinner is present does not produce a token. Two further pitfalls (2026-09-29): wait for the
+in-frame `input` element itself (the frame element can be "visible" while its document is still
+loading; `bounding_box()` does not wait), and expect the **first click on a fresh page to be
+dropped** — re-click within the same page.
+ Wait for the overlay to disappear, then click.
 
 Escalation handling: if `/check` returns `status != "ok"` (e.g. an image captcha), do not retry in a
 loop. Treat it as escalation and hand off per the playbook; a UA/fingerprint mismatch is the likely
@@ -379,3 +417,5 @@ a separate gate.
 | CAPTCHA | `account.habr.com` login still loads Yandex SmartCaptcha with sitekey `ysc1_zgWuDVpgrG9kwB8QEfIkuWseZyEnRzHLCAPF2dwh1db6e985` |
 | CAPTCHA enforcement | A token-less login POST still answers `{"success":false,"errors":{"smart-token":"..."}}` |
 | CAPTCHA escalation | `POST smartcaptcha.cloud.yandex.ru/check` still answers `{status:"failed",captcha:{type:"checkbox"\|"image"},pow:{complexity:10}}`; `pow` still verifies as `sha256(prefix ++ nonce)` with `complexity` leading zero bits |
+| CAPTCHA encoding | `/check` is still POST-only (GET → `404`), query carries `host`/`sitekey`/`href`, body carries `sitekey`/`lang`/`test`/`webview` (+ `key`/`pdata`/`rep`) |
+| CAPTCHA click | The checkbox lives in `iframe[title="SmartCaptcha checkbox"]`, injected ~8 s after load; clicking the iframe element yields no token, a real click on the frame `input`/checkbox pixel does. Wait for the in-frame `input` to be visible (not just the iframe element) and re-click because the first click on a fresh page is dropped. |

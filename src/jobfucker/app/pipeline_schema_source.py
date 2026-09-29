@@ -37,6 +37,7 @@ from typing import Annotated, Final
 
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
+from jobfucker.clients.habr.config import HabrServiceConfig
 from jobfucker.clients.hh.config import HHServiceConfig
 from jobfucker.clients.mock.params import MockServiceConfig
 from jobfucker.schema_source import SchemaSource
@@ -229,12 +230,13 @@ class PipelineServiceYaml(BaseModel):
         extra="forbid",
         json_schema_extra={  # lint-ignore[raw-dict]: JSON Schema constraint fragment
             "description": "Exactly one board key; the single key selects the client.",
-            "oneOf": [{"required": ["mock"]}, {"required": ["hh"]}],
+            "oneOf": [{"required": ["mock"]}, {"required": ["hh"]}, {"required": ["habr"]}],
         },
     )
 
     mock: MockServiceConfig | None = Field(default=None, json_schema_extra=_not_null())
     hh: HHServiceConfig | None = Field(default=None, json_schema_extra=_not_null())
+    habr: HabrServiceConfig | None = Field(default=None, json_schema_extra=_not_null())
 
 
 # --- Root -------------------------------------------------------------------

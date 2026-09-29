@@ -16,6 +16,8 @@ from __future__ import annotations
 from pydantic import BaseModel
 
 from jobfucker.clients.factory import Factory
+from jobfucker.clients.habr.client import HabrClient
+from jobfucker.clients.habr.config import HabrServiceConfig
 from jobfucker.clients.hh.client import HHClient
 from jobfucker.clients.hh.config import HHServiceConfig
 from jobfucker.clients.mock.client import MockClient
@@ -31,6 +33,7 @@ SectionModel = type[BaseModel]
 # first-party clients). Immutable by convention (module-level dict; enforced by
 # the custom linter marker below).
 SERVICE_SECTION_MODELS: dict[str, SectionModel] = {  # lint-ignore[module-mutable-state]: m  # lint-ignore[raw-dict]: m
+    "habr": HabrServiceConfig,
     "hh": HHServiceConfig,
     "mock": MockServiceConfig,
 }
@@ -43,5 +46,6 @@ def register_clients(factory: Factory) -> None:
         factory: the composition root's :class:`Factory`, already bound to the
             run's deps and config section.
     """
+    factory.register("habr", HabrClient)
     factory.register("hh", HHClient)
     factory.register("mock", MockClient)

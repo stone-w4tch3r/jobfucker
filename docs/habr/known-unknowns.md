@@ -31,8 +31,9 @@ unknown:
 - The accepted value shape of `company_ids[]` and the specialization filter (`divisions` / `s`);
   both were attempted and did not filter as expected.
 - Archived/hidden vacancies: whether they appear in listings and how they count toward totals.
-- The exact accessible-position cap (last observed position 995; declared 1000) and whether it
-  varies per query or account.
+- The accessible-position cap is bounded by `meta.totalPages` (observed ~950 for an 1118-item pool);
+  whether it varies per query or account is untested. Declare `max_search_items = 1000`
+  conservatively.
 - Whether `type=suitable` requires an owned resume and how the board selects it.
 - Rate/captcha behavior on the listing endpoint at fetch volume.
 
@@ -91,8 +92,9 @@ daily; per account, not per IP; deletes still count). Still unknown:
   Follow the [CAPTCHA rule](research-playbook.md#captcha-handling-rule).
 - Qrator WAF behavior under load: whether it issues an interstitial or cookie-refresh challenge, and
   its trigger.
-- Rate-limit behavior and retry headers: none observed at low volume; thresholds, `429`, and
-  `Retry-After` are unestablished (see [Transport and errors](api/transport-and-errors.md)).
+- Rate-limit behavior and retry headers: a `429` was observed once under a request burst
+  (2026-09-29) with no `Retry-After`; the trigger threshold and any retry header are unestablished
+  (see [Transport and errors](api/transport-and-errors.md)).
 - Error taxonomy: core shapes are mapped in
   [Transport and errors](api/transport-and-errors.md), but `5xx` bodies, any `429`/`Retry-After`, and
   the Qrator block page are unestablished. The `{"httpCode":…,"errorCode":…}` envelope is verified

@@ -38,6 +38,10 @@ secrets/
 
 /logs/
 
+# ---- Agent Manager runtime state (worktrees, session bookkeeping) ----
+.kilo/worktrees/
+.kilo/agent-manager.json
+
 # ---- editor / OS ----
 .idea/
 # Ignore VS Code dir contents but keep the editor config files we DO want tracked

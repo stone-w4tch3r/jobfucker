@@ -801,6 +801,229 @@
       "title": "Work arrangement",
       "type": "object"
     },
+    "HabrEmployment": {
+      "description": "Employment type as the board exposes it.",
+      "enum": [
+        "full_time",
+        "part_time"
+      ],
+      "title": "HabrEmployment",
+      "type": "string"
+    },
+    "HabrFilterConfig": {
+      "additionalProperties": false,
+      "description": "User-facing flat filter contract for ``service.habr.searches[].filter``.\n\nEvery field carries UI annotations; :meth:`to_search_filters` is the one-way\nbridge to the wire model. Only verified filters are exposed \u2014 a filter that\nlies (silently ignored upstream) is worse than no filter.",
+      "properties": {
+        "employment": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HabrEmployment"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Employment type (employment_type=\u2026); omitted = any.",
+          "title": "Employment"
+        },
+        "locations": {
+          "default": [],
+          "description": "Prefixed location ids (locations[]=\u2026); bare numeric ids are rejected.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Locations",
+          "type": "array"
+        },
+        "qualification": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HabrQualification"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Required grade (qid 1/3/4/5/6); omitted = any grade.",
+          "title": "Qualification"
+        },
+        "remote": {
+          "default": false,
+          "description": "Only remote vacancies (remote=true).",
+          "title": "Remote",
+          "type": "boolean"
+        },
+        "salary_currency": {
+          "$ref": "#/$defs/HabrSalaryCurrency",
+          "default": "rur",
+          "description": "Currency for 'salary from'; one of rur, eur, usd, uah, kzt.",
+          "title": "Salary currency"
+        },
+        "salary_from": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Minimum salary threshold in the chosen currency; omitted = any.",
+          "title": "Salary from"
+        },
+        "skills": {
+          "default": [],
+          "description": "Required skill ids (skills[]=\u2026).",
+          "items": {
+            "type": "integer"
+          },
+          "title": "Skills",
+          "type": "array"
+        },
+        "sort": {
+          "$ref": "#/$defs/HabrSort",
+          "default": "relevance",
+          "description": "Result ordering: relevance, date, salary_desc, salary_asc.",
+          "title": "Sort"
+        },
+        "with_salary": {
+          "default": false,
+          "description": "Only vacancies stating a salary (with_salary=true).",
+          "title": "With salary",
+          "type": "boolean"
+        }
+      },
+      "title": "Habr vacancy-search filter",
+      "type": "object"
+    },
+    "HabrQualification": {
+      "description": "Required applicant grade; maps to the board's numeric ``qid``.",
+      "enum": [
+        "intern",
+        "junior",
+        "middle",
+        "senior",
+        "lead"
+      ],
+      "title": "HabrQualification",
+      "type": "string"
+    },
+    "HabrSalaryCurrency": {
+      "description": "Currency the ``salary_from`` threshold is expressed in.",
+      "enum": [
+        "rur",
+        "eur",
+        "usd",
+        "uah",
+        "kzt"
+      ],
+      "title": "HabrSalaryCurrency",
+      "type": "string"
+    },
+    "HabrSearchEntry": {
+      "additionalProperties": false,
+      "description": "One ordered ``service.habr.searches[]`` entry: query + search type + filter (+ window).\n\nSelf-contained by design: each entry carries its own board query string, its\nown listing :class:`HabrSearchType`, and its own typed filter (no defaulting\nor merging between entries). The ``window`` base field optionally scopes the\nentry's fetch window; core reads only ``query`` + ``window``.",
+      "properties": {
+        "filter": {
+          "$ref": "#/$defs/HabrFilterConfig"
+        },
+        "query": {
+          "description": "Board query-language search text for this entry.",
+          "title": "Query",
+          "type": "string"
+        },
+        "search_type": {
+          "$ref": "#/$defs/HabrSearchType",
+          "default": "all",
+          "description": "all = the whole pool; suitable = the board's own match (requires a session).",
+          "title": "Search type"
+        },
+        "window": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SearchWindow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional per-entry fetch window/slice; omitted = the default window.",
+          "title": "Fetch window"
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "title": "Habr search entry",
+      "type": "object"
+    },
+    "HabrSearchType": {
+      "description": "Which Habr listing the entry searches.",
+      "enum": [
+        "all",
+        "suitable"
+      ],
+      "title": "HabrSearchType",
+      "type": "string"
+    },
+    "HabrServiceConfig": {
+      "additionalProperties": false,
+      "description": "Validated ``service.habr`` pipeline section.",
+      "properties": {
+        "captcha_max_attempts": {
+          "default": 4,
+          "description": "Maximum fresh SmartCaptcha images solved for one login challenge.",
+          "maximum": 10,
+          "minimum": 1,
+          "title": "CAPTCHA answer attempts",
+          "type": "integer"
+        },
+        "resume_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional; defaults to the account alias. A mismatch with the alias is a pipeline stop.",
+          "title": "Resume id"
+        },
+        "searches": {
+          "description": "Ordered search entries fetched one after another into the same DB; an entry's position is its stable search_index.",
+          "items": {
+            "$ref": "#/$defs/HabrSearchEntry"
+          },
+          "minItems": 1,
+          "title": "Search pool",
+          "type": "array"
+        }
+      },
+      "required": [
+        "searches"
+      ],
+      "title": "HabrServiceConfig",
+      "type": "object"
+    },
+    "HabrSort": {
+      "description": "Result ordering (ordering only; the result set does not change).",
+      "enum": [
+        "relevance",
+        "date",
+        "salary_desc",
+        "salary_asc"
+      ],
+      "title": "HabrSort",
+      "type": "string"
+    },
     "HoursPerDay": {
       "description": "Working-hours-per-day bucket (``AROUND_THE_CLOCK`` = 24-hour shift day).",
       "enum": [
@@ -1722,9 +1945,28 @@
           "required": [
             "hh"
           ]
+        },
+        {
+          "required": [
+            "habr"
+          ]
         }
       ],
       "properties": {
+        "habr": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HabrServiceConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "not": {
+            "type": "null"
+          }
+        },
         "hh": {
           "anyOf": [
             {
@@ -1999,5 +2241,5 @@
   ],
   "title": "jobfucker pipeline.yaml",
   "type": "object",
-  "x-jobfucker-schema-version": "sha256:2fe6e3a79c98c70cb0b28047b1e027a05988f88d9e832fcfe7be8d2045f9ecd4"
+  "x-jobfucker-schema-version": "sha256:bbbe2aa70ec12daecec543b8de306f58791fa83d783af32ec7c9912ca3f402fa"
 }

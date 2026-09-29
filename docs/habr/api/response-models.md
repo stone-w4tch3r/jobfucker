@@ -3,7 +3,8 @@
 Structures observed on the live read surfaces, and how they map to the
 [client contract](../../specs/client-contract.md) models.
 
-> Freshness: read-shape capture 2026-09-18; apply-response shape added 2026-09-19 (see
+> Freshness: read-shape capture 2026-09-18; apply-response shape added 2026-09-19; detail SSR anchor
+> and `response.kind` discriminator re-pinned 2026-09-29 (see
 > [Applications and responses](../applications-and-responses.md)).
 
 ## Listing item
@@ -50,7 +51,7 @@ Field notes:
 | `remoteWork` | remote flag |
 | `qualification` / `salaryQualification.title` | grade ("Middle"/"Senior"/...) |
 | `skills[].title` | structured skill names (`key_skills`) |
-| `divisions[]`, `locations[]` | specialization / city chips |
+| `divisions[]`, `locations[]`, `skills[]` | specialization / city / skill chips; **`locations` and `skills` may be JSON `null`** instead of `[]` (live 2026-09-29: ~1/3 of items had `locations: null`) — treat `null` as empty |
 | `employment` | `full_time` \| `part_time` |
 | `archived`, `hidden` | availability flags |
 | `response.kind` | apply mode: `direct` (not responded) \| `applied` \| `guest` (see note); the same field is on the detail object |
@@ -58,17 +59,25 @@ Field notes:
 
 No description/snippet is present in the listing — fetch the detail page for it.
 
-Note on `response.kind`: `direct`/`applied` are returned for XHR-style requests — the site's own calls
-send `X-Requested-With: XMLHttpRequest` (and/or `X-CSRF-Token`) and get the account-aware kinds;
-request profiles without them (observed with plain `urllib`) get `kind":"guest"` for **every** item,
-which is not an apply state. Always send `X-Requested-With: XMLHttpRequest` and treat `guest` as an
-unusable listing signal. See [Applications and responses](../applications-and-responses.md#apply-mode-signal).
+Note on `response.kind`: `direct`/`applied` are the account-aware kinds; the re-probe (2026-09-29)
+shows the authenticated **session**, not `X-Requested-With`, is the discriminator — an authenticated
+request got `direct` even without the XHR header. An anonymous request gets `kind":"guest"` for
+**every** item, which is not an apply state. Still send `X-Requested-With: XMLHttpRequest` (it drives
+other account-aware listing fields) and treat `guest` as an unusable listing signal. See
+[Applications and responses](../applications-and-responses.md#apply-mode-signal).
 
 ## Detail page
 
-`GET /vacancies/<id>` is an HTML page containing an inline JSON object under `"vacancy":{...}`. It is
-the same shape as a listing item **plus** `description` (full HTML), and it is the most stable
-structured detail source:
+`GET /vacancies/<id>` is an HTML page whose server-rendered state is a single
+`<script type="application/json" data-ssr-state="true">…</script>` block that `json.loads` parses
+directly; the detail object is `state["vacancy"]` (anchor pinned 2026-09-29). It is the same shape as
+a listing item **plus** `description` (full HTML), and it is the most stable structured detail
+source:
+
+```python
+m = re.search(r'<script type="application/json" data-ssr-state="true">(.*?)</script>', html, re.S)
+vacancy = json.loads(m.group(1))["vacancy"]
+```
 
 ```json
 "vacancy": {
@@ -81,8 +90,9 @@ structured detail source:
 }
 ```
 
-- `description` is escaped HTML (`\u003c...`) and must be normalized to text for
-  `Vacancy.description` (the contract requires full normalized text, not a snippet).
+- `description` is escaped HTML (`\u003c...`) **in the raw bytes**; `json.loads` unescapes it to real
+  HTML (`<p>…`), which must then be normalized to text for `Vacancy.description` (the contract
+  requires full normalized text, not a snippet). Never regex-strip the raw bytes directly.
 - `response.kind` is the apply-mode signal (`direct` unresponded, `applied` responded; same as the
   listing item). It is the only apply field on the detail object.
 - The page also carries a schema.org `JobPosting` `ld+json` block with a smaller field set:
@@ -157,7 +167,7 @@ be silently merged into `salary`.
 | Area | Canary |
 | --- | --- |
 | Listing shape | A listing item still has `id`, `title`, `href`, `salary`, `skills`, `publishedDate.date` |
-| Detail | `/vacancies/<id>` still embeds a `"vacancy":{...}` JSON with `description` |
+| Detail | `/vacancies/<id>` still embeds the `script[type=application/json][data-ssr-state=true]` block with `state["vacancy"].description` |
 | JSON-LD | The page still has one `JobPosting` `ld+json` block with `identifier.value` = the id |
 | Resume | `/profile` still renders the resume; `user.alias` still equals the public slug |
 | RSS | An item still has `guid` (id), `link`, `author`, `pubDate` |

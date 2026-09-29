@@ -7,7 +7,8 @@ over pure HTTP and how it maps onto the [client contract](../../specs/client-con
 > Freshness: probes run 2026-09-18 over pure HTTP with an exported authenticated cookie jar and a
 > clean anonymous jar, against live `career.habr.com`. Low volume (single requests, one 10-request
 > burst); no challenge or throttle was induced. Apply-signal rows and the `/responses*` error
-> envelope added 2026-09-19.
+> envelope added 2026-09-19. Re-probed 2026-09-29: a `429` was observed once under a burst (with one
+> transient connection reset) — pace defensively.
 
 ## Request profile
 
@@ -84,7 +85,7 @@ Notes:
 | --- | --- | --- |
 | Connect/TLS/timeout, DNS, unreadable stream | `TransportError(status=None)` | Bounded retry, safe operations only |
 | `5xx` | `TransportError(status)` | Bounded retry, safe operations only |
-| `429` (not observed) | `TransportError(status=429)` | Honor `Retry-After` if ever present, else backoff |
+| `429` (observed once under a burst, 2026-09-29) | `TransportError(status=429)` | Honor `Retry-After` if present, else backoff |
 | `302` to `/users/auth_required`; `{}` from an identity call; login `errors.smart-token` | `AuthError` | Re-authorize; do not loop |
 | `404` JSON `{"error":"Not found"}` or HTML error page | `NotFoundError` | No retry |
 | `422` CSRF `{"status":422,...}`; other `400`/`422` validation | `BadRequestError` | No retry; fix request/CSRF |
@@ -112,9 +113,10 @@ retry the single mutation once; do not loop.
 
 ## Rate limits and Qrator
 
-- No rate-limit headers and no `429`/`403` in a 10-request sequence (page 1..10, ~0.3 s apart,
-  authenticated), and no UA-based block (Chrome / python-urllib / curl). Thresholds are unknown —
-  keep HH-like pacing (≥0.3 s between requests, larger gaps before mutations).
+- No rate-limit headers and no `429`/`403` in the original 10-request sequence (page 1..10, ~0.3 s
+  apart, authenticated), and no UA-based block (Chrome / python-urllib / curl). A later burst
+  (2026-09-29) did produce one `429` and one transient connection reset, so the threshold is low but
+  unquantified — keep ≥1 s pacing between requests and back off on connection resets.
 - **Mutations have their own limits:** a ~10 s minimum interval between responses and a 150/month
   per-account quota, both with no `Retry-After` / `X-RateLimit-*` headers. The full contract is owned
   by [Applications and responses](../applications-and-responses.md#limits-and-pacing).
@@ -136,4 +138,4 @@ retry the single mutation once; do not loop.
 | Error envelope | `/api/frontend_v1/responses*` still returns `{"httpCode":404,"errorCode":"NOT_FOUND",…}`; unknown other paths still `{"error":"Not found"}` |
 | Anonymous reads | `/vacancies`, `/vacancies/<id>`, `/vacancies/rss` return `200` with content |
 | Anonymous protected | `GET /responses` redirects to `/users/auth_required` |
-| Rate limits | No `X-RateLimit-*`/`Retry-After` on ordinary reads |
+| Rate limits | No `X-RateLimit-*`/`Retry-After` on ordinary reads; `429` seen only under a burst |

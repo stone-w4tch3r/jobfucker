@@ -6,7 +6,9 @@ SmartCaptcha (see [CAPTCHA](captcha.md)) that is **enforced on every fresh crede
 full login, including the captcha, was completed **browserlessly over pure HTTP**.
 
 > Freshness: chain and browserless login observed 2026-09-18 against live `account.habr.com` /
-> `career.habr.com`. Consolidated 2026-09-23.
+> `career.habr.com`. Consolidated 2026-09-23. Re-probed 2026-09-29 (dev account): the concrete
+> `client_id` is discoverable from the `/users/auth/tmid` redirect, and the SSR login form carries no
+> `smart-token` field (it is injected at runtime).
 
 ## Outcome
 
@@ -65,7 +67,9 @@ https://account.habr.com/oauth/authorize/?response_type=code
 ```
 
 - `response_type=code` — authorization-code flow, code delivered to the career callback.
-- `client_id` is a static `career-<uuid>` client registration.
+- `client_id` is a static `career-<uuid>` client registration (observed `career-c9073d40-6724-42c`,
+  2026-09-29). A client does **not** need to hard-code it: the value is discoverable by following the
+  `/users/auth/tmid` redirect chain hop by hop.
 - `redirect_uri` is fixed to `/users/auth/tmid/callback_oauth`.
 - `state=bslogin` and `action=login` are set by the career app for an interactive sign-in.
 - With no Habr Account session, authorize renders the login form instead of issuing a code.
@@ -79,7 +83,7 @@ path).
 | --- | --- | --- |
 | `email` | email | required |
 | `password` | password | required |
-| `smart-token` | hidden | Yandex SmartCaptcha token, populated after the captcha passes (checkbox or image) |
+| `smart-token` | hidden, **runtime-injected** | Yandex SmartCaptcha token, populated after the captcha passes (checkbox or image). The server-rendered form carries only `email`/`password`; `captcha.js` injects the hidden `smart-token` field at runtime (2026-09-29). |
 
 - Submit: `POST https://account.habr.com/ru/ident/in/<state-token>`.
 - No `authenticity_token` on this form — it is a Habr Account form, not the Rails career app.
@@ -255,7 +259,7 @@ the payload (`user` present), never from the status code.
 | Area | Canary |
 | --- | --- |
 | Identity | `GET /api/frontend_v1/users/me` returns `user.alias` |
-| SSO | Login still routes through `/users/auth/tmid` and `account.habr.com/oauth/authorize`; the login form POSTs `email`/`password`/`smart-token`; a valid login answers JSON `{"success":true,"rurl":".../oauth/authorize/done/<hash>"}` |
+| SSO | Login still routes through `/users/auth/tmid` and `account.habr.com/oauth/authorize` (the authorize URL carries `client_id=career-<uuid>`, discoverable from the redirect); the login form POSTs `email`/`password`/`smart-token`; a valid login answers JSON `{"success":true,"rurl":".../oauth/authorize/done/<hash>"}` |
 | Session | A logged-in session still sets `_career_session` (career) and `.habr.com` `s<hex>` SSO cookies |
 | Session refresh | Dropping `_career_session` but keeping `remember_user_token` still returns the identity and re-issues `_career_session` |
 | Anonymous identity | `GET /api/frontend_v1/users/me` anonymous still `200 {}` |

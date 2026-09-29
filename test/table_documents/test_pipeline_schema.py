@@ -62,6 +62,7 @@ from jobfucker.schema_generation import derive_schema_version, generate_all_sche
 _JSON_MAPPING = TypeAdapter(dict[str, JsonValue])  # lint-ignore[raw-dict]: parsed JSON schema boundary
 _PROJECT_ROOT = Path(__file__).parents[2]
 _EXAMPLE_PIPELINES = (
+    "docs/examples/pipeline.habr.example.yaml",
     "docs/examples/pipeline.mock.yaml",
     "docs/examples/pipeline.hh-fullstack.example.yaml",
 )

@@ -64,12 +64,14 @@ Vacancy application automation engine for Russian job boards (initially hh.ru). 
 | --- | --- |
 | Engine, stages (fetch/score/generate/apply), storage, config, limits, audit | **real**, BDD-tested |
 | Mock client (offline, scriptable) | **real** |
-| Shared client infra (`clients/shared/`: transport, store, cookies, html text, browser engine) + board registry | **real**, exercised through the HH suite |
+| Shared client infra (`clients/shared/`: transport, store, cookies, html text, browser engine) + board registry | **real**, exercised through the HH and Habr suites |
 | HH client: transport, auth, captcha (browser engine + login protocol), search + detail enrichment | **real**, BDD-tested vs mock transport + scripted browser double |
 | HH client: apply (preflight, submission, reconciliation) | **real**, BDD-tested vs mock transport |
 | HH client: resumes listing + pre-apply resume validation | **real**, BDD-tested vs mock transport |
 | HH client: screening-test fetch + website apply-with-answers (`HhTestCapable`) | **real**, BDD-tested vs mock transport |
 | Screening-test solving (AI + answers file, `hh-tests dump`, `apply --test-answers`) | **real**, BDD-tested |
+| Habr client: transport, SSO auth + cookie-only session, SmartCaptcha (browser click + browserless vision), search + SSR-detail enrichment, listing preview | **real**, BDD-tested vs mock transport + scripted browser double; live-verified on the dev account |
+| Habr client: single-resume mapping + apply (preflight, multipart letter, ≥10 s pacing, reconciliation) | **real**, BDD-tested vs mock transport; live-verified (apply/withdraw/throttle) |
 | Vacancies review/edit CLI (`jobfucker vacancies dump\|apply\|edit`) | **real** |
 | Search preview (`jobfucker search`, listing-only `Client.list_vacancies`) | **real**, BDD-tested |
 | Doctor command (`jobfucker doctor`, `Client.get_identity` probes) | **real** |
@@ -79,8 +81,9 @@ Vacancy application automation engine for Russian job boards (initially hh.ru). 
 
 - **Client contract layer** — engine/stages/storage never depend on a board; `Client` protocol + vendor-neutral models in `clients/base.py`. New board = a client package under `clients/<board>/` + one `clients/registry.py` entry ([client-contract.md](docs/specs/client-contract.md)).
 - **Shared client mechanics** — `clients/shared/` (transport, atomic store, cookies, HTML text, patchright browser driver) is board-free and composed by boards; `clients/registry.py` is the only core-side module naming concrete boards.
+- **Habr client** — the second real board, registered the same way (one `clients/registry.py` entry + a pipeline section). Anonymous reads for `type=all`/preview; `type=suitable`, identity, resumes, and apply require a session (SSO + SmartCaptcha login, cookie-only). Quotas use the month window (`apply_period="month"`, 150/account/month).
 - **Own SQLite DB** (`jobfucker.db`) as single source of truth.
-- **Captcha is first-class & generic** (`captcha/`): handler selection, terminal rendering (sixel/kitty), AI vision solving. HH-specific detection stays in the HH client; standalone challenges are cleared by the shared browser engine (`clients/shared/browser.py`, patchright stealth Chromium — the only working path, see [docs/hh/captcha.md](docs/hh/captcha.md) §5a); the embedded login challenge keeps the browserless multipart replay.
+- **Captcha is first-class & generic** (`captcha/`): handler selection, terminal rendering (sixel/kitty), AI vision solving. HH-specific detection stays in the HH client; standalone challenges are cleared by the shared browser engine (`clients/shared/browser.py`, patchright stealth Chromium — the only working path, see [docs/hh/captcha.md](docs/hh/captcha.md) §5a); the embedded login challenge keeps the browserless multipart replay. Habr's SmartCaptcha login is board-owned: browser-click primary, browserless vision fallback (see [docs/habr/captcha.md](docs/habr/captcha.md)).
 - **GUI:** PySide6 toolchain removed from deps until the planned rewrite; re-add `pyside6`/`qasync`/`tomli-w`/`pytest-qt` together with `src/jobfucker/shared/shortcuts` (refetch from the original template).
 
 ---

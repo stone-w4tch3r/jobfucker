@@ -22,6 +22,7 @@ import sys
 from collections.abc import AsyncGenerator, Sequence
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from dataclasses import dataclass
+from time import monotonic
 from typing import TYPE_CHECKING, Final, Protocol
 
 import anyio
@@ -39,6 +40,25 @@ logger = logging.getLogger(__name__)
 _GOTO_TIMEOUT_MS: Final = 30_000
 _PICTURE_TIMEOUT_MS: Final = 20_000
 _IMAGE_LOAD_TIMEOUT_MS: Final = 15_000
+# Single-read timeout and poll interval for :meth:`wait_for_value`.
+_VALUE_READ_TIMEOUT_MS: Final = 1_000
+_VALUE_POLL_SECONDS: Final = 0.25
+
+# A frame-local click on the Habr SmartCaptcha checkbox proved unreliable; the
+# live-verified reliable target is a real mouse click a small inset from the
+# widget's top-left (the checkbox anchor), not the widget centre. Clamped to
+# half the target size so a small element still gets a centre-ish click. A real
+# ``mouse.move`` plus a short settle before the click is what the widget's
+# pointer handshake expects (a bare ``mouse.click`` produced no token).
+_FRAME_CLICK_INSET_X: Final = 25.0
+_FRAME_CLICK_INSET_Y: Final = 30.0
+_FRAME_CLICK_SETTLE_MS: Final = 300.0
+
+# A challenge widget can be injected seconds after load (the Habr SmartCaptcha
+# checkbox frame was observed ~8 s after DOMContentLoaded), so a bare ``hidden``
+# wait returns immediately while the element is still absent (a race). Give
+# attachment a generous budget, then wait for hidden.
+_HIDDEN_ATTACH_TIMEOUT_MS: Final = 10_000
 
 # Belt and suspenders over patchright's own C-level patches: the validated
 # gate clearer is a hidden ``navigator.webdriver``.
@@ -102,6 +122,31 @@ class BrowserSession(Protocol):
         ...
 
     async def visible(self, selector: str) -> bool: ...
+
+    async def click_in_frame(self, frame_selector: str, selector: str, *, timeout_s: float = 15.0) -> None:
+        """Click ``selector`` inside the cross-origin frame matching ``frame_selector``.
+
+        Some challenges (e.g. an embedded SmartCaptcha checkbox) live in a
+        cross-origin iframe the top-page ``click`` cannot reach; a frame-local
+        click is the only working target.
+        """
+        ...
+
+    async def wait_for_value(self, selector: str, *, timeout_s: float) -> str | None:
+        """Wait until an input's value becomes non-empty; ``None`` on timeout.
+
+        Used to read a token an embedded widget writes into a hidden input.
+        """
+        ...
+
+    async def wait_for_hidden(self, selector: str, *, timeout_s: float) -> bool:
+        """Wait for an element to become hidden/detached; ``True`` when absent.
+
+        An element that never appears is already gone, so it counts as hidden;
+        ``False`` is returned only when an attached element stays visible past
+        ``timeout_s``.
+        """
+        ...
 
 
 class BrowserDriver(Protocol):
@@ -329,3 +374,84 @@ class PatchrightSession:
 
     async def visible(self, selector: str) -> bool:
         return await self._page.locator(selector).is_visible()
+
+    async def click_in_frame(self, frame_selector: str, selector: str, *, timeout_s: float = 15.0) -> None:
+        """Click ``selector`` inside the frame matching ``frame_selector``.
+
+        A frame-local ``locator.click()`` proved unreliable against Habr's
+        SmartCaptcha checkbox (live runs produced no token), while a real
+        ``page.mouse.click`` did. Playwright returns a frame element's bounding
+        box in main-frame viewport coordinates, so the target can be clicked
+        with the mouse directly. The sequence mirrors the live-verified recipe:
+        wait for the frame, **wait for the in-frame target itself**, resolve its
+        box (falling back to the frame element's box), then ``mouse.move`` + a
+        short settle + ``mouse.click`` a small clamped inset from the box's
+        top-left (the checkbox pixel; the widget centre was less reliable).
+        Falls back to the frame-local ``locator.click()`` when no box is
+        available.
+
+        Waiting on the in-frame *target* is what makes the click land: an
+        ``iframe`` element can be inserted and become "visible" while its
+        cross-origin document is still loading (live Habr: clicking at this
+        point hit an inert frame and produced no token; the widget's own click
+        listener is attached by the frame's inline script). ``locator``
+        ``wait_for`` blocks until the frame's document has run and the target
+        element exists, closing that race. ``bounding_box`` alone does not wait.
+        """
+        timeout_ms = int(timeout_s * 1000)
+        frame = self._page.locator(frame_selector)
+        await frame.wait_for(state="visible", timeout=timeout_ms)
+        target = self._page.frame_locator(frame_selector).locator(selector)
+        await target.wait_for(state="visible", timeout=timeout_ms)
+        box = await target.bounding_box()
+        if box is None:
+            box = await frame.bounding_box()
+        if box is None:
+            await target.click(timeout=timeout_ms)
+            return
+        x = box["x"] + min(_FRAME_CLICK_INSET_X, box["width"] / 2)
+        y = box["y"] + min(_FRAME_CLICK_INSET_Y, box["height"] / 2)
+        await self._page.mouse.move(x, y)
+        await self._page.wait_for_timeout(_FRAME_CLICK_SETTLE_MS)
+        await self._page.mouse.click(x, y)
+
+    async def wait_for_value(self, selector: str, *, timeout_s: float) -> str | None:
+        locator = self._page.locator(selector)
+        try:
+            await locator.wait_for(state="attached", timeout=int(timeout_s * 1000))
+        except Exception:
+            # patchright raises its own Error hierarchy on timeout; the verdict
+            # is the None return, not the exception type.
+            return None
+        deadline = monotonic() + timeout_s
+        while monotonic() < deadline:
+            try:
+                value = await locator.input_value(timeout=_VALUE_READ_TIMEOUT_MS)
+            except Exception:
+                return None
+            if value:
+                return value
+            await asyncio.sleep(_VALUE_POLL_SECONDS)
+        return None
+
+    async def wait_for_hidden(self, selector: str, *, timeout_s: float) -> bool:
+        """Wait for an element to attach and then become hidden; ``False`` on timeout.
+
+        A bare ``state="hidden"`` wait succeeds immediately when the element is
+        absent, but the intended element may still be about to be injected (a
+        spinner overlay appearing seconds after load). Wait briefly for it to
+        attach first; if it never appears, it is already gone → ``True``. Once
+        attached, wait out the remaining ``timeout_s`` for it to hide.
+        """
+        locator = self._page.locator(selector)
+        attach_ms = min(int(timeout_s * 1000), _HIDDEN_ATTACH_TIMEOUT_MS)
+        try:
+            await locator.wait_for(state="attached", timeout=attach_ms)
+        except Exception:
+            # Never appeared within the attach budget: treat as already hidden.
+            return True
+        try:
+            await locator.wait_for(state="hidden", timeout=int(timeout_s * 1000))
+        except Exception:
+            return False
+        return True

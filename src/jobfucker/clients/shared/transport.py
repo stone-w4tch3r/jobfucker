@@ -162,7 +162,10 @@ class Transport:
                 response = await self._client.request(
                     method,
                     url,
-                    params=request.params,
+                    # httpx clears a URL's own query when handed an empty params
+                    # container, so pass the query-bearing URL through untouched
+                    # when the caller supplied no explicit params.
+                    params=request.params or None,
                     headers=request.headers,
                     content=request.content,
                     files=request.files,
@@ -203,7 +206,9 @@ class Transport:
                 response = await self._client.request(
                     method,
                     url,
-                    params=request.params,
+                    # Same empty-params guard as ``send``: never drop an embedded
+                    # query just because no explicit params were passed.
+                    params=request.params or None,
                     headers=request.headers,
                     content=request.content,
                     files=request.files,

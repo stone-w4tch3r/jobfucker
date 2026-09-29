@@ -6,7 +6,8 @@ feed is not a search surface.
 
 > Freshness: probes run 2026-09-18 over pure HTTP with an exported authenticated cookie jar and a
 > clean anonymous jar. Totals drift with live data; use the shapes and parameter semantics, not the
-> example numbers.
+> example numbers. Re-probed 2026-09-29 (dev account): the page base, the over-page signal, and the
+> accessible-position cap were corrected — see below.
 
 ## Endpoint
 
@@ -39,8 +40,8 @@ Response:
 | `q` | text query | free text; omitted = all vacancies |
 | `type` | search mode | `all` \| `suitable` |
 | `sort` | ordering | `relevance` (default) \| `date` \| `salary_desc` \| `salary_asc` |
-| `page` | 0-based page | `page=1` is the first page; `page=0` is accepted and echoes `currentPage:0` |
-| `per_page` | requested page size | echoed back, but **at most 50 items are returned** (see caps) |
+| `page` | page number (**1-based**) | `page=1` is the first page; `page=0` is accepted as an alias of page 1 and echoes `currentPage:0` |
+| `per_page` | requested page size | echoed back, but **at most 50 items are returned** (see caps); **ignored by `type=suitable`** (always 25) |
 | `qid` | qualification | `1`=Intern, `3`=Junior, `4`=Middle, `5`=Senior, `6`=Lead; `2` returns 0; omitted = any |
 | `remote` | remote work | `true` |
 | `with_salary` | only vacancies with a stated salary | `true` |
@@ -83,6 +84,10 @@ why the [aux catalog](../aux/README.md) only mirrors countries + Russian regions
 - Authenticated: resume-scoped "подходящие" list (small set, e.g. 13).
 - **Anonymous: the filter is ignored** — the response is the full pool (capped). A client must hold a
   session for `type=suitable` to mean anything; never treat the anonymous response as suitable.
+- **`per_page` is ignored.** Live-pinned 2026-09-29 (authenticated probe): `per_page=20`, `25`, and
+  `50` all return exactly **25** items with `meta.perPage=25`. A client must therefore walk
+  `type=suitable` with a **fixed 25-item stride** regardless of the requested page size; the `≤50`
+  cap below applies only to the other search types.
 - Whether it requires an owned resume could not be tested negatively (the experiment account has a
   profile).
 
@@ -90,14 +95,17 @@ why the [aux catalog](../aux/README.md) only mirrors countries + Russian regions
 
 - **Effective page-size cap is 50.** `per_page=100`/`1000` are echoed in `meta.perPage`, but `list`
   carries at most 50 items and `totalPages` is computed from 50
-  (`465` → `10` pages at `per_page=100`; `19` pages at `per_page=25`).
-- **Accessible-position cap ≈ 1000.** Requests whose window starts at offset ≥ 1000 return
-  `200` with an empty `list` while `meta.totalResults` stays the true total. Observed last accessible
-  position was 995 (`per_page=50&page=20` → 46 items; `per_page=25&page=40` → 21 items).
-  `service_info.max_search_items` should therefore be `1000` (conservative).
-- **`page` beyond `meta.totalPages` returns `404 {"error":"Not found"}`**, not an empty page. A
-  paging walk must treat this as exhaustion (`NotFoundError` → stop), not as a hard failure.
-- Page walk beyond the accessible cap but within `totalPages` returns `200` with an empty list.
+  (`465` → `10` pages at `per_page=100`; `19` pages at `per_page=25`). This applies to every type
+  except `type=suitable`, whose effective/observed page size is a fixed **25** (see above).
+- **Accessible positions are bounded by `meta.totalPages`.** Re-probed 2026-09-29: for an
+  1118-item pool the last data page was `19` (36 items) and `page=20` returned `200` with an
+  **empty `list`**; `meta.totalPages` was capped at 19. Any window whose start is past the
+  accessible range returns `200` with an empty `list`, never a `404` (the earlier `404` observation
+  is stale). Declare `service_info.max_search_items = 1000` as a conservative cap.
+- **Exhaustion is a short page or an empty `200` page.** A page listing fewer than `page_size`
+  items, or an empty `list` (past `meta.totalPages` / the accessible cap), ends the walk. A `404` is
+  still mapped to exhaustion defensively in case the board reintroduces it, but it is not the
+  observed signal and must not be the only exhaustion path.
 
 ## HTML listing
 
@@ -116,8 +124,8 @@ client.
 | Signal | Meaning | Mapping |
 | --- | --- | --- |
 | `500 {"status":500,"error":"Internal Server Error"}` | malformed filter value (e.g. scalar `company_ids`, string `locations`) | `BadRequestError` — validate params locally, never send untyped values |
-| `404 {"error":"Not found"}` | page beyond `meta.totalPages` | exhaustion / `NotFoundError` |
-| `200` + empty `list` | window at/after the ~1000 cap | exhaustion |
+| `404 {"error":"Not found"}` | (not observed for paging since 2026-09-29; map defensively) | exhaustion / `NotFoundError` |
+| `200` + empty or short `list` | window past `meta.totalPages` / the accessible cap, or the listing ended | exhaustion |
 
 ## Contract mapping
 
@@ -135,8 +143,9 @@ client.
 | --- | --- |
 | Endpoint | `GET /api/frontend/vacancies?q=python&type=all` returns `{list, meta}` with `meta.totalResults` |
 | Page size | `per_page=100` returns at most 50 items and `totalPages` uses 50 |
-| Cap | A page at offset ≥ 1000 returns `200` with an empty `list` |
-| Over-page | A page beyond `meta.totalPages` returns `404 {"error":"Not found"}` |
+| Page base | `page=1` is the first page; `page=0` aliases it (echoes `currentPage:0`) |
+| Cap | A window at/after the accessible cap returns `200` with an empty `list` |
+| Over-page | A page past `meta.totalPages` returns `200` with an empty `list` (never `404`) |
 | Filters | `qid=5`, `remote=true`, `with_salary=true`, `skills[]=<id>`, `city_id=<id>` change `totalResults` |
 | Location granularity | `locations[]=c_678` / `r_14068` / `ct_444` all filter; a bare `locations[]=678` is ignored |
 | Sort | `sort=date` reorders by `publishedDate`; `sort=salary_desc` puts salaried items first |

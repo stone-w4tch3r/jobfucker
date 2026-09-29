@@ -46,9 +46,9 @@ Same contract, different behavior. Read this before the rest.
 | Screening tests | yes (`HhTestCapable`) | none | capability absent, flag stays `None` |
 | Auth signal | `401` | anonymous `200 {}` | detect auth from payload, not status |
 | Session kind | Bearer token + cookies | **cookies only** | persist cookie jar, no token |
-| Page size | ≤100 | **≤50** | fetch geometry |
+| Page size | ≤100 | **≤50** (25 for `type=suitable`) | fetch geometry |
 | Item cap | 2000 | **1000** | `max_search_items` |
-| Over-page | short page | **`404`** | treat as exhaustion |
+| Over-page | short page | **`200` empty** | treat as exhaustion |
 | Detail source | clean JSON API | **HTML with embedded JSON** | parse page |
 | Filters | 8 big groups | ~7 flat fields | small filter model |
 
@@ -205,6 +205,10 @@ sequenceDiagram
 Rules:
 
 - **Auth is read from the payload, never the status.** Anonymous `/users/me` is `200 {}`.
+- The OAuth `client_id` is **discovered** by following the `/users/auth/tmid` redirect chain hop by
+  hop — never hard-coded. The login page's server-rendered form carries only `email`/`password`;
+  `smart-token` is injected at runtime, so the client takes it from its captcha solver, not the SSR
+  HTML.
 - Persist `_career_session`, `remember_user_token`, and `.habr.com` SSO cookies. Drop analytics.
 - A missing `_career_session` but present `remember_user_token` → session re-issued; retry once
   before a full login.
@@ -213,7 +217,9 @@ Rules:
   token once and replay the single mutation once. Never loop.
 - Never log credentials, cookies, CSRF tokens, or `meta.logoutToken`.
 - `authorize()` is idempotent. Healthcheck through `get_identity`.
-- `aclose()` closes the shared transport and the browser engine; safe to call twice.
+- `aclose()` closes the shared transport and is safe to call twice. Browser
+  sessions are **per-attempt** (opened and closed around one captcha solve), so
+  there is no long-lived engine handle to close.
 
 ---
 
@@ -247,6 +253,11 @@ Both reuse existing seams:
 `PatchrightDriver` (shared browser) for method 1, `CaptchaHandler` (PNG → text) for the OCR step of
 method 2. The ladder, `pow`, `spravka`, and `smart-token` injection are board-owned.
 
+The checkbox lives in a **cross-origin** `iframe[title="SmartCaptcha checkbox"]` (injected ~8 s after
+load): clicking the iframe element itself fails, so the client clicks the frame's `input`/checkbox
+pixel. The shared `BrowserSession` is therefore extended with a minimal board-neutral
+frame-click / value-read / hidden-wait surface to reach it.
+
 Escalation / fail-fast signals:
 
 | Signal | Meaning |
@@ -258,6 +269,8 @@ Escalation / fail-fast signals:
 Policy:
 
 - Session reuse is the main defense — captcha fires mainly on a fresh credential login.
+- `/check` is **POST-only** (a GET is `404`); the image challenge is a PNG; `spravka` is ~308 chars
+  (do not assume a fixed length or reuse it — it is single-use and page-bound).
 - Bound OCR retries with `captcha_max_attempts`; a wrong answer returns a **fresh** image.
 - Fresh image key after every answer.
 - On exhaustion or an unknown `captcha.type` → `CaptchaSolvingError(recovery_url=login_url)`.
@@ -269,8 +282,16 @@ Policy:
 
 ### Listing surface
 
-`GET /api/frontend/vacancies?<params>` → JSON `{list, meta}`. Anonymous works.
-`X-Requested-With: XMLHttpRequest` is required for account-aware fields.
+`GET /api/frontend/vacancies?<params>` → JSON `{list, meta}`. Anonymous works; the `response.kind`
+discriminator is the **session**, not the header (anonymous → `guest`), and the client still sends
+`X-Requested-With: XMLHttpRequest` for account-aware fields.
+
+### Auth requirement
+
+Reads do not force a login. `list_vacancies` and `search_type=all` run without a session;
+`search_type=suitable` requires an authenticated session and fails closed with `ConfigurationError`
+**before any request** when none is available (anonymous Habr silently ignores `type=suitable`).
+`get_identity`, `get_resumes`, and `apply_to_vacancy` require authorization.
 
 ### Geometry
 
@@ -278,20 +299,25 @@ Policy:
 | --- | --- | --- |
 | requested page size | echoed | client enforces `≤50` |
 | effective page size | **50** | `page_size` capped at 50 |
-| accessible positions | **~1000** | `ServiceInfo.max_search_items = 1000` |
-| offset ≥ 1000 | `200` empty list | treat as **exhaustion** |
-| page past `meta.totalPages` | `404 {"error":"Not found"}` | treat as **exhaustion**, not a hard error |
+| effective page size (`type=suitable`) | **25** (ignores `per_page`) | walk with a fixed 25-item stride regardless of the requested size; a decoded `meta.perPage` that disagrees with the effective stride is a `ProtocolError` (never silently mis-slice) |
+| page base | **1-based** (`page=1` is first; `page=0` aliases it) | client sends `native_page + 1` |
+| accessible positions | bounded by `meta.totalPages` | `ServiceInfo.max_search_items = 1000` (conservative) |
+| window past the cap / `meta.totalPages` | `200` empty list | treat as **exhaustion** |
+| `404 {"error":"Not found"}` | not observed for paging (still map defensively) | treat as **exhaustion**, not a hard error |
 | short page | fewer than page_size | exhaustion |
 
-Two exhaustion signals (`404`, empty-at-cap) must both map to exhausted. Walk runs through the
-shared driver (`jobfucker.clients.paging.plan_pages` + `scan_slice` / `scan_listing`), so slice
-trimming and "enrich only in-range items" hold for free.
+Exhaustion signals — a short page, an empty `200` page past `meta.totalPages`/the accessible cap, and
+(defensively) a `404` — must all map to exhausted. `page` is **1-based**: the client sends
+`native_page + 1` for the shared driver's 0-based page. Walk runs through the shared driver
+(`jobfucker.clients.paging.plan_pages` + `scan_slice` / `scan_listing`), so slice trimming and
+"enrich only in-range items" hold for free.
 
 ### Enrichment
 
-Listing items carry no description. Detail = one `GET /vacancies/<id>` per slice item. The page
-embeds an inline, escaped `"vacancy":{...}` JSON with the full `description` HTML. `JobPosting`
-`ld+json` is a fallback canary only.
+Listing items carry no description. Detail = one `GET /vacancies/<id>` per slice item. The page's
+server-rendered state is a single `<script type="application/json" data-ssr-state="true">…</script>`
+block that `json.loads` parses directly; the detail object is `state["vacancy"]` (with the full
+`description` HTML). `JobPosting` `ld+json` is a fallback canary only.
 
 - Enrich **only** items inside `[offset, offset + limit)`.
 - `external_id`s in `exclude` → no detail `GET` at all.
@@ -365,7 +391,10 @@ Content-Disposition: form-data; name="body"
 
 - Letter is the multipart field `body`. Empty body applies without a letter.
 - Pacing: **≥10 s between response POSTs**, monotonic clock, plus small jitter. Client-internal
-  (the contract has no pacing hook).
+  (the contract has no pacing hook). The interval is measured to the **actual response POST**: the
+  CSRF token is prefetched (`HabrTransport.ensure_csrf()`) **before** the pacing wait, so the lazy
+  CSRF scrape (~3 s) can never stretch the board-facing POST→POST gap; a CSRF failure aborts before
+  any wait or submission.
 - CSRF is required. `X-CSRF-Token` header or `authenticity_token` field.
 
 ### Outcome map
@@ -432,12 +461,12 @@ Map board outcomes into the generic contract errors. Never make callers parse te
 | Signal | Error |
 | --- | --- |
 | connect/TLS/timeout, `5xx` on safe GET | `TransportError` |
-| redirect to `/users/auth_required`, `{}` identity, login captcha error | `AuthError` |
+| redirect to `/users/auth_required`, identity `401`/`403` (stale session) → anonymous, recover via login; `{}` identity | `AuthError` |
 | `404` (apply) | `NotFoundError` |
 | `422` CSRF, other `400`/`422` validation | `BadRequestError` / `ConfigurationError` |
 | monthly cap `400` | `LimitExceededError` |
 | JSON promised but unparseable / wrong type | `ProtocolError` |
-| challenge markers | `CaptchaSolvingError(recovery_url)` |
+| challenge markers, login captcha error | `CaptchaSolvingError(recovery_url)` |
 | possible Qrator interstitial / unknown `4xx` | `ProtocolError` (hand off) |
 
 `Reporter` events: operation, page/item progress, vacancy title/URL, attempt number. Never secrets
@@ -452,11 +481,11 @@ No internal patching.
 
 | Area | Required scenarios |
 | --- | --- |
-| Construction | rejects a non-Habr section; resolves credentials; closes transport/browser idempotently |
+| Construction | rejects a non-Habr section; resolves credentials; closes the transport idempotently (browser sessions are per-attempt) |
 | Auth | anonymous `200 {}` → full SSO; session reuse; `remember_user_token` re-issue; identity decode; `resume_id` mismatch → `ConfigurationError` |
 | Captcha | browser click pass; escalation detect; browserless OCR+pow pass; wrong answer → fresh image; exhaustion → `CaptchaSolvingError(recovery_url)`; unknown type fails |
 | Transport | CSRF refresh-once on `422`; pacing; both error envelopes; malformed JSON → `ProtocolError` |
-| Search | both `search_type`s; `suitable` fail-closed without session; page size `≤50`; `max_search_items=1000`; offset ≥1000 empty = exhausted; past-total `404` = exhausted; filter wire mapping; short page = exhausted |
+| Search | both `search_type`s; `suitable` fail-closed without session; page size `≤50` (fixed 25 stride for `suitable`, `meta.perPage` mismatch → `ProtocolError`); `max_search_items=1000`; offset ≥1000 empty = exhausted; past-total `404` = exhausted; filter wire mapping; short page = exhausted |
 | Enrichment | inline `vacancy` parse; escaped HTML → text; `predictedSalary` not merged; null company/salary; `exclude` skips detail GET; in-range-only enrichment |
 | Resumes | single resume; alias id; `updated_at=None` |
 | Apply | `200` success; duplicate `401`; anonymous `401`; throttle retry-once; monthly cap stop; `404`; CSRF refresh; letterless; letter; uncertain reconcile; unresolvable → `UnknownApplyOutcomeError` |

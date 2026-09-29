@@ -6,6 +6,8 @@ behavior drifts. The wiki describes Habr Career as it behaves, not how it was re
 
 > Freshness: surface discovery against live `career.habr.com` on 2026-09-18 with the authenticated
 > `habr-exp` account; apply/letter/withdraw surface added 2026-09-19; consolidated 2026-09-23.
+> Re-probed 2026-09-29 (dev account): paging base/cap, the detail SSR anchor, `response.kind`, the
+> login form, and the captcha encoding were re-pinned — see the per-page notes.
 
 ## Start here
 
@@ -69,11 +71,16 @@ detail page embeds structured JSON, so scraping is not needed. Every `Client` me
   first request still sets `_career_session`
   ([Platform map](platform-map.md#anonymous-behavior)).
 - **Vacancy listings are JSON**: `GET /api/frontend/vacancies?<filters>` (`/api/frontend/`, not
-  `/api/frontend_v1/`) returns `{list, meta}`; the detail page embeds the full description
+  `/api/frontend_v1/`) returns `{list, meta}`; the detail page embeds the full description under the
+  page's `script[type=application/json][data-ssr-state=true]` block, read as `state["vacancy"]`
   ([Search](api/search.md), [Response models](api/response-models.md#detail-page)).
-- Listing caps: effective page size is **50**; offsets ≥ ~1000 return an empty list; a page beyond
-  `meta.totalPages` is `404 {"error":"Not found"}`. Declare `max_search_items = 1000`
+- Listing caps: effective page size is **50** and `page` is **1-based** (`page=1` is the first page;
+  `page=0` aliases it). A page past `meta.totalPages` (or the accessible-position cap) returns
+  **`200` with an empty `list`**, never a `404` — a short page and an empty page both mean
+  exhaustion. Declare `max_search_items = 1000`
   ([Search](api/search.md#pagination-page-size-and-caps)).
+- `response.kind` (`direct`/`applied`/`guest`) is decided by the **session**, not by
+  `X-Requested-With`: anonymous → `guest` (not an apply state), authenticated → `direct`/`applied`.
 - **One account = one resume**, identified by the account alias; no resume id is sent at apply
   ([Response models](api/response-models.md#owned-resume)).
 - **Apply is `POST /api/frontend/vacancies/<id>/responses`** (multipart, optional `body` letter);
@@ -84,7 +91,8 @@ detail page embeds structured JSON, so scraping is not needed. Every `Client` me
   with `service_info.apply_period = "month"`
   ([Applications and responses](applications-and-responses.md#limits-and-pacing)).
 - The site is fronted by **Qrator** (`Server: QRATOR`) and errors come in two shapes:
-  `{"error":"Not found"}` and, under `/responses*`, a `{"httpCode","errorCode",…}` envelope
+  `{"error":"Not found"}` and, under `/responses*`, a `{"httpCode","errorCode",…}` envelope. A `429`
+  was observed once under a request burst, so pace defensively (≥1 s, backoff on resets)
   ([Transport](api/transport-and-errors.md)).
 - Habr documents an **OAuth 2.0 employer API** (`/info/api`) for CRM export; it is company-side and
   not a seeker search/apply API ([Applications and responses](applications-and-responses.md#official-api-is-employer-side-not-a-seeker-apply-path)).
