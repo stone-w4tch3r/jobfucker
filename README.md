@@ -1,15 +1,16 @@
 # jobfucker
 
 <p align="center">
-  <img src="./assets/readme/hero.svg" width="100%" alt="jobfucker — автоотклик на вакансии hh.ru под управлением ИИ-агента: поиск, AI-скоринг, сопроводительные письма, отклики по лимитам, скрининг-тесты">
+  <img src="./assets/readme/hero.svg" width="100%" alt="jobfucker — автоотклик на вакансии hh.ru и Habr Career под управлением ИИ-агента: поиск, AI-скоринг, сопроводительные письма, отклики по лимитам, скрининг-тесты">
 </p>
 
-Автоматизация отклика на вакансии hh.ru (и другие сервисы в будущем).
+Автоматизация отклика на вакансии российских досок вакансий: **hh.ru** и **Habr Career**.
 
 ![status](https://img.shields.io/badge/status-early_alpha-orange)
 ![python](https://img.shields.io/badge/python-3.14%2B-blue)
 ![uv](https://img.shields.io/badge/uv-managed-261230)
-![board](https://img.shields.io/badge/board-hh.ru-d6001c)
+![board hh.ru](https://img.shields.io/badge/board-hh.ru-d6001c)
+![board Habr Career](https://img.shields.io/badge/board-Habr_Career-6f9f00)
 ![interface](https://img.shields.io/badge/interface-CLI_%C2%B7_GUI_planned-lightgrey)
 
 > Ранняя альфа. Пока только CLI; GUI запланирован.
@@ -18,7 +19,7 @@
 
 ![Прогон jobfucker apply: 3 отклика, 4 отказа, 2 ошибки](assets/readme/demo.gif)
 
-Реальный прогон `jobfucker apply`: отклики, обработка ошибок и вывод результатов.
+Реальный прогон `jobfucker apply` на hh.ru: отклики, обработка ошибок и вывод результатов.
 
 ## Что это
 
@@ -38,7 +39,7 @@
    [Kilo](https://kilo.ai/landing/free-models).
 
 <p align="center">
-  <img src="./assets/readme/workflow.svg" width="100%" alt="Четыре этапа движка: fetch — поисковые запросы hh.ru в локальную БД; score — AI-оценка под резюме; generate — AI-сопроводительное под вакансию; apply — отклик с учётом лимитов">
+  <img src="./assets/readme/workflow.svg" width="100%" alt="Четыре этапа движка: fetch — поисковые запросы доски вакансий в локальную БД; score — AI-оценка под резюме; generate — AI-сопроводительное под вакансию; apply — отклик с учётом лимитов">
 </p>
 
 Встроенный ИИ проекта делает потоковые операции (score / generate / tests / captcha).
@@ -96,20 +97,20 @@ uv tool install --force --editable .   # ставит команду `jobfucker`
 
 | Скилл | Про что |
 | --- | --- |
-| `jobfucker-setup` | первичная настройка: установка, конфиг, HH-доступ, AI, капча, первый запуск |
+| `jobfucker-setup` | первичная настройка: установка, конфиг, доступ к доске (hh.ru / Habr Career), AI, капча, первый запуск |
 | `jobfucker-workflow` | операционный цикл: fetch → score → ревью → generate → apply, triage, лимиты |
 | `jobfucker-creating-prompts` | скоринг-промпт и сопроводительное (спрашивает предпочтения) |
-| `jobfucker-collecting-hh-vacancies` | подбор и проверка поисковых запросов HH |
+| `jobfucker-collecting-vacancies` | подбор и проверка поисковых запросов доски (hh.ru / Habr Career) |
 
 ## Требования
 
 - Python 3.14+ и `uv`
-- Аккаунт hh.ru и резюме
-- OpenAI-совместимый AI-провайдер (текстовая модель + vision для капчи)
+- Аккаунт hh.ru и/или Habr Career и резюме
+- OpenAI-совместимый AI-провайдер (текстовая модель; vision-модель для капчи)
 - ИИ-агент (Claude Code, Kilo и т. п.)
 
 ## Документация
 
 - **`AGENTS.md`** — входная точка для агента и разработчика: подсистемы, команды, архитектура,
   верификация. Все технические подробности — там.
-- `docs/` — спецификации, наблюдаемое поведение hh.ru, примеры пайплайнов и промптов.
+- `docs/` — спецификации, наблюдаемое поведение hh.ru и Habr Career, примеры пайплайнов и промптов.
