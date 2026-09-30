@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-labelledby="wf-title wf-desc">
   <title id="wf-title">Движок jobfucker: четыре этапа</title>
-  <desc id="wf-desc">Цепочка этапов движка: fetch — поисковые запросы hh.ru в локальную БД; score — AI-оценка под резюме; generate — сопроводительное под вакансию; apply — отклик с решением капчи и тестов.</desc>
+  <desc id="wf-desc">Цепочка этапов движка: fetch — поисковые запросы hh.ru и Habr Career в локальную БД; score — AI-оценка под резюме; generate — сопроводительное под вакансию; apply — отклик с решением капчи и тестов.</desc>
 
   <rect width="1200" height="300" rx="20" fill="#0a0d10"/>
   <rect x="0.5" y="0.5" width="1199" height="299" rx="20" fill="none" stroke="#232b33"/>
@@ -12,8 +12,8 @@
       <rect x="64" y="92" width="250" height="152" rx="14" fill="#11161b" stroke="#232b33"/>
       <text x="86" y="128" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16" fill="#6e7b89">01</text>
       <text x="86" y="164" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="26" font-weight="700" fill="#e6edf3">fetch</text>
-      <text x="86" y="200" font-size="18" fill="#8b98a5">поисковые запросы hh.ru</text>
-      <text x="86" y="224" font-size="18" fill="#8b98a5">&#8594; локальная БД</text>
+      <text x="86" y="200" font-size="18" fill="#8b98a5">поисковые запросы</text>
+      <text x="86" y="224" font-size="18" fill="#8b98a5">hh.ru / Habr &#8594; БД</text>
     </g>
 
     <text x="315" y="175" font-size="22" fill="#58a6ff">&#8594;</text>
