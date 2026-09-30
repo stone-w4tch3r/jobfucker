@@ -4,7 +4,7 @@
 # Обобщённая копия рабочего пайплайна. Профиль: Java Fullstack Engineer.
 # Показывает форму пула поисков, AI-секции, капчу, промпты и лимиты.
 #
-# Поисковый пул проектируется скиллом `jobfucker-collecting-hh-vacancies`;
+# Поисковый пул проектируется скиллом `jobfucker-collecting-vacancies`;
 # промпты — скиллом `jobfucker-creating-prompts`.
 # yaml-language-server: $schema=https://raw.githubusercontent.com/stone-w4tch3r/jobfucker/master/docs/schemas/pipeline.schema.json
 

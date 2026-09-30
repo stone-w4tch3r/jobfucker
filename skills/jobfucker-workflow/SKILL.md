@@ -5,7 +5,7 @@ description: >-
   Используй при прогоне pipeline, повседневной работе с jobfucker, вопросах «что дальше», разборе проскоренных вакансий, обработке requires_attention, повторном скоринге после правки промпта, диагностике падений (авторизация/капча/AI), выборе между ручным шагом и агентом.
 ---
 
-Для первичной настройки — jobfucker-setup; для дизайна поисков — jobfucker-collecting-hh-vacancies; для промптов — jobfucker-creating-prompts.
+Для первичной настройки — jobfucker-setup; для дизайна поисков — jobfucker-collecting-vacancies; для промптов — jobfucker-creating-prompts.
 
 # Операционный цикл jobfucker
 
@@ -15,8 +15,8 @@ description: >-
 
 | Задача | Скилл |
 | --- | --- |
-| Установка, первый запуск, новый pipeline, капча | `jobfucker-setup` |
-| Дизайн / расширение / бэкфилл поискового пула | `jobfucker-collecting-hh-vacancies` |
+| Установка, первый запуск, новый pipeline (hh.ru / Habr Career), капча | `jobfucker-setup` |
+| Дизайн / расширение / бэкфилл поискового пула (любая доска) | `jobfucker-collecting-vacancies` |
 | Создание / калибровка / итерация скоринг- и apply-промптов | `jobfucker-creating-prompts` |
 
 ## Цикл
@@ -69,12 +69,14 @@ description: >-
 
 ### 6. apply
 
-`jobfucker apply --pipeline-id <id> [batch flags] [--test-answers FILE|--no-test-ai]`
+`jobfucker apply --pipeline-id <id> [batch flags]`
 
 - eligible = есть письмо + score ≥ min + не `manual_skip` + не решён.
 - Релаксации на прогон: `--min-score N`, `--include-unscored`, `--allow-without-letter`, `--vacancy-id ID ...`, `--force`.
-- Тесты: при `has_hh_test` тест решается AI (по умолчанию) или файлом ответов; `hh-tests dump` — офлайн-решение.
-- Лимиты: локальный дневной cap + ответ `limit_exceeded` от HH (стоп, остаток pending).
+- **Скрининг-тесты и hh-специфичные флаги — только hh.ru:** `--test-answers FILE`, `--no-test-ai`, `--has-hh-tests`, `hh-tests dump`. У Habr Career тестов нет, флаги не применяются.
+- Лимиты: cap и окно — от доски (hh.ru — сутки, Habr Career — **150/месяц**). Ответ `limit_exceeded` останавливает батч, остаток pending.
+- Капча на apply — только у hh.ru; у Habr Career капча лишь на логине.
+- Habr Career: пейсинг ≥10 c между откликами → длинные батчи идут медленно.
 - Фатальные ошибки (`ConfigurationError`, `AuthError`) останавливают батч так же.
 
 ### 7. status
