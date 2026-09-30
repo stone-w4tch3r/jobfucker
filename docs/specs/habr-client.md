@@ -114,17 +114,12 @@ class HabrSearchEntry(SearchEntryBase):
 
 class HabrServiceConfig(BaseModel):
     searches: tuple[HabrSearchEntry, ...] = Field(min_length=1)  # the search pool
-    resume_id: str | None = None          # optional; defaults to the account alias
     captcha_max_attempts: int = Field(default=4, ge=1, le=10)
 ```
 
 Notes:
 
-- `resume_id` is **Habr-local** (not in the global section). Habr has one resume; its id is the
-  account alias. Omitted → the client uses `get_identity().external_id`. If set and it does not
-  match the alias → `ConfigurationError` (a pipeline stop).
-- `search_type=suitable` with no session fails closed with `ConfigurationError` **before** any
-  request (anonymous Habr silently ignores the flag — a silent wrong result otherwise).
+- `search_type=suitable` with no session fails closed with `ConfigurationError` **before** any request (anonymous Habr silently ignores the flag — a silent wrong result otherwise).
 
 ### Filter contract (`HabrFilterConfig`)
 
@@ -355,7 +350,6 @@ One account = one resume. The id is the account alias.
 - `get_resumes()` → `Ok([ResumeInfo(resume_id=alias, title=fullName, updated_at=None)])`.
 - `updated_at` is not established by Habr → `None`.
 - Apply carries **no** resume parameter.
-- If config `resume_id` is set and differs from the alias → `ConfigurationError` (stop).
 - No published/owned resume validation (nothing to select).
 
 ---
@@ -482,7 +476,7 @@ No internal patching.
 | Area | Required scenarios |
 | --- | --- |
 | Construction | rejects a non-Habr section; resolves credentials; closes the transport idempotently (browser sessions are per-attempt) |
-| Auth | anonymous `200 {}` → full SSO; session reuse; `remember_user_token` re-issue; identity decode; `resume_id` mismatch → `ConfigurationError` |
+| Auth | anonymous `200 {}` → full SSO; session reuse; `remember_user_token` re-issue; identity decode |
 | Captcha | browser click pass; escalation detect; browserless OCR+pow pass; wrong answer → fresh image; exhaustion → `CaptchaSolvingError(recovery_url)`; unknown type fails |
 | Transport | CSRF refresh-once on `422`; pacing; both error envelopes; malformed JSON → `ProtocolError` |
 | Search | both `search_type`s; `suitable` fail-closed without session; page size `≤50` (fixed 25 stride for `suitable`, `meta.perPage` mismatch → `ProtocolError`); `max_search_items=1000`; offset ≥1000 empty = exhausted; past-total `404` = exhausted; filter wire mapping; short page = exhausted |

@@ -55,11 +55,6 @@ Feature: Habr session lifecycle reuses cookies, retries remember_user_token, and
     Then authorization succeeds
     And the full login chain ran after the remember retry
 
-  Scenario: A configured resume_id mismatch stops the pipeline
-    Given a valid persisted Habr session and a configured resume_id different from the account alias
-    When the Habr client authorizes
-    Then authorization fails with a configuration error
-
   Scenario: A malformed identity response is a protocol error
     Given no persisted Habr session and a malformed identity response
     When the Habr client authorizes

@@ -983,20 +983,6 @@
           "title": "CAPTCHA answer attempts",
           "type": "integer"
         },
-        "resume_id": {
-          "anyOf": [
-            {
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Optional; defaults to the account alias. A mismatch with the alias is a pipeline stop.",
-          "title": "Resume id"
-        },
         "searches": {
           "description": "Ordered search entries fetched one after another into the same DB; an entry's position is its stable search_index.",
           "items": {
@@ -2241,5 +2227,5 @@
   ],
   "title": "jobfucker pipeline.yaml",
   "type": "object",
-  "x-jobfucker-schema-version": "sha256:bbbe2aa70ec12daecec543b8de306f58791fa83d783af32ec7c9912ca3f402fa"
+  "x-jobfucker-schema-version": "sha256:07f99efd62007f7f920115614d67238600810eb7999e5d6c19fc74bef141ea44"
 }

@@ -13,9 +13,6 @@ Habr (docs/habr/authentication.md, docs/habr/captcha.md):
    :class:`LoginCaptcha`, submit the ``email``/``password``/``smart-token`` form,
    then follow the returned ``rurl`` callback with the same cookie jar.
 5. Persist the new cookie snapshot + identity.
-
-The configured ``resume_id`` (when given) must equal the account alias; a
-mismatch stops the pipeline with a ``ConfigurationError``.
 """
 
 from __future__ import annotations
@@ -31,7 +28,6 @@ from jobfucker.clients.base import (
     AuthError,
     ClientDeps,
     ClientError,
-    ConfigurationError,
     ProtocolError,
     ServiceIdentity,
 )
@@ -111,13 +107,10 @@ class AuthCoordinator:
         deps: ClientDeps,
         transport: HabrTransport,
         captcha: LoginCaptcha,
-        *,
-        resume_id: str | None = None,
     ) -> None:
         self._deps = deps
         self._transport = transport
         self._captcha = captcha
-        self._resume_id = resume_id
         self._identity: ServiceIdentity | None = None
         self._store: AtomicJsonStore[PersistedHabrSession] = AtomicJsonStore(
             data_dir=deps.data_dir,
@@ -308,10 +301,7 @@ class AuthCoordinator:
         return _Authorized(identity)
 
     async def _accept(self, identity: ServiceIdentity, *, persist: bool) -> Result[None, ClientError]:
-        """Adopt an identity after validating the configured resume, optionally persisting."""
-        mismatch = _resume_mismatch(self._resume_id, identity)
-        if mismatch is not None:
-            return Err(ConfigurationError(message=mismatch))
+        """Adopt an identity, optionally persisting the session snapshot."""
         self._identity = identity
         await self._deps.reporter.publish(
             RunEvent(stage="authorize", message=f"Habr: authorized as {identity.external_id}", level="info")
@@ -327,13 +317,6 @@ class AuthCoordinator:
             ),
         )
         return await self._store.save(snapshot)
-
-
-def _resume_mismatch(configured: str | None, identity: ServiceIdentity) -> str | None:
-    """Return a ConfigurationError message when the configured resume id disagrees."""
-    if configured is None or configured == identity.external_id:
-        return None
-    return f"configured resume_id '{configured}' does not match the Habr account alias '{identity.external_id}'"
 
 
 def _cookies_differ(current: tuple[PersistedCookie, ...], previous: tuple[PersistedCookie, ...]) -> bool:

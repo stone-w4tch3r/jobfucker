@@ -18,7 +18,6 @@ from pytest_bdd import given, parsers, scenarios, then, when
 
 from jobfucker.clients.base import (
     ClientError,
-    ConfigurationError,
     ProtocolError,
     ServiceIdentity,
 )
@@ -159,7 +158,6 @@ def _scenario(
     healthchecks: ScriptedResponses,
     cookies: tuple[PersistedCookie, ...] = (),
     seeded: bool = False,
-    resume_id: str | None = None,
     career_session_cookie: str | None = None,
     extra_login_hops: tuple[str, ...] = (),
 ) -> AuthScenario:
@@ -176,7 +174,7 @@ def _scenario(
     deps = habr_deps(data_dir, profile_id, RecordingSolver(), login=DEFAULT_LOGIN, password=DEFAULT_PASSWORD)
     driver = FakeHabrBrowserDriver(FakeHabrBrowserSession(token=BROWSER_TOKEN))
     captcha = habr_captcha(transport, deps.captcha_handler, driver=driver, max_attempts=4)
-    coordinator = AuthCoordinator(deps, transport, captcha, resume_id=resume_id)
+    coordinator = AuthCoordinator(deps, transport, captcha)
     return AuthScenario(
         router=router,
         transport=transport,
@@ -262,20 +260,6 @@ def remember_then_login_step(tmp_path: Path) -> AuthScenario:
     )
 
 
-@given(
-    "a valid persisted Habr session and a configured resume_id different from the account alias",
-    target_fixture="auth_scenario",
-)
-def resume_mismatch_step(tmp_path: Path) -> AuthScenario:
-    return _scenario(
-        tmp_path,
-        seeded=True,
-        cookies=(PersistedCookie(name="_career_session", value="seed", domain="career.habr.com"),),
-        healthchecks=ScriptedResponses(authorized_identity()),
-        resume_id="some-other-alias",
-    )
-
-
 @given("no persisted Habr session and a malformed identity response", target_fixture="auth_scenario")
 def malformed_identity_step(tmp_path: Path) -> AuthScenario:
     return _scenario(tmp_path, healthchecks=ScriptedResponses(httpx.Response(200, text="<html>nope</html>")))
@@ -296,11 +280,6 @@ def authorize_and_close_step(auth_scenario: AuthScenario) -> AuthOutcome:
 @then("authorization succeeds")
 def assert_success_step(auth_outcome: AuthOutcome) -> None:
     assert auth_outcome.error is None
-
-
-@then("authorization fails with a configuration error")
-def assert_configuration_error_step(auth_outcome: AuthOutcome) -> None:
-    assert isinstance(auth_outcome.error, ConfigurationError)
 
 
 @then("authorization fails with a protocol error")

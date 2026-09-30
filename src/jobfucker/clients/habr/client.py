@@ -84,7 +84,7 @@ class HabrClient(Client):
             ),
             reporter=deps.reporter,
         )
-        self._auth = AuthCoordinator(deps, self._transport, captcha, resume_id=section.resume_id)
+        self._auth = AuthCoordinator(deps, self._transport, captcha)
         self._search = SearchService(self._transport)
         self._resumes = ResumeService()
         self._applications = ApplicationService(self._transport, delay=apply_delay)

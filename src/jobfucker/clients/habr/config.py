@@ -270,12 +270,6 @@ class HabrServiceConfig(BaseModel):
             "an entry's position is its stable search_index."
         ),
     )
-    resume_id: str | None = Field(
-        default=None,
-        min_length=1,
-        title="Resume id",
-        description="Optional; defaults to the account alias. A mismatch with the alias is a pipeline stop.",
-    )
     captcha_max_attempts: int = Field(
         default=4,
         ge=1,
